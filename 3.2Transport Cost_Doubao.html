@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HK Travel Cost Simulator | HKDSE Math</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .slider-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .slider-container {
+            margin: 20px 0;
+        }
+        #timeValueSlider {
+            width: 100%;
+            height: 8px;
+            accent-color: #3498db;
+        }
+        .value-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+        }
+        .optimal-hsr {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .optimal-air {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .chart-container {
+            height: 400px;
+            margin-top: 15px;
+        }
+        .formula {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .divider {
+            height: 1px;
+            background: #ddd;
+            margin: 30px 0;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚄 vs ✈️ Hong Kong Travel Cost Simulator</h1>
+        <p>Interactive Total Cost Minimization Model (HKDSE Applied Mathematics)</p>
+    </div>
+
+    <!-- Slider Section -->
+    <div class="slider-section">
+        <h3>Adjust Your Value of Time (v)</h3>
+        <p>Drag the slider to change your hourly time value (HKD/hour)</p>
+        <div class="slider-container">
+            <input type="range" id="timeValueSlider" min="0" max="1000" value="200" step="10">
+        </div>
+        <div class="value-display">
+            Current Time Value: <span id="timeValue">200</span> HKD/hour
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid">
+        <!-- Results Table -->
+        <div class="card">
+            <h3>📊 Cost Breakdown & Optimal Choices</h3>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Destination</th>
+                        <th>HSR Cost (HKD)</th>
+                        <th>Air Cost (HKD)</th>
+                        <th>Best Choice</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+            <h3>📈 Total Cost vs Distance</h3>
+            <div class="chart-container">
+                <canvas id="costChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Break-Even Analysis -->
+    <div class="card">
+        <h3>⚖️ Break-Even Time Value (v*) Analysis</h3>
+        <div class="formula">
+            v* = (P_Air - P_HSR) / (T_HSR - T_Air)
+        </div>
+        <p><strong>Rules:</strong><br>
+        • If your v > v* → Air is cheaper<br>
+        • If your v < v* → HSR is cheaper</p>
+        <table id="breakEvenTable">
+            <thead>
+                <tr>
+                    <th>Destination</th>
+                    <th>Break-Even v* (HKD/hour)</th>
+                </tr>
+            </thead>
+            <tbody id="breakEvenBody"></tbody>
+        </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Notes -->
+    <div class="card">
+        <h3>📚 HKDSE Math Notes</h3>
+        <p><strong>Total Cost Formula:</strong> C = Ticket Price + Travel Time × Time Value</p>
+        <p><strong>Key Observations:</strong><br>
+        • Short-haul (<500km): HSR is always better<br>
+        • Medium-haul (500-1200km): Depends on your time value<br>
+        • Long-haul (>1200km): Air becomes better for high time value</p>
+    </div>
+
+    <script>
+        // Travel Data
+        const destinations = [
+            {name: "Shenzhen", dist: 40, hsrPrice: 82, airPrice: 812, hsrTime: 0.40, airTime: 3.32},
+            {name: "Guangzhou", dist: 140, hsrPrice: 231, airPrice: 980, hsrTime: 1.05, airTime: 3.48},
+            {name: "Changsha", dist: 690, hsrPrice: 648, airPrice: 1310, hsrTime: 3.61, airTime: 4.15},
+            {name: "Xiamen", dist: 520, hsrPrice: 512, airPrice: 1192, hsrTime: 4.32, airTime: 3.92},
+            {name: "Wuhan", dist: 920, hsrPrice: 780, airPrice: 1489, hsrTime: 4.88, airTime: 4.31},
+            {name: "Shanghai", dist: 1250, hsrPrice: 1021, airPrice: 1780, hsrTime: 8.21, airTime: 4.90},
+            {name: "Hangzhou", dist: 1150, hsrPrice: 973, airPrice: 1664, hsrTime: 7.42, airTime: 4.79},
+            {name: "Beijing", dist: 2000, hsrPrice: 1460, airPrice: 2408, hsrTime: 8.65, airTime: 5.85},
+            {name: "Chengdu", dist: 1350, hsrPrice: 1098, airPrice: 1822, hsrTime: 10.08, airTime: 5.21},
+            {name: "Kunming", dist: 1200, hsrPrice: 952, airPrice: 1751, hsrTime: 7.74, airTime: 4.92}
+        ];
+
+        // Global Variables
+        let timeValue = 200;
+        let chart;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            updateAll();
+            loadBreakEven();
+        });
+
+        // Slider Event
+        const slider = document.getElementById('timeValueSlider');
+        const valueDisplay = document.getElementById('timeValue');
+        
+        slider.addEventListener('input', function() {
+            timeValue = parseInt(this.value);
+            valueDisplay.textContent = timeValue;
+            updateAll();
+        });
+
+        // Calculate Costs
+        function calculateCosts() {
+            return destinations.map(item => {
+                const hsrCost = item.hsrPrice + (item.hsrTime * timeValue);
+                const airCost = item.airPrice + (item.airTime * timeValue);
+                const optimal = hsrCost < airCost ? "HSR" : "Air";
+                return {
+                    ...item,
+                    hsrCost: hsrCost.toFixed(2),
+                    airCost: airCost.toFixed(2),
+                    optimal: optimal
+                };
+            });
+        }
+
+        // Update Table
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                const optimalClass = item.optimal === "HSR" ? "optimal-hsr" : "optimal-air";
+                
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.hsrCost}</td>
+                    <td>${item.airCost}</td>
+                    <td class="${optimalClass}">${item.optimal}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'HSR Total Cost',
+                            data: [],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'Air Total Cost',
+                            data: [],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Total Travel Cost at v = ${timeValue} HKD/hour`
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distance (km)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Total Cost (HKD)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Chart
+        function updateChart(data) {
+            const distances = data.map(item => item.dist);
+            const hsrCosts = data.map(item => parseFloat(item.hsrCost));
+            const airCosts = data.map(item => parseFloat(item.airCost));
+
+            chart.data.labels = distances;
+            chart.data.datasets[0].data = hsrCosts;
+            chart.data.datasets[1].data = airCosts;
+            chart.options.plugins.title.text = `Total Travel Cost at v = ${timeValue} HKD/hour`;
+            chart.update();
+        }
+
+        // Load Break-Even Table
+        function loadBreakEven() {
+            const tbody = document.getElementById('breakEvenBody');
+            tbody.innerHTML = '';
+            
+            destinations.forEach(item => {
+                const vStar = ((item.airPrice - item.hsrPrice) / (item.hsrTime - item.airTime)).toFixed(2);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${vStar}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update All Components
+        function updateAll() {
+            const data = calculateCosts();
+            updateTable(data);
+            updateChart(data);
+        }
+    </script>
+</body>
+</html>
