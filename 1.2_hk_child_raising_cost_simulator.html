@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20-Year Cost of Raising a Child in Hong Kong Simulator</title>
+    <!-- Chart.js for smooth, client-side, dependency-free interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --color-bg: #f4f6f9;
+            --color-card: #ffffff;
+            --color-text: #2d3748;
+            --color-text-muted: #718096;
+            --color-border: #e2e8f0;
+            
+            /* Stage Colors */
+            --color-stage1: #ff6b6b;
+            --color-stage1-hover: #fa5252;
+            --color-stage2: #4d96ff;
+            --color-stage2-hover: #3b82f6;
+            --color-stage3: #6bcb77;
+            --color-stage3-hover: #51cf66;
+            
+            --color-primary: #4a5568;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            color: var(--color-text-muted);
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: 400px 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--color-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--color-border);
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #1a202c;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .control-value {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            background-color: #edf2f7;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #2d3748;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+        @media (min-width: 992px) {
+            .chart-container {
+                height: 100%;
+                min-height: 450px;
+            }
+        }
+
+        .summary-banner {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: #ffffff;
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 80%);
+            pointer-events: none;
+        }
+
+        .summary-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            color: #cbd5e0;
+        }
+
+        .summary-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            font-feature-settings: "tnum";
+        }
+
+        @media (min-width: 576px) {
+            .summary-value {
+                font-size: 3.25rem;
+            }
+        }
+
+        .legend-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>20-Year Cost of Raising a Child in Hong Kong Simulator</h1>
+        <p>Interactive Multi-Parameter Financial Horizon Modeler</p>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Controls Panel -->
+        <div class="card">
+            <div class="card-title">Simulation Control Panel</div>
+            
+            <!-- Inflation -->
+            <div class="control-group">
+                <div class="control-label-wrapper">
+                    <span class="control-label">Average Inflation Rate</span>
+                    <span class="control-value" id="val-inflation">3.0%</span>
+                </div>
+                <input type="range" id="param-inflation" min="0" max="10" step="0.5" value="3.0">
+            </div>
+
+            <!-- Stage 1 Base Cost -->
+            <div class="control-group">
+                <div class="control-label-wrapper">
+                    <span class="control-label">
+                        <span class="legend-indicator" style="background-color: var(--color-stage1)"></span>
+                        Early Childhood Base (0–5)
+                    </span>
+                    <span class="control-value" id="val-stage1">$120,000</span>
+                </div>
+                <input type="range" id="param-stage1" min="50000" max="250000" step="10000" value="120000">
+            </div>
+
+            <!-- Stage 2 Base Cost -->
+            <div class="control-group">
+                <div class="control-label-wrapper">
+                    <span class="control-label">
+                        <span class="legend-indicator" style="background-color: var(--color-stage2)"></span>
+                        Primary / Secondary (6–17)
+                    </span>
+                    <span class="control-value" id="val-stage2">$100,000</span>
+                </div>
+                <input type="range" id="param-stage2" min="40000" max="300000" step="10000" value="100000">
+            </div>
+
+            <!-- Stage 3 Base Cost -->
+            <div class="control-group">
+                <div class="control-label-wrapper">
+                    <span class="control-label">
+                        <span class="legend-indicator" style="background-color: var(--color-stage3)"></span>
+                        University Period (18–20)
+                    </span>
+                    <span class="control-value" id="val-stage3">$150,000</span>
+                </div>
+                <input type="range" id="param-stage3" min="50000" max="500000" step="10000" value="150000">
+            </div>
+        </div>
+
+        <!-- Visualization Canvas Card -->
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="costChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Dynamic Total Summary Banner -->
+    <div class="summary-banner">
+        <div class="summary-label">20-Year Estimated Total Cost</div>
+        <div class="summary-value" id="total-cost-display">0 HKD</div>
+    </div>
+</div>
+
+<script>
+    // Elements Setup
+    const sliderInflation = document.getElementById('param-inflation');
+    const sliderStage1 = document.getElementById('param-stage1');
+    const sliderStage2 = document.getElementById('param-stage2');
+    const sliderStage3 = document.getElementById('param-stage3');
+
+    const lblInflation = document.getElementById('val-inflation');
+    const lblStage1 = document.getElementById('val-stage1');
+    const lblStage2 = document.getElementById('val-stage2');
+    const lblStage3 = document.getElementById('val-stage3');
+    const displayTotalCost = document.getElementById('total-cost-display');
+
+    // Chart Configuration Variables
+    let chartInstance = null;
+    const ages = Array.from({length: 21}, (_, i) => i);
+
+    // Formatter Helpers
+    function formatCurrency(val) {
+        return '$' + Number(val).toLocaleString('en-US');
+    }
+
+    // Mathematical Calculation Engine
+    function calculateData() {
+        const r = parseFloat(sliderInflation.value) / 100.0;
+        const base1 = parseFloat(sliderStage1.value);
+        const base2 = parseFloat(sliderStage2.value);
+        const base3 = parseFloat(sliderStage3.value);
+
+        let calculatedExpenses = [];
+        let backgroundColors = [];
+        let hoverColors = [];
+        let totalSum = 0;
+
+        for (let age = 0; age <= 20; age++) {
+            let baseExpense = 0;
+            let bgC = '';
+            let hC = '';
+
+            if (age >= 0 && age <= 5) {
+                baseExpense = base1;
+                bgC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage1').trim();
+                hC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage1-hover').trim();
+            } else if (age >= 6 && age <= 17) {
+                baseExpense = base2;
+                bgC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage2').trim();
+                hC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage2-hover').trim();
+            } else {
+                baseExpense = base3;
+                bgC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage3').trim();
+                hC = getComputedStyle(document.documentElement).getPropertyValue('--color-stage3-hover').trim();
+            }
+
+            // Exponential Staged Geometric Progression Realized Value Formula
+            const actualAnnualExpense = baseExpense * Math.pow((1 + r), age);
+            calculatedExpenses.push(Math.round(actualAnnualExpense));
+            backgroundColors.push(bgC);
+            hoverColors.push(hC);
+            totalSum += actualAnnualExpense;
+        }
+
+        return {
+            expenses: calculatedExpenses,
+            bgColors: backgroundColors,
+            hColors: hoverColors,
+            total: Math.round(totalSum)
+        };
+    }
+
+    // Synchronization Layer
+    function updateDashboard() {
+        // Synchronize numeric labels text
+        lblInflation.textContent = parseFloat(sliderInflation.value).toFixed(1) + '%';
+        lblStage1.textContent = formatCurrency(sliderStage1.value);
+        lblStage2.textContent = formatCurrency(sliderStage2.value);
+        lblStage3.textContent = formatCurrency(sliderStage3.value);
+
+        // Fetch execution output metrics
+        const metrics = calculateData();
+
+        // Dynamically update total calculated banner string
+        displayTotalCost.textContent = metrics.total.toLocaleString('en-US') + ' HKD';
+
+        // Redraw or initialize Chart.js Instance natively
+        if (chartInstance) {
+            chartInstance.data.datasets[0].data = metrics.expenses;
+            chartInstance.data.datasets[0].backgroundColor = metrics.bgColors;
+            chartInstance.data.datasets[0].hoverBackgroundColor = metrics.hColors;
+            chartInstance.update();
+        } else {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ages.map(age => 'Age ' + age),
+                    datasets: [{
+                        label: 'Annual Expense Profile',
+                        data: metrics.expenses,
+                        backgroundColor: metrics.bgColors,
+                        hoverBackgroundColor: metrics.hColors,
+                        borderRadius: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false // Using custom structural indicators on label tags
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Expense: ' + formatCurrency(context.raw) + ' HKD';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#edf2f7'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'k';
+                                },
+                                font: {
+                                    family: 'monospace'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Register Multi-Event Dynamic Listeners
+    [sliderInflation, sliderStage1, sliderStage2, sliderStage3].forEach(slider => {
+        slider.addEventListener('input', updateDashboard);
+    });
+
+    // Run Initialization Instance on runtime mount
+    window.addEventListener('DOMContentLoaded', updateDashboard);
+</script>
+
+</body>
+</html>
