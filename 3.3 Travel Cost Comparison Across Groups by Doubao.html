@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6 Group Travel Choice Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .control-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 14px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        select, input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+        .slider-box {
+            margin-top: 16px;
+        }
+        #timeValueSlider {
+            width: 100%;
+            height: 7px;
+            accent-color: #3498db;
+            margin-top: 10px;
+        }
+        .value-box {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+        }
+        .hsr { color: #27ae60; font-weight: bold; }
+        .air { color: #e67e22; font-weight: bold; }
+        .chart-container {
+            height: 380px;
+            margin-top: 12px;
+        }
+        .info-row {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #34495e;
+        }
+        .divider {
+            height: 1px;
+            background: #ddd;
+            margin: 24px 0;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🚄 vs ✈️ 6 Group Travel Choice Simulator</h1>
+    <p>Total Cost Model: Ticket + Time Cost + Auxiliary Cost</p>
+</div>
+
+<!-- Group & Time Value Control -->
+<div class="control-card">
+    <div>
+        <label>Select Group:</label>
+        <select id="groupSelect">
+            <option value="highIncome">High-income individuals</option>
+            <option value="middleIncome">Middle-income individuals</option>
+            <option value="lowIncome">Low-income individuals</option>
+            <option value="teacher">Secondary school teachers</option>
+            <option value="student">Secondary school students</option>
+            <option value="elderly">The elderly</option>
+        </select>
+    </div>
+
+    <div class="slider-box">
+        <label>Adjust Time Value (HKD/hour):</label>
+        <input type="range" id="timeValueSlider" min="0" max="1000" step="10" value="220">
+        <div class="value-box">Current: <span id="vDisplay">220</span> HKD/hour</div>
+    </div>
+
+    <div class="info-row">
+        Aux Cost (HSR): <span id="auxHsr">0</span> HKD&nbsp;&nbsp;&nbsp;
+        Aux Cost (Air): <span id="auxAir">0</span> HKD
+    </div>
+</div>
+
+<!-- Main Grid -->
+<div class="grid">
+    <div class="card">
+        <h3>📊 Cost & Best Choice</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Destination</th>
+                    <th>HSR Cost</th>
+                    <th>Air Cost</th>
+                    <th>Best Choice</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>📈 Cost vs Distance Chart</h3>
+        <div class="chart-container">
+            <canvas id="costChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Break Even Analysis -->
+<div class="card">
+    <h3>⚖️ Break-Even Time Value (v*)</h3>
+    <p><b>Rule:</b> If your v > v* → Choose Air; else → Choose HSR</p>
+    <table style="margin-top:12px">
+        <thead>
+            <tr>
+                <th>Destination</th>
+                <th>Break-Even v* (HKD/h)</th>
+            </tr>
+        </thead>
+        <tbody id="breakEvenBody"></tbody>
+    </table>
+</div>
+
+<script>
+// --------------------------
+// 1. Route Data
+// --------------------------
+const routes = [
+    { dest: "Shenzhen",   hsrPrice:82, airPrice:812, hsrTime:0.40, airTime:3.32 },
+    { dest: "Guangzhou",  hsrPrice:231, airPrice:980, hsrTime:1.05, airTime:3.48 },
+    { dest: "Changsha",   hsrPrice:648, airPrice:1310, hsrTime:3.61, airTime:4.15 },
+    { dest: "Xiamen",     hsrPrice:512, airPrice:1192, hsrTime:4.32, airTime:3.92 },
+    { dest: "Wuhan",      hsrPrice:780, airPrice:1489, hsrTime:4.88, airTime:4.31 },
+    { dest: "Shanghai",   hsrPrice:1021, airPrice:1780, hsrTime:8.21, airTime:4.90 },
+    { dest: "Beijing",    hsrPrice:1460, airPrice:2408, hsrTime:8.65, airTime:5.85 }
+];
+
+// --------------------------
+// 2. 6 Group Parameters
+// --------------------------
+const groupData = {
+    highIncome:   { v:600, auxHSR:40, auxAir:120 },
+    middleIncome: { v:220, auxHSR:30, auxAir:80 },
+    lowIncome:    { v:60,  auxHSR:15, auxAir:40 },
+    teacher:      { v:280, auxHSR:35, auxAir:90 },
+    student:      { v:40,  auxHSR:20, auxAir:50 },
+    elderly:      { v:30,  auxHSR:50, auxAir:150 }
+};
+
+// --------------------------
+// 3. Global Variables
+// --------------------------
+let currentGroup = "middleIncome";
+let timeValue = groupData[currentGroup].v;
+let auxHSR = groupData[currentGroup].auxHSR;
+let auxAir = groupData[currentGroup].auxAir;
+let chart;
+
+// --------------------------
+// 4. Initialize
+// --------------------------
+window.onload = function() {
+    initChart();
+    updateUI();
+    refreshAll();
+};
+
+// --------------------------
+// 5. Group Select Listener
+// --------------------------
+document.getElementById("groupSelect").addEventListener("change", function(e) {
+    currentGroup = e.target.value;
+    const g = groupData[currentGroup];
+    timeValue = g.v;
+    auxHSR = g.auxHSR;
+    auxAir = g.auxAir;
+
+    document.getElementById("timeValueSlider").value = timeValue;
+    updateUI();
+    refreshAll();
+});
+
+// --------------------------
+// 6. Slider Listener
+// --------------------------
+document.getElementById("timeValueSlider").addEventListener("input", function(e) {
+    timeValue = parseInt(e.target.value);
+    updateUI();
+    refreshAll();
+});
+
+// --------------------------
+// 7. Update Display
+// --------------------------
+function updateUI() {
+    document.getElementById("vDisplay").innerText = timeValue;
+    document.getElementById("auxHsr").innerText = auxHSR;
+    document.getElementById("auxAir").innerText = auxAir;
+}
+
+// --------------------------
+// 8. Calculate All Costs
+// --------------------------
+function calculate() {
+    return routes.map(r => {
+        const hsrTotal = r.hsrPrice + r.hsrTime * timeValue + auxHSR;
+        const airTotal = r.airPrice + r.airTime * timeValue + auxAir;
+        const best = hsrTotal < airTotal ? "HSR" : "Air";
+        const vStar = ((r.airPrice - r.hsrPrice) + (auxAir - auxHSR)) / (r.hsrTime - r.airTime);
+
+        return {
+            ...r, hsrTotal, airTotal, best, vStar
+        };
+    });
+}
+
+// --------------------------
+// 9. Update Result Table
+// --------------------------
+function updateTable(data) {
+    const tbody = document.getElementById("resultBody");
+    tbody.innerHTML = "";
+    data.forEach(item => {
+        const tr = document.createElement("tr");
+        const cls = item.best === "HSR" ? "hsr" : "air";
+        tr.innerHTML = `
+            <td>${item.dest}</td>
+            <td>${item.hsrTotal.toFixed(0)}</td>
+            <td>${item.airTotal.toFixed(0)}</td>
+            <td class="${cls}">${item.best}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// --------------------------
+// 10. Update Break Even Table
+// --------------------------
+function updateBreakEven(data) {
+    const tbody = document.getElementById("breakEvenBody");
+    tbody.innerHTML = "";
+    data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${item.dest}</td>
+            <td>${item.vStar.toFixed(1)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// --------------------------
+// 11. Chart
+// --------------------------
+function initChart() {
+    const ctx = document.getElementById("costChart").getContext("2d");
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { title: { display: true, text: "Total Cost Comparison" } },
+            scales: {
+                x: { title: { display: true, text: "Route Order" } },
+                y: { title: { display: true, text: "Total Cost (HKD)" } }
+            }
+        }
+    });
+}
+
+function updateChart(data) {
+    const labels = data.map(x => x.dest);
+    const hsrCosts = data.map(x => x.hsrTotal);
+    const airCosts = data.map(x => x.airTotal);
+
+    chart.data.labels = labels;
+    chart.data.datasets = [
+        { label: 'HSR Total Cost', data: hsrCosts, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.1)', tension:0.3 },
+        { label: 'Air Total Cost', data: airCosts, borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.1)', tension:0.3 }
+    ];
+    chart.options.plugins.title.text = `Total Cost (v = ${timeValue} HKD/h)`;
+    chart.update();
+}
+
+// --------------------------
+// 12. Refresh All
+// --------------------------
+function refreshAll() {
+    const data = calculate();
+    updateTable(data);
+    updateBreakEven(data);
+    updateChart(data);
+}
+</script>
+</body>
+</html>
