@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HK-Mainland Travel Cost Minimization Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 antialiased min-h-screen py-8 px-4">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8 border-b border-gray-200 pb-6">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="bg-blue-600 text-white text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded">DSE Applied Math</span>
+                <span class="bg-purple-600 text-white text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded">Data Science</span>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Transport Cost Minimization Simulator
+            </h1>
+            <p class="mt-2 text-sm text-gray-600 max-w-3xl">
+                An interactive mathematical modeling matrix analyzing optimal transport modes for Hong Kong citizens traveling to Mainland China. This model minimizes total generalized travel cost: 
+                <code class="bg-gray-100 px-1.5 py-0.5 rounded text-blue-700 font-mono text-xs">C = Price + (V &times; Time)</code>, where <code class="bg-gray-100 px-1.5 py-0.5 rounded text-blue-700 font-mono text-xs">V</code> represents the individual's subjective value of time.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+            
+            <div class="lg:col-span-1 bg-white p-5 rounded-xl shadow-sm border border-gray-200 sticky top-6">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4"></i> Control Variables
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-baseline mb-1">
+                            <label for="timeValueSlider" class="text-sm font-semibold text-gray-700">Value of Time (<span class="font-mono text-blue-600">V</span>)</label>
+                            <span id="timeValueDisplay" class="text-lg font-bold font-mono text-blue-600">text</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="timeValueSlider" 
+                            min="0" 
+                            max="500" 
+                            step="5" 
+                            value="115" 
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <div class="flex justify-between text-[10px] text-gray-400 font-mono mt-1">
+                            <span>$0/hr</span>
+                            <span>$250/hr</span>
+                            <span>$500/hr</span>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-tight block">Reference Markers</span>
+                        <button onclick="setSlider(40)" class="w-full text-left text-xs p-2 rounded bg-gray-50 hover:bg-gray-100 border border-gray-200 transition flex justify-between items-center">
+                            <span class="text-gray-600">Grassroots / Student Level</span>
+                            <span class="font-mono font-medium">$40/hr</span>
+                        </button>
+                        <button onclick="setSlider(115)" class="w-full text-left text-xs p-2 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition flex justify-between items-center text-blue-900 font-semibold">
+                            <span class="flex items-center gap-1"><i data-lucide="info" class="w-3 h-3"></i> HK Median Wage Rate</span>
+                            <span class="font-mono">$115/hr</span>
+                        </button>
+                        <button onclick="setSlider(350)" class="w-full text-left text-xs p-2 rounded bg-gray-50 hover:bg-gray-100 border border-gray-200 transition flex justify-between items-center">
+                            <span class="text-gray-600">Corporate / Corporate Premium</span>
+                            <span class="font-mono">$350/hr</span>
+                        </button>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 space-y-2">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-tight block">Model Aggregations</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg text-center">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-700 block">Favor HSR</span>
+                                <span id="hsrCount" class="text-2xl font-black text-emerald-800">0</span>
+                            </div>
+                            <div class="bg-sky-50 border border-sky-200 p-2.5 rounded-lg text-center">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-sky-700 block">Favor Flight</span>
+                                <span id="airCount" class="text-2xl font-black text-sky-800">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-3.5 px-4 font-semibold">Destination Matrix</th>
+                                    <th class="py-3.5 px-4 font-semibold text-right">Distance</th>
+                                    <th class="py-3.5 px-4 font-semibold bg-emerald-50/50 text-emerald-900 border-x border-gray-100 text-center">HSR Total Cost</th>
+                                    <th class="py-3.5 px-4 font-semibold bg-sky-50/50 text-sky-900 border-x border-gray-100 text-center">Flight Total Cost</th>
+                                    <th class="py-3.5 px-4 font-semibold text-center">Breakeven Value ($V^*$)</th>
+                                    <th class="py-3.5 px-4 font-semibold text-right">Optimal Model Decision</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrixBody" class="divide-y divide-gray-100 text-sm">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex gap-2 items-start text-xs text-gray-500 bg-gray-100/60 p-3 rounded-lg border border-gray-200/60">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-gray-400 shrink-0 mt-0.5"></i>
+                    <p>
+                        <strong>Strict Dominance Condition:</strong> Where Breakeven ($V^*$) evaluates to <span class="font-mono italic text-emerald-700 font-semibold">"Always HSR"</span>, High-Speed Rail achieves lower financial ticketing costs <em>and</em> absolute shorter travel run times simultaneously. Under these configurations, flying violates the absolute efficiency optimization principle.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Empirical raw input data parameters array dictionary mapping
+        const destinations = [
+            { name: "Shenzhen", dist: 40, p_hsr: 82, p_air: 812, t_hsr: 0.40, t_air: 3.32 },
+            { name: "Guangzhou", dist: 140, p_hsr: 231, p_air: 980, t_hsr: 1.05, t_air: 3.48 },
+            { name: "Xiamen", dist: 520, p_hsr: 512, p_air: 1192, t_hsr: 4.32, t_air: 3.92 },
+            { name: "Changsha", dist: 690, p_hsr: 648, p_air: 1310, t_hsr: 3.61, t_air: 4.15 },
+            { name: "Wuhan", dist: 920, p_hsr: 780, p_air: 1489, t_hsr: 4.88, t_air: 4.31 },
+            { name: "Hangzhou", dist: 1150, p_hsr: 973, p_air: 1664, t_hsr: 7.42, t_air: 4.79 },
+            { name: "Kunming", dist: 1200, p_hsr: 952, p_air: 1751, t_hsr: 7.74, t_air: 4.92 },
+            { name: "Shanghai", dist: 1250, p_hsr: 1021, p_air: 1780, t_hsr: 8.21, t_air: 4.90 },
+            { name: "Chengdu", dist: 1350, p_hsr: 1098, p_air: 1822, t_hsr: 10.08, t_air: 5.21 },
+            { name: "Beijing", dist: 2000, p_hsr: 1460, p_air: 2408, t_hsr: 8.65, t_air: 5.85 }
+        ];
+
+        const slider = document.getElementById('timeValueSlider');
+        const display = document.getElementById('timeValueDisplay');
+        const matrixBody = document.getElementById('matrixBody');
+        const hsrCountEl = document.getElementById('hsrCount');
+        const airCountEl = document.getElementById('airCount');
+
+        // Explicit reference pointer interface controller function helper
+        function setSlider(val) {
+            slider.value = val;
+            calculateModel();
+        }
+
+        // Vectorized array compute calculations evaluation script engine
+        function calculateModel() {
+            const V = parseFloat(slider.value);
+            display.textContent = `$${V} HKD/hr`;
+            
+            let hsrWins = 0;
+            let airWins = 0;
+            let rowsHtml = '';
+
+            destinations.forEach(dest => {
+                // Calculate generalized linear operational cost functions
+                const c_hsr = dest.p_hsr + (V * dest.t_hsr);
+                const c_air = dest.p_air + (V * dest.t_air);
+                
+                // Solve mathematical equation system for system equilibrium threshold index V*
+                // Delta P / Delta T
+                const deltaP = dest.p_air - dest.p_hsr;
+                const deltaT = dest.t_hsr - dest.t_air;
+                
+                let breakEvenText = '';
+                if (deltaT <= 0) {
+                    breakEvenText = '<span class="text-emerald-700 italic font-medium text-xs">Always HSR</span>';
+                } else {
+                    const v_star = deltaP / deltaT;
+                    breakEvenText = `<span class="font-mono text-xs font-semibold text-gray-600">$${v_star.toFixed(2)}/hr</span>`;
+                }
+
+                // Determine absolute logical inequality cost minimizing mode decision strategy
+                const isHsrOptimal = c_hsr <= c_air;
+                if (isHsrOptimal) hsrWins++; else airWins++;
+
+                rowsHtml += `
+                    <tr class="hover:bg-gray-50/80 transition duration-150">
+                        <td class="py-4 px-4 font-semibold text-gray-900">${dest.name}</td>
+                        <td class="py-4 px-4 text-right text-xs font-mono text-gray-500">${dest.dist} km</td>
+                        
+                        <td class="py-4 px-4 text-center font-mono border-x border-gray-100 bg-emerald-50/20 ${isHsrOptimal ? 'text-emerald-700 font-bold' : 'text-gray-400 text-xs'}">
+                            $${c_hsr.toFixed(0)}
+                            <span class="block text-[10px] text-gray-400 font-normal mt-0.5">Ticket: $${dest.p_hsr}</span>
+                        </td>
+                        
+                        <td class="py-4 px-4 text-center font-mono border-x border-gray-100 bg-sky-50/10 ${!isHsrOptimal ? 'text-sky-700 font-bold' : 'text-gray-400 text-xs'}">
+                            $${c_air.toFixed(0)}
+                            <span class="block text-[10px] text-gray-400 font-normal mt-0.5">Ticket: $${dest.p_air}</span>
+                        </td>
+                        
+                        <td class="py-4 px-4 text-center border-r border-gray-100 bg-gray-50/30">${breakEvenText}</td>
+                        
+                        <td class="py-4 px-4 text-right font-medium">
+                            ${isHsrOptimal ? 
+                                `<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                                    <i data-lucide="train" class="w-3 h-3"></i> High-Speed Rail
+                                 </span>` : 
+                                `<span class="inline-flex items-center gap-1 bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-1 rounded-full border border-sky-200">
+                                    <i data-lucide="plane" class="w-3 h-3"></i> Airplane Flight
+                                 </span>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+
+            matrixBody.innerHTML = rowsHtml;
+            hsrCountEl.textContent = hsrWins;
+            airCountEl.textContent = airWins;
+            
+            // Re-render dynamically injected vector icons
+            lucide.createIcons();
+        }
+
+        // Document initialize setup mapping handlers
+        slider.addEventListener('input', calculateModel);
+        window.addEventListener('DOMContentLoaded', calculateModel);
+    </script>
+</body>
+</html>
