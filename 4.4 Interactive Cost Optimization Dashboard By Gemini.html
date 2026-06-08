@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOC Tower Surface Area & Cost Optimization Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            transition: background 0.15s ease-in-out;
+        }
+        .slider-thumb::-webkit-slider-thumb:hover {
+            background: #1d4ed8;
+        }
+        .chart-grid line {
+            stroke: #e5e7eb;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+        .chart-grid path {
+            stroke-width: 0;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-blue-900 to-indigo-950 text-white py-6 px-8 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Bank of China Tower Optimization Dashboard</h1>
+                <p class="text-blue-200 text-sm mt-1">Mathematical Modeling, Structural Engineering & Commercial Cost Analysis Emulator</p>
+            </div>
+            <div class="bg-blue-800/50 backdrop-blur-sm border border-blue-700/50 px-4 py-2 rounded-lg text-xs font-mono text-blue-100">
+                Data Source Calibration: 30,104 m² (Idealized) vs 55,000 m² (Real-world Baseline)
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    Model Control Parameters
+                </h2>
+                
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="slider-multiplier" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Stochastic Correction Multiplier</label>
+                            <span id="val-multiplier" class="font-mono text-sm font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">1.70x</span>
+                        </div>
+                        <input type="range" id="slider-multiplier" min="1.0" max="2.2" step="0.05" value="1.70" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <p class="text-[11px] text-slate-400 mt-1">Adjusts the baseline idealized geometry to account for 3D frame depths, structural columns, and complex rhombic cuts.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="slider-unit-cost" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Unit Cost (HKD / m²)</label>
+                            <span id="val-unit-cost" class="font-mono text-sm font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">$25</span>
+                        </div>
+                        <input type="range" id="slider-unit-cost" min="15" max="50" step="1" value="25" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <p class="text-[11px] text-slate-400 mt-1">The specialized contract procurement rate per square meter for high-altitude curtain wall operations.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="slider-budget" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Procurement Budget Limit (HKD)</label>
+                            <span id="val-budget" class="font-mono text-sm font-bold bg-emerald-550 text-emerald-700 px-2 py-0.5 rounded">$1,200,000</span>
+                        </div>
+                        <input type="range" id="slider-budget" min="500000" max="2000000" step="50000" value="1200000" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <p class="text-[11px] text-slate-400 mt-1">The absolute commercial cap allocated for the single-cycle facade maintenance campaign.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alert-card" class="rounded-xl p-5 border transition-all duration-300 shadow-xs flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                    <div id="alert-icon-container" class="p-2 rounded-lg">
+                        </div>
+                    <div>
+                        <h3 id="alert-title" class="text-base font-bold">Checking Parameters...</h3>
+                        <p id="alert-subtitle" class="text-xs mt-0.5"></p>
+                    </div>
+                </div>
+                <div id="alert-description" class="text-xs leading-relaxed border-t pt-3 mt-1">
+                    </div>
+            </div>
+        </section>
+
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-4 flex flex-col">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Modeled Surface Area</span>
+                    <span id="metric-area" class="text-2xl font-black text-slate-900 mt-1">-- m²</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Scaled via correction matrix</span>
+                </div>
+                <div id="metric-card-cost" class="bg-white rounded-xl shadow-xs border border-slate-200 p-4 flex flex-col transition-colors duration-200">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Projected Project Cost</span>
+                    <span id="metric-cost" class="text-2xl font-black text-slate-900 mt-1">HKD --</span>
+                    <span id="metric-cost-variance" class="text-[11px] mt-1">--</span>
+                </div>
+                <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-4 flex flex-col">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Max Cleanable Cap</span>
+                    <span id="metric-max-area" class="text-2xl font-black text-slate-900 mt-1">-- m²</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Affordable under explicit budget</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-6 flex flex-col flex-1">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Commercial Optimization Envelope</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Comparing dynamic modeled area against maximum budget threshold across scaling factors</p>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-medium">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 bg-blue-600 rounded-xs inline-block"></span>
+                            <span>Modeled Area Trend</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-0.5 bg-red-500 border-t border-dashed border-red-500 inline-block"></span>
+                            <span>Budget Constraint Cap</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chart-wrapper" class="w-full flex-1 min-h-[340px] relative">
+                    <svg id="optimization-chart" class="w-full h-full min-h-[340px]"></svg>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 text-xs text-center py-4 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4">
+            Designed for senior mathematical modeling curricula and engineering procurement optimization simulations. Driven by D3.js engine.
+        </div>
+    </footer>
+
+    <script>
+        // Analytical Constants
+        const CONSTANTS = {
+            IDEALIZED_BASE_AREA: 30104, // Ground truth baseline from textbook geometric model (m²)
+            MIN_MULTIPLIER: 1.0,
+            MAX_MULTIPLIER: 2.2
+        };
+
+        // UI State Variables
+        let state = {
+            multiplier: 1.70,
+            unitCost: 25,
+            budget: 1200000
+        };
+
+        // Selection of DOM nodes
+        const el = {
+            sliderMultiplier: document.getElementById('slider-multiplier'),
+            sliderUnitCost: document.getElementById('slider-unit-cost'),
+            sliderBudget: document.getElementById('slider-budget'),
+            valMultiplier: document.getElementById('val-multiplier'),
+            valUnitCost: document.getElementById('val-unit-cost'),
+            valBudget: document.getElementById('val-budget'),
+            metricArea: document.getElementById('metric-area'),
+            metricCost: document.getElementById('metric-cost'),
+            metricCostCard: document.getElementById('metric-card-cost'),
+            metricCostVariance: document.getElementById('metric-cost-variance'),
+            metricMaxArea: document.getElementById('metric-max-area'),
+            alertCard: document.getElementById('alert-card'),
+            alertIconContainer: document.getElementById('alert-icon-container'),
+            alertTitle: document.getElementById('alert-title'),
+            alertSubtitle: document.getElementById('alert-subtitle'),
+            alertDescription: document.getElementById('alert-description'),
+            chartWrapper: document.getElementById('chart-wrapper')
+        };
+
+        // Initialize D3 Components
+        let svg, g, margin, width, height, xScale, yScale, lineGenerator, areaGenerator;
+
+        function initChart() {
+            svg = d3.select("#optimization-chart");
+            
+            // Clear prior rendering if resized
+            svg.selectAll("*").remove();
+
+            margin = { top: 20, right: 30, bottom: 40, left: 60 };
+            
+            // Use container bounding box dimensions dynamically
+            const bounds = el.chartWrapper.getBoundingClientRect();
+            width = bounds.width - margin.left - margin.right;
+            height = (bounds.height || 350) - margin.top - margin.bottom;
+
+            svg.attr("viewBox", `0 0 ${bounds.width} ${bounds.height || 350}`)
+               .attr("preserveAspectRatio", "xMinYMin meet");
+
+            g = svg.append("g")
+                   .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Scales setup
+            xScale = d3.scaleLinear()
+                .domain([CONSTANTS.MIN_MULTIPLIER, CONSTANTS.MAX_MULTIPLIER])
+                .range([0, width]);
+
+            yScale = d3.scaleLinear()
+                .domain([0, CONSTANTS.MAX_MULTIPLIER * CONSTANTS.IDEALIZED_BASE_AREA * 1.1])
+                .range([height, 0]);
+
+            // Define D3 Area and Line Paths
+            lineGenerator = d3.line()
+                .x(d => xScale(d.multiplier))
+                .y(d => yScale(d.area))
+                .curve(d3.curveMonotoneX);
+
+            areaGenerator = d3.area()
+                .x(d => xScale(d.multiplier))
+                .y0(height)
+                .y1(d => yScale(d.area))
+                .curve(d3.curveMonotoneX);
+
+            // Add Rendered Structural Grid Lines
+            g.append("g")
+                .attr("class", "chart-grid text-slate-200")
+                .call(d3.axisLeft(yScale).tickSize(-width).tickFormat(""));
+
+            g.append("g")
+                .attr("class", "chart-grid text-slate-200")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale).tickSize(-height).tickFormat(""));
+
+            // Add Standard Chart Axes
+            g.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .attr("class", "text-slate-600 font-mono text-xs")
+                .call(d3.axisBottom(xScale).tickFormat(d3.format(".2f")));
+
+            g.append("g")
+                .attr("class", "text-slate-600 font-mono text-xs")
+                .call(d3.axisLeft(yScale).tickFormat(d3.format(",.0f")));
+
+            // Axis labels
+            g.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + 35)
+                .attr("text-anchor", "middle")
+                .attr("class", "text-[11px] fill-slate-400 font-semibold uppercase tracking-wider")
+                .text("Stochastic Multiplier (Model Geometry Complexity)");
+
+            // Append persistent visual elements
+            g.append("path").attr("class", "area-path fill-blue-500/10");
+            g.append("path").attr("class", "line-path fill-none stroke-blue-600 stroke-[3]");
+            g.append("line").attr("class", "budget-cap-line stroke-red-500 stroke-[2] stroke-dasharray-[4,4]");
+            g.append("g").attr("class", "interactive-marker-group");
+
+            updateChart();
+        }
+
+        // Generate Dataset dynamic based on state criteria
+        function generateData() {
+            const data = [];
+            const steps = 40;
+            const stepSize = (CONSTANTS.MAX_MULTIPLIER - CONSTANTS.MIN_MULTIPLIER) / steps;
+            
+            for(let i = 0; i <= steps; i++) {
+                const mult = CONSTANTS.MIN_MULTIPLIER + (i * stepSize);
+                data.push({
+                    multiplier: mult,
+                    area: CONSTANTS.IDEALIZED_BASE_AREA * mult
+                });
+            }
+            return data;
+        }
+
+        // Main Calculation and UI Updates Engine
+        function updateDashboard() {
+            // Read inputs
+            state.multiplier = parseFloat(el.sliderMultiplier.value);
+            state.unitCost = parseInt(el.sliderUnitCost.value);
+            state.budget = parseInt(el.sliderBudget.value);
+
+            // Display raw text updates
+            el.valMultiplier.textContent = state.multiplier.toFixed(2) + "x";
+            el.valUnitCost.textContent = "HKD " + state.unitCost + "/m²";
+            el.valBudget.textContent = "HKD " + state.budget.toLocaleString();
+
+            // Calculate core mathematical dimensions
+            const modeledArea = CONSTANTS.IDEALIZED_BASE_AREA * state.multiplier;
+            const projectedCost = modeledArea * state.unitCost;
+            const maxCleanableArea = state.budget / state.unitCost;
+            const costDeficit = projectedCost - state.budget;
+
+            // Render absolute outputs inside cards
+            el.metricArea.textContent = Math.round(modeledArea).toLocaleString() + " m²";
+            el.metricCost.textContent = "HKD " + Math.round(projectedCost).toLocaleString();
+            el.metricMaxArea.textContent = Math.round(maxCleanableArea).toLocaleString() + " m²";
+
+            // Status Logic Matrix Evaluation
+            if (projectedCost <= state.budget) {
+                // Optimal Configuration Found
+                el.metricCostCard.className = "bg-emerald-50 rounded-xl shadow-xs border border-emerald-200 p-4 flex flex-col transition-colors duration-200";
+                el.metricCostVariance.className = "text-[11px] font-medium text-emerald-700 mt-1";
+                el.metricCostVariance.textContent = `Within budget bounds (Surplus: +HKD ${Math.round(state.budget - projectedCost).toLocaleString()})`;
+
+                el.alertCard.className = "bg-emerald-50/70 border-emerald-200 rounded-xl p-5 border shadow-xs flex flex-col gap-3";
+                el.alertTitle.className = "text-base font-bold text-emerald-900";
+                el.alertTitle.textContent = "Commercial Clearance Secured";
+                el.alertSubtitle.className = "text-xs mt-0.5 text-emerald-600 font-medium";
+                el.alertSubtitle.textContent = "Calculated Operational Footprint Fully Covered";
+                el.alertDescription.className = "text-xs leading-relaxed border-t border-emerald-200 text-emerald-800 pt-3 mt-1";
+                el.alertDescription.innerHTML = `<strong>Operational Verdict:</strong> Your current budget configuration successfully covers the complete calibrated architectural surface area model of <strong>${Math.round(modeledArea).toLocaleString()} m²</strong>. Procurement channels are validated for full deployment clearance.`;
+                
+                el.alertIconContainer.className = "p-2 rounded-lg bg-emerald-100 text-emerald-700";
+                el.alertIconContainer.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else {
+                // Budget Allocation Breached
+                el.metricCostCard.className = "bg-rose-50 rounded-xl shadow-xs border border-rose-200 p-4 flex flex-col transition-colors duration-200";
+                el.metricCostVariance.className = "text-[11px] font-medium text-rose-700 mt-1";
+                el.metricCostVariance.textContent = `Budget Deficit: -HKD ${Math.round(costDeficit).toLocaleString()}`;
+
+                el.alertCard.className = "bg-rose-50/70 border-rose-200 rounded-xl p-5 border shadow-xs flex flex-col gap-3";
+                el.alertTitle.className = "text-base font-bold text-rose-900";
+                el.alertTitle.textContent = "Risk Warning: Budget Deficit";
+                el.alertSubtitle.className = "text-xs mt-0.5 text-rose-600 font-medium";
+                el.alertSubtitle.textContent = `Unfunded Operational Risk: ${Math.round((modeledArea - maxCleanableArea)).toLocaleString()} m² Untouched`;
+                el.alertDescription.className = "text-xs leading-relaxed border-t border-rose-200 text-rose-800 pt-3 mt-1";
+                el.alertDescription.innerHTML = `<strong>Engineering Threat:</strong> The current budget is structurally insufficient. Under current parameters, workers will reach financial exhaustion at <strong>${Math.round(maxCleanableArea).toLocaleString()} m²</strong>, leaving the upper phases of the tower uncleaned and triggering severe contractual default timelines.`;
+                
+                el.alertIconContainer.className = "p-2 rounded-lg bg-rose-100 text-rose-700";
+                el.alertIconContainer.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            }
+
+            updateChart();
+        }
+
+        // Live Render Matrix of D3 chart components
+        function updateChart() {
+            if (!g) return;
+
+            const chartData = generateData();
+            const currentArea = CONSTANTS.IDEALIZED_BASE_AREA * state.multiplier;
+            const budgetMaxAreaLimit = state.budget / state.unitCost;
+
+            // Transition smooth updates across paths
+            g.select(".area-path")
+                .datum(chartData)
+                .attr("d", areaGenerator);
+
+            g.select(".line-path")
+                .datum(chartData)
+                .attr("d", lineGenerator);
+
+            // Compute Y coordinate position for budget cap boundary threshold
+            const budgetY = yScale(budgetMaxAreaLimit);
+            const constrainedBudgetY = Math.max(0, Math.min(height, budgetY));
+
+            g.select(".budget-cap-line")
+                .attr("x1", 0)
+                .attr("y1", constrainedBudgetY)
+                .attr("x2", width)
+                .attr("y2", constrainedBudgetY)
+                .style("opacity", budgetMaxAreaLimit > yScale.domain()[1] ? 0 : 1);
+
+            // Redraw live focal tracker dot nodes
+            const markerGroup = g.select(".interactive-marker-group");
+            markerGroup.selectAll("*").remove();
+
+            const currentX = xScale(state.multiplier);
+            const currentY = yScale(currentArea);
+
+            // Central tracking point
+            markerGroup.append("circle")
+                .attr("cx", currentX)
+                .attr("cy", currentY)
+                .attr("r", 6)
+                .attr("class", currentArea <= budgetMaxAreaLimit ? "fill-blue-600 stroke-white stroke-2" : "fill-rose-600 stroke-white stroke-2");
+
+            // Floating horizontal indicator track line
+            markerGroup.append("line")
+                .attr("x1", 0)
+                .attr("y1", currentY)
+                .attr("x2", currentX)
+                .attr("y2", currentY)
+                .attr("class", "stroke-slate-400 stroke-1 stroke-dasharray-[2,2]");
+
+            // Horizontal cross reference for the budget line intersection
+            if (budgetMaxAreaLimit <= yScale.domain()[1]) {
+                markerGroup.append("text")
+                    .attr("x", width - 5)
+                    .attr("y", constrainedBudgetY - 6)
+                    .attr("text-anchor", "end")
+                    .attr("class", "text-[10px] font-mono font-bold fill-rose-500 bg-white")
+                    .text(`Budget Cap: ${Math.round(budgetMaxAreaLimit).toLocaleString()} m²`);
+            }
+        }
+
+        // Connect Input Event Triggers
+        el.sliderMultiplier.addEventListener('input', updateDashboard);
+        el.sliderUnitCost.addEventListener('input', updateDashboard);
+        el.sliderBudget.addEventListener('input', updateDashboard);
+
+        // Catch Window Resize Events for Responsive Visualization Rendering
+        window.addEventListener('resize', () => {
+            initChart();
+            updateDashboard();
+        });
+
+        // Bootstrap Application View State
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>
