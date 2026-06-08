@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Demographic Transport Minimization Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 antialiased min-h-screen py-8 px-4">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 border-b border-gray-200 pb-6">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded">DSE Applied Mathematics</span>
+                <span class="bg-pink-600 text-white text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded">Multi-Segment Econometrics</span>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Demographic Transport Cost Simulator
+            </h1>
+            <p class="mt-2 text-sm text-gray-600 max-w-4xl">
+                An advanced multi-segment econometric modeling matrix analyzing transport mode optimization across 6 distinct demographic groups. This system evaluates a weighted generalized cost function: 
+                <code class="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">C = (&alpha; &times; Price) + (V &times; Time)</code>, 
+                where <code class="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">&alpha;</code> represents group price sensitivity and <code class="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">V</code> signifies the subjective value of time.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+                
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4"></i> Target Demographic Profiles
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2" id="profileSelectorGroup">
+                        </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-5">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4"></i> Active Parameters Tuning
+                    </h2>
+
+                    <div>
+                        <div class="flex justify-between items-baseline mb-1">
+                            <label for="vSlider" class="text-sm font-semibold text-gray-700">Value of Time (<span class="font-mono text-indigo-600">V</span>)</label>
+                            <span id="vDisplay" class="text-base font-bold font-mono text-indigo-600">$115/hr</span>
+                        </div>
+                        <input 
+                            type="range" id="vSlider" min="0" max="600" step="5" value="115" 
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                        <span class="text-[10px] text-gray-400 block mt-0.5">Impacts the penalty associated with total travel hours.</span>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-baseline mb-1">
+                            <label for="alphaSlider" class="text-sm font-semibold text-gray-700">Price Sensitivity (<span class="font-mono text-pink-600">&alpha;</span>)</label>
+                            <span id="alphaDisplay" class="text-base font-bold font-mono text-pink-600">1.00x</span>
+                        </div>
+                        <input 
+                            type="range" id="alphaSlider" min="0.1" max="3.0" step="0.1" value="1.0" 
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        >
+                        <span class="text-[10px] text-gray-400 block mt-0.5">Weights the upfront out-of-pocket financial cost.</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Profile Decision Distribution
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs text-gray-500 font-medium px-0.5">
+                            <span id="hsrBarLabel">HSR: 0 cities</span>
+                            <span id="airBarLabel">Flight: 0 cities</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex">
+                            <div id="hsrProgressBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 50%"></div>
+                            <div id="airProgressBar" class="h-full bg-sky-500 transition-all duration-300" style="width: 50%"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center pt-2">
+                            <div class="bg-emerald-50/60 p-2 rounded border border-emerald-100">
+                                <span class="text-[10px] font-bold text-emerald-700 block uppercase tracking-wider">HSR Dominance</span>
+                                <span id="hsrCount" class="text-xl font-black text-emerald-800">0</span>
+                            </div>
+                            <div class="bg-sky-50/60 p-2 rounded border border-sky-100">
+                                <span class="text-[10px] font-bold text-sky-700 block uppercase tracking-wider">Flight Dominance</span>
+                                <span id="airCount" class="text-xl font-black text-sky-800">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[750px]">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-4 px-4 font-semibold">City Target Vector</th>
+                                    <th class="py-4 px-4 font-semibold text-right">Distance</th>
+                                    <th class="py-4 px-4 font-semibold text-center bg-emerald-50/40 border-x border-gray-100 text-emerald-950">Weighted HSR Cost</th>
+                                    <th class="py-4 px-4 font-semibold text-center bg-sky-50/40 border-x border-gray-100 text-sky-950">Weighted Flight Cost</th>
+                                    <th class="py-4 px-4 font-semibold text-right">Optimization Output Strategy</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrixGridBody" class="divide-y divide-gray-100 text-sm">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex gap-3 items-start text-xs text-gray-500 bg-gray-100/80 p-4 rounded-xl border border-gray-200">
+                    <i data-lucide="lightbulb" class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5"></i>
+                    <div>
+                        <strong class="text-gray-800 block mb-0.5">HKDSE Mathematical Modeling Core Concept:</strong>
+                        Under weighted econometric modeling conditions, the localized breakeven threshold equation evolves to evaluate parameters relative to multi-variable constraints: 
+                        <span class="font-mono bg-white px-1 py-0.5 rounded border border-gray-200 text-indigo-700 font-semibold text-[11px]">V^* = [&alpha; &times; (P_Air - P_HSR)] / (T_HSR - T_Air)</span>. 
+                        Adjusting price sensitivity scaling coefficients simulates budget elasticity barriers natively found across demographic cohorts.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Empirical raw input destinations dataset matrix
+        const destinations = [
+            { name: "Shenzhen", dist: 40, p_hsr: 82, p_air: 812, t_hsr: 0.40, t_air: 3.32 },
+            { name: "Guangzhou", dist: 140, p_hsr: 231, p_air: 980, t_hsr: 1.05, t_air: 3.48 },
+            { name: "Xiamen", dist: 520, p_hsr: 512, p_air: 1192, t_hsr: 4.32, t_air: 3.92 },
+            { name: "Changsha", dist: 690, p_hsr: 648, p_air: 1310, t_hsr: 3.61, t_air: 4.15 },
+            { name: "Wuhan", dist: 920, p_hsr: 780, p_air: 1489, t_hsr: 4.88, t_air: 4.31 },
+            { name: "Hangzhou", dist: 1150, p_hsr: 973, p_air: 1664, t_hsr: 7.42, t_air: 4.79 },
+            { name: "Kunming", dist: 1200, p_hsr: 952, p_air: 1751, t_hsr: 7.74, t_air: 4.92 },
+            { name: "Shanghai", dist: 1250, p_hsr: 1021, p_air: 1780, t_hsr: 8.21, t_air: 4.90 },
+            { name: "Chengdu", dist: 1350, p_hsr: 1098, p_air: 1822, t_hsr: 10.08, t_air: 5.21 },
+            { name: "Beijing", dist: 2000, p_hsr: 1460, p_air: 2408, t_hsr: 8.65, t_air: 5.85 }
+        ];
+
+        // Hardcoded structural group segment profile parameter mappings definitions
+        const profiles = [
+            { id: "high", name: "High-Income Profile", icon: "briefcase", v: 400, alpha: 0.5 },
+            { id: "middle", name: "Middle-Income Profile", icon: "user", v: 150, alpha: 1.0 },
+            { id: "low", name: "Low-Income Profile", icon: "wallet", v: 60, alpha: 1.5 },
+            { id: "teacher", name: "School Teachers", icon: "graduation-cap", v: 250, alpha: 1.0 },
+            { id: "student", name: "School Students", icon: "book-open", v: 30, alpha: 2.0 },
+            { id: "elderly", name: "The Elderly (65+)", icon: "heart", v: 40, alpha: 1.2 }
+        ];
+
+        let activeProfileId = "middle";
+
+        // Element Interface Pointer References Queries
+        const profileSelectorGroup = document.getElementById('profileSelectorGroup');
+        const vSlider = document.getElementById('vSlider');
+        const alphaSlider = document.getElementById('alphaSlider');
+        const vDisplay = document.getElementById('vDisplay');
+        const alphaDisplay = document.getElementById('alphaDisplay');
+        const matrixGridBody = document.getElementById('matrixGridBody');
+        const hsrCountEl = document.getElementById('hsrCount');
+        const airCountEl = document.getElementById('airCount');
+        const hsrBarLabel = document.getElementById('hsrBarLabel');
+        const airBarLabel = document.getElementById('airBarLabel');
+        const hsrProgressBar = document.getElementById('hsrProgressBar');
+        const airProgressBar = document.getElementById('airProgressBar');
+
+        // Dynamic structural generation mapping array elements for control triggers configuration matrix
+        function initProfileSelectors() {
+            profileSelectorGroup.innerHTML = profiles.map(p => `
+                <button 
+                    onclick="selectProfile('${p.id}')"
+                    id="btn-prof-${p.id}"
+                    class="flex flex-col items-start p-3 rounded-lg border text-left transition duration-200 group focus:outline-none"
+                >
+                    <span class="flex items-center gap-1.5 text-xs font-bold transition-colors duration-150" id="title-prof-${p.id}">
+                        <i data-lucide="${p.icon}" class="w-3.5 h-3.5 shrink-0"></i>
+                        ${p.name}
+                    </span>
+                    <span class="text-[10px] text-gray-400 font-mono mt-1 block">V=$${p.v}, &alpha;=${p.alpha}x</span>
+                </button>
+            `).join('');
+            syncSelectorActiveStyles();
+        }
+
+        function syncSelectorActiveStyles() {
+            profiles.forEach(p => {
+                const btn = document.getElementById(`btn-prof-${p.id}`);
+                const title = document.getElementById(`title-prof-${p.id}`);
+                if (p.id === activeProfileId) {
+                    btn.className = "flex flex-col items-start p-3 rounded-lg border text-left transition duration-200 bg-indigo-600 border-indigo-600 text-white font-semibold shadow-sm";
+                    title.className = "flex items-center gap-1.5 text-xs font-bold text-white";
+                } else {
+                    btn.className = "flex flex-col items-start p-3 rounded-lg border text-left transition duration-200 bg-gray-50/60 border-gray-200 hover:bg-gray-100/70 hover:border-gray-300 text-gray-700 font-medium";
+                    title.className = "flex items-center gap-1.5 text-xs font-bold text-gray-800 group-hover:text-indigo-600";
+                }
+            });
+        }
+
+        // Functional control pipeline target mutation selector mapping routine event
+        function selectProfile(profileId) {
+            activeProfileId = profileId;
+            const target = profiles.find(p => p.id === profileId);
+            if (target) {
+                vSlider.value = target.v;
+                alphaSlider.value = target.alpha;
+                syncSelectorActiveStyles();
+                computeOptimizationMatrix();
+            }
+        }
+
+        // Vector calculation execution loop configuration
+        function computeOptimizationMatrix() {
+            const V = parseFloat(vSlider.value);
+            const alpha = parseFloat(alphaSlider.value);
+
+            // Interface dynamic textual metric updates configuration
+            vDisplay.textContent = `$${V}/hr`;
+            alphaDisplay.textContent = `${alpha.toFixed(1)}x`;
+
+            let hsrWins = 0;
+            let airWins = 0;
+            let rowsHtml = '';
+
+            destinations.forEach(dest => {
+                // Generalized weighted behavioral linear utility evaluation cost equations
+                const weightedCostHSR = (alpha * dest.p_hsr) + (V * dest.t_hsr);
+                const weightedCostAir = (alpha * dest.p_air) + (V * dest.t_air);
+
+                const isHsrOptimal = weightedCostHSR <= weightedCostAir;
+                if (isHsrOptimal) hsrWins++; else airWins++;
+
+                rowsHtml += `
+                    <tr class="hover:bg-gray-50/60 transition duration-150">
+                        <td class="py-4 px-4 font-semibold text-gray-900">${dest.name}</td>
+                        <td class="py-4 px-4 text-right text-xs font-mono text-gray-400">${dest.dist} km</td>
+                        
+                        <td class="py-4 px-4 text-center font-mono border-x border-gray-100 bg-emerald-50/10 ${isHsrOptimal ? 'text-emerald-700 font-bold' : 'text-gray-400 text-xs'}">
+                            $${weightedCostHSR.toFixed(0)}
+                            <span class="block text-[10px] text-gray-400 font-normal mt-0.5">Base: $${dest.p_hsr} &times; ${alpha}</span>
+                        </td>
+                        
+                        <td class="py-4 px-4 text-center font-mono border-x border-gray-100 bg-sky-50/5 ${!isHsrOptimal ? 'text-sky-700 font-bold' : 'text-gray-400 text-xs'}">
+                            $${weightedCostAir.toFixed(0)}
+                            <span class="block text-[10px] text-gray-400 font-normal mt-0.5">Base: $${dest.p_air} &times; ${alpha}</span>
+                        </td>
+                        
+                        <td class="py-4 px-4 text-right font-medium">
+                            ${isHsrOptimal ? 
+                                `<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                                    <i data-lucide="train" class="w-3 h-3"></i> High-Speed Rail
+                                 </span>` : 
+                                `<span class="inline-flex items-center gap-1 bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-1 rounded-full border border-sky-200">
+                                    <i data-lucide="plane" class="w-3 h-3"></i> Airplane Flight
+                                 </span>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Target runtime element payload matrix buffer flush execution
+            matrixGridBody.innerHTML = rowsHtml;
+            hsrCountEl.textContent = hsrWins;
+            airCountEl.textContent = airWins;
+
+            // Bar segment percentage distribution animation processing math calculations
+            const total = destinations.length;
+            const hsrPct = (hsrWins / total) * 100;
+            const airPct = (airWins / total) * 100;
+
+            hsrProgressBar.style.width = `${hsrPct}%`;
+            airProgressBar.style.width = `${airPct}%`;
+
+            hsrBarLabel.textContent = `HSR: ${hsrWins} ${hsrWins === 1 ? 'city' : 'cities'} (${hsrPct.toFixed(0)}%)`;
+            airBarLabel.textContent = `Flight: ${airWins} ${airWins === 1 ? 'city' : 'cities'} (${airPct.toFixed(0)}%)`;
+
+            // Structural injection component icons vector framework refresh trigger
+            lucide.createIcons();
+        }
+
+        // Functional programmatic input slider handler routines mappings definitions
+        vSlider.addEventListener('input', () => {
+            activeProfileId = null; // Decouple from preset identity matching boundaries on manual override tweaks
+            syncSelectorActiveStyles();
+            computeOptimizationMatrix();
+        });
+
+        alphaSlider.addEventListener('input', () => {
+            activeProfileId = null; // Decouple from preset identity matching boundaries on manual override tweaks
+            syncSelectorActiveStyles();
+            computeOptimizationMatrix();
+        });
+
+        // Application DOM lifecycle bootstrapping initiation
+        window.addEventListener('DOMContentLoaded', () => {
+            initProfileSelectors();
+            selectProfile("middle");
+        });
+    </script>
+</body>
+</html>
