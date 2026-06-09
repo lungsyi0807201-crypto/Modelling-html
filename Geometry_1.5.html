@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKDSE Geometry Interactive Visualization</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f7f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #1a365d;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #4a5568;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+        canvas {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #fff;
+            max-width: 100%;
+        }
+        .controls {
+            margin-top: 25px;
+            width: 100%;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        input[type=range] {
+            width: 80%;
+            max-width: 400px;
+            height: 6px;
+            background: #cbd5e0;
+            border-radius: 5px;
+            outline: none;
+            accent-color: #3182ce;
+        }
+        .info-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            border-radius: 4px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dynamic DSE Proof: Thales' Theorem in Action</h1>
+    <p>Drag the slider to move <strong>Point A</strong>. Notice how the lengths deform, but the relationship holds.</p>
+    
+    <canvas id="geometryCanvas" width="600" height="400"></canvas>
+    
+    <div class="controls">
+        <label id="angleLabel" for="angleSlider">Drag Point A (Angle: 60°)</label>
+        <input type="range" id="angleSlider" min="15" max="165" value="60">
+    </div>
+
+    <div class="info-box">
+        <strong>Geometric Observations:</strong>
+        <ul>
+            <li>Since <span style="color: #e53e3e; font-weight: bold;">DA = DB = DC</span>, Point A is locked to a circular trajectory.</li>
+            <li>No matter where you drag A, <strong>&angle;BAC</strong> remains a crisp <strong>90°</strong>.</li>
+            <li>This verifies the converse of the DSE property: <em>"Angle in semi-circle"</em>.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('geometryCanvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('angleSlider');
+    const label = document.getElementById('angleLabel');
+
+    // Configuration parameters
+    const cx = canvas.width / 2; // Center X (Point D)
+    const cy = canvas.height / 2 + 50; // Center Y (Point D shifted down slightly)
+    const R = 180; // Radius of the circle configuration
+
+    function draw() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const angleDeg = parseFloat(slider.value);
+        label.innerText = `Drag Point A (Angle: ${angleDeg}°)`;
+        const theta = (angleDeg * Math.PI) / 180;
+
+        // Coordinate calculations
+        const bx = cx - R, by = cy;
+        const ax = cx + R * Math.cos(Math.PI - theta), ay = cy - R * Math.sin(Math.PI - theta);
+        const chx = cx + R, chy = cy; // Point C
+
+        // 1. Draw Semicircle Path (Dashed)
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, Math.PI, 2 * Math.PI, true);
+        ctx.strokeStyle = '#cbd5e0';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid lines
+
+        // 2. Draw Equidistant Radial Constraint Lines (DA, DB, DC)
+        ctx.beginPath();
+        ctx.moveTo(cx, cy); ctx.lineTo(ax, ay); // DA
+        ctx.moveTo(cx, cy); ctx.lineTo(bx, by); // DB
+        ctx.moveTo(cx, cy); ctx.lineTo(chx, chy); // DC
+        ctx.strokeStyle = '#e53e3e';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 3. Draw Right Angle Marker at A
+        // Calculate unit vectors along AB and AC to project a standard square marker
+        const dAB = Math.hypot(bx - ax, by - ay);
+        const dAC = Math.hypot(chx - ax, chy - ay);
+        const size = 15;
+        
+        if(dAB > 0 && dAC > 0) {
+            const uxB = (bx - ax) / dAB, uyB = (by - ay) / dAB;
+            const uxC = (chx - ax) / dAC, uyC = (chy - ay) / dAC;
+            
+            ctx.beginPath();
+            ctx.moveTo(ax + uxB * size, ay + uyB * size);
+            ctx.lineTo(ax + uxB * size + uxC * size, ay + uyB * size + uyC * size);
+            ctx.lineTo(ax + uxC * size, ay + uyC * size);
+            ctx.strokeStyle = '#2b6cb0';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // 4. Draw Triangle ABC Outline
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(chx, chy);
+        ctx.closePath();
+        ctx.strokeStyle = '#2b6cb0';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // 5. Plot Nodes (A, B, C, D)
+        const points = [
+            { x: ax, y: ay, label: 'A', fill: '#2b6cb0', ox: -5, oy: -15 },
+            { x: bx, y: by, label: 'B', fill: '#1a202c', ox: -20, oy: 5 },
+            { x: chx, y: chy, label: 'C', fill: '#1a202c', ox: 10, oy: 5 },
+            { x: cx, y: cy, label: 'D (Origin)', fill: '#e53e3e', ox: -25, oy: 20 }
+        ];
+
+        points.forEach(pt => {
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = pt.fill;
+            ctx.fill();
+            
+            ctx.fillStyle = '#1a202c';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(pt.label, pt.x + pt.ox, pt.y + pt.oy);
+        });
+    }
+
+    // Dynamic updates via input event listener
+    slider.addEventListener('input', draw);
+    draw(); // Initial load run
+</script>
+
+</body>
+</html>
