@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Area Invariance - Parallelograms</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .math-font {
+            font-family: 'Fira Code', monospace;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    Area Invariance of Co-Skewed Parallelograms
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">
+                    An advanced generalization of the classic adjacent square geometry problem.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button id="btn-animate" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-lg transition duration-200 shadow-md hover:shadow-indigo-500/20 flex items-center gap-2">
+                    <svg id="play-icon" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="pause-icon" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <span id="animate-text">Auto Animate</span>
+                </button>
+                <button id="btn-reset" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm rounded-lg border border-slate-700 transition duration-200">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Workspace: Interactive Canvas (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800 shadow-xl">
+            <div class="flex justify-between items-center px-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Interactive Canvas</span>
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs text-slate-400">Live Render Loop Active</span>
+                </div>
+            </div>
+            
+            <!-- Canvas Container -->
+            <div class="relative flex-1 bg-slate-900 rounded-xl border border-slate-800/80 overflow-hidden min-h-[400px] lg:min-h-[500px] flex items-center justify-center">
+                <canvas id="geometry-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- Floating Real-Time Area Indicator -->
+                <div class="absolute top-4 right-4 bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-xl border border-indigo-500/30 shadow-lg flex flex-col items-center">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Triangle Area</span>
+                    <span id="area-badge" class="text-3xl font-extrabold text-white math-font tracking-tight">18.00</span>
+                    <span class="text-[9px] text-slate-500 mt-0.5">Always constant!</span>
+                </div>
+
+                <!-- Orientation helper -->
+                <div class="absolute bottom-4 left-4 text-[10px] text-slate-500 bg-slate-950/50 backdrop-blur-xs p-2 rounded border border-slate-800 pointer-events-none">
+                    Scroll to Zoom • Drag to Pan
+                </div>
+            </div>
+
+            <!-- Parameters Sliders Card -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900 p-4 rounded-xl border border-slate-800/80">
+                <!-- Variable 'a' (Height / Base of Left Shape) -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label for="slider-a" class="text-sm font-semibold text-rose-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            Left Parallelogram Height/Base (a)
+                        </label>
+                        <span id="val-a" class="text-sm font-bold bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded math-font">4.50</span>
+                    </div>
+                    <input type="range" id="slider-a" min="1.0" max="10.0" step="0.05" value="4.5" 
+                           class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500 focus:outline-none">
+                    <div class="flex justify-between text-[10px] text-slate-500 px-1">
+                        <span>Min (1.0)</span>
+                        <span>Max (10.0)</span>
+                    </div>
+                </div>
+
+                <!-- Variable 's' (Skew factor) -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label for="slider-s" class="text-sm font-semibold text-blue-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Co-Skew Factor (s)
+                        </label>
+                        <span id="val-s" class="text-sm font-bold bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded math-font">0.50</span>
+                    </div>
+                    <input type="range" id="slider-s" min="-2.0" max="2.0" step="0.05" value="0.5" 
+                           class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 focus:outline-none">
+                    <div class="flex justify-between text-[10px] text-slate-500 px-1">
+                        <span>Left Skew (-2.0)</span>
+                        <span>Right Skew (2.0)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Workspace: Theoretical proof & Dynamic Algebra (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Live Math Engine / Matrix Computation Panel -->
+            <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col gap-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-md font-bold text-slate-200 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        Live Algebraic Evaluation
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Watch how variables cancel out dynamically under any morphing setup.</p>
+                </div>
+
+                <!-- Interactive Coordinates -->
+                <div class="grid grid-cols-3 gap-2 text-xs math-font">
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-rose-500/20 text-center">
+                        <div class="text-slate-500 text-[10px] font-semibold">Vertex A</div>
+                        <div id="coord-A" class="text-rose-400 font-bold mt-1">(-2.25, 4.5)</div>
+                        <div class="text-[9px] text-slate-500 mt-0.5">(sa-a, a)</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-blue-500/20 text-center">
+                        <div class="text-slate-500 text-[10px] font-semibold">Vertex B</div>
+                        <div id="coord-B" class="text-blue-400 font-bold mt-1">(3.0, 6.0)</div>
+                        <div class="text-[9px] text-slate-500 mt-0.5">(6s, 6)</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-700/55 text-center">
+                        <div class="text-slate-500 text-[10px] font-semibold">Vertex C</div>
+                        <div class="text-emerald-400 font-bold mt-1">(6.0, 0.0)</div>
+                        <div class="text-[9px] text-slate-500 mt-0.5">(6, 0)</div>
+                    </div>
+                </div>
+
+                <!-- Step-by-Step Shoelace Formula Expansion -->
+                <div class="bg-slate-900 rounded-xl p-4 border border-slate-800 text-xs math-font flex flex-col gap-3">
+                    <div class="text-slate-400 font-bold text-center border-b border-slate-800 pb-2">
+                        Shoelace Determinant Expansion:
+                    </div>
+                    
+                    <div class="flex flex-col gap-2 text-slate-300">
+                        <div class="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-800/50">
+                            <span>Part 1: <span class="text-slate-500">x_A(y_B - y_C)</span></span>
+                            <span id="step-1" class="text-indigo-300 font-bold">-13.50</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-800/50">
+                            <span>Part 2: <span class="text-slate-500">x_B(y_C - y_A)</span></span>
+                            <span id="step-2" class="text-indigo-300 font-bold">-13.50</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-800/50">
+                            <span>Part 3: <span class="text-slate-500">x_C(y_A - y_B)</span></span>
+                            <span id="step-3" class="text-indigo-300 font-bold">-9.00</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 pt-2 border-t border-slate-800">
+                        <div class="flex justify-between items-center bg-indigo-950/45 p-2.5 rounded border border-indigo-500/30">
+                            <span class="font-bold text-indigo-200">Total Sum:</span>
+                            <span id="step-sum" class="font-extrabold text-indigo-300">-36.00</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-emerald-950/45 p-2.5 rounded border border-emerald-500/30 mt-2">
+                            <span class="font-bold text-emerald-200">Area = 0.5 * |Sum|:</span>
+                            <span class="font-extrabold text-emerald-400 text-sm">18.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mathematical Proof Details Card -->
+            <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-xl flex-1 flex flex-col gap-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-md font-bold text-slate-200 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Proof of Generalization
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">How the co-skew factor and left dimension cancel out completely.</p>
+                </div>
+
+                <div class="text-sm text-slate-300 space-y-3 leading-relaxed">
+                    <p>
+                        Let both parallelograms share the horizontal skew factor <code class="text-indigo-400 bg-slate-900 px-1 py-0.5 rounded math-font">s</code>.
+                    </p>
+                    <p>
+                        We set up the coordinate system with the bottom junction at <code class="text-slate-400 math-font">(0,0)</code>.
+                    </p>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs space-y-1 text-slate-400 math-font">
+                        <div>A = (sa - a, a)</div>
+                        <div>B = (6s, 6)</div>
+                        <div>C = (6, 0)</div>
+                    </div>
+                    <p>
+                        Expanding the determinant of the triangle:
+                    </p>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs text-slate-300 math-font overflow-x-auto whitespace-nowrap">
+                        det = (sa - a)(6) + 6s(-a) + 6(a - 6)<br>
+                        det = 6sa - 6a - 6sa + 6a - 36<br>
+                        det = -36
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Since <code class="text-indigo-400 math-font">6sa - 6sa = 0</code> and <code class="text-indigo-400 math-font">-6a + 6a = 0</code>, the variables <code class="text-indigo-400 math-font">a</code> and <code class="text-indigo-400 math-font">s</code> drop out.
+                    </p>
+                    <div class="bg-emerald-950/20 text-emerald-300 p-3 rounded-xl border border-emerald-500/20 text-xs">
+                        <strong>Theorem:</strong> The area is strictly invariant at <code class="font-bold text-emerald-400">18</code> for <em>all</em> parallel slants and scales.
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+            <p>Built as an advanced geometry demonstration of Area Invariance. Powered by HTML5 Canvas & Tailwind.</p>
+        </footer>
+
+    <!-- Interactive JS App Engine -->
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('geometry-canvas');
+        const ctx = canvas.getContext('2d');
+        const sliderA = document.getElementById('slider-a');
+        const sliderS = document.getElementById('slider-s');
+        const valA = document.getElementById('val-a');
+        const valS = document.getElementById('val-s');
+        const btnAnimate = document.getElementById('btn-animate');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const coordA = document.getElementById('coord-A');
+        const coordB = document.getElementById('coord-B');
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
+        const stepSum = document.getElementById('step-sum');
+
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const animateText = document.getElementById('animate-text');
+
+        // Dynamic Parameters State
+        let state = {
+            a: parseFloat(sliderA.value),
+            s: parseFloat(sliderS.value),
+            zoom: 30, // Pixels per math unit
+            pan: { x: 0, y: 0 },
+            isDragging: false,
+            dragStart: { x: 0, y: 0 },
+            isAnimating: false,
+            animationTime: 0
+        };
+
+        // Standard Geometry Dimensions
+        const h2 = 6.0;
+        const b2 = 6.0;
+
+        // Auto-center canvas on start
+        function initViewport() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.parentElement.clientWidth * dpr;
+            canvas.height = canvas.parentElement.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+
+            // Center origin horizontally, place slightly above bottom of canvas
+            state.pan.x = canvas.parentElement.clientWidth / 2 - 50;
+            state.pan.y = canvas.parentElement.clientHeight - 100;
+            state.zoom = Math.min(canvas.parentElement.clientWidth / 20, 32);
+        }
+
+        // Draw helper functions
+        function toScreen(x, y) {
+            return {
+                x: state.pan.x + x * state.zoom,
+                y: state.pan.y - y * state.zoom // Y-axis inverted in Canvas
+            };
+        }
+
+        function drawGrid() {
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+
+            // Simple coordinate grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 0.5;
+
+            const gridSpacing = 1; // 1 unit
+            const xMin = Math.floor((-state.pan.x) / state.zoom);
+            const xMax = Math.ceil((w - state.pan.x) / state.zoom);
+            const yMin = Math.floor((state.pan.y - h) / state.zoom);
+            const yMax = Math.ceil(state.pan.y / state.zoom);
+
+            for (let x = xMin; x <= xMax; x++) {
+                const pt1 = toScreen(x, yMin);
+                const pt2 = toScreen(x, yMax);
+                ctx.beginPath();
+                ctx.moveTo(pt1.x, pt1.y);
+                ctx.lineTo(pt2.x, pt2.y);
+                ctx.stroke();
+            }
+
+            for (let y = yMin; y <= yMax; y++) {
+                const pt1 = toScreen(xMin, y);
+                const pt2 = toScreen(xMax, y);
+                ctx.beginPath();
+                ctx.moveTo(pt1.x, pt1.y);
+                ctx.lineTo(pt2.x, pt2.y);
+                ctx.stroke();
+            }
+
+            // Draw primary Axes
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            
+            // X-Axis
+            const axisY = toScreen(0, 0).y;
+            ctx.beginPath();
+            ctx.moveTo(0, axisY);
+            ctx.lineTo(w, axisY);
+            ctx.stroke();
+
+            // Y-Axis
+            const axisX = toScreen(0, 0).x;
+            ctx.beginPath();
+            ctx.moveTo(axisX, 0);
+            ctx.lineTo(axisX, h);
+            ctx.stroke();
+        }
+
+        function drawParallelogram(vertices, fillColor, strokeColor, label) {
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            const start = toScreen(vertices[0].x, vertices[0].y);
+            ctx.moveTo(start.x, start.y);
+            for (let i = 1; i < vertices.length; i++) {
+                const pt = toScreen(vertices[i].x, vertices[i].y);
+                ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawHatchedTriangle(A, B, C) {
+            const pA = toScreen(A.x, A.y);
+            const pB = toScreen(B.x, B.y);
+            const pC = toScreen(C.x, C.y);
+
+            // Path for stroke
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pA.x, pA.y);
+            ctx.lineTo(pB.x, pB.y);
+            ctx.lineTo(pC.x, pC.y);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Create animated marching dash pattern inside or simple translucent fill
+            ctx.fillStyle = 'rgba(99, 102, 241, 0.15)'; // Translucent indigo
+            ctx.fill();
+        }
+
+        function drawVertexNode(coord, label, color, labelOffset = {x: 10, y: -10}) {
+            const pt = toScreen(coord.x, coord.y);
+            
+            // Outer glow ring
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Label text styling
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 12px Inter';
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 4;
+            ctx.fillText(label, pt.x + labelOffset.x, pt.y + labelOffset.y);
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function render() {
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Background Grids
+            drawGrid();
+
+            // Left Parallelogram Vertices (dependent on variable a and skew s)
+            const a = state.a;
+            const s = state.s;
+            const L_vertices = [
+                { x: -a, y: 0 },
+                { x: 0, y: 0 },
+                { x: s * a, y: a },
+                { x: -a + s * a, y: a }
+            ];
+
+            // Right Parallelogram Vertices (dependent on constant base 6, height 6 and skew s)
+            const R_vertices = [
+                { x: 0, y: 0 },
+                { x: b2, y: 0 },
+                { x: b2 + s * h2, y: h2 },
+                { x: s * h2, y: h2 }
+            ];
+
+            // Key interactive triangle vertices:
+            const A = L_vertices[3]; // Top-left of left parallelogram
+            const B = R_vertices[3]; // Top-left of right parallelogram
+            const C = R_vertices[1]; // Bottom-right of right parallelogram
+
+            // Render shapes
+            drawParallelogram(L_vertices, 'rgba(244, 63, 94, 0.12)', '#f43f5e', 'Left shape');
+            drawParallelogram(R_vertices, 'rgba(59, 130, 246, 0.12)', '#3b82f6', 'Right shape');
+            drawHatchedTriangle(A, B, C);
+
+            // Render Nodes
+            drawVertexNode(A, `A (${A.x.toFixed(1)}, ${A.y.toFixed(1)})`, '#f43f5e', {x: -95, y: -10});
+            drawVertexNode(B, `B (${B.x.toFixed(1)}, ${B.y.toFixed(1)})`, '#3b82f6', {x: 10, y: -10});
+            drawVertexNode(C, `C (6, 0)`, '#10b981', {x: 10, y: 15});
+
+            // Update Math Calculations Panel Live Text
+            coordA.innerText = `(${A.x.toFixed(2)}, ${A.y.toFixed(2)})`;
+            coordB.innerText = `(${B.x.toFixed(2)}, ${B.y.toFixed(2)})`;
+
+            const p1 = A.x * (B.y - C.y);
+            const p2 = B.x * (C.y - A.y);
+            const p3 = C.x * (A.y - B.y);
+            const sum = p1 + p2 + p3;
+
+            step1.innerHTML = `${p1.toFixed(2)} <span class="text-slate-600">(${A.x.toFixed(2)} * 6)</span>`;
+            step2.innerHTML = `${p2.toFixed(2)} <span class="text-slate-600">(${B.x.toFixed(2)} * -${A.y.toFixed(1)})</span>`;
+            step3.innerHTML = `${p3.toFixed(2)} <span class="text-slate-600">(6 * ${ (A.y - B.y).toFixed(1) })</span>`;
+            stepSum.innerText = sum.toFixed(2);
+        }
+
+        // Event Listeners for UI interaction
+        function updateFromSliders() {
+            state.a = parseFloat(sliderA.value);
+            state.s = parseFloat(sliderS.value);
+            valA.innerText = state.a.toFixed(2);
+            valS.innerText = state.s.toFixed(2);
+            render();
+        }
+
+        sliderA.addEventListener('input', updateFromSliders);
+        sliderS.addEventListener('input', updateFromSliders);
+
+        // Zoom & Drag navigation interaction
+        canvas.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.dragStart.x = e.clientX - state.pan.x;
+            state.dragStart.y = e.clientY - state.pan.y;
+        });
+
+        window.addEventListener('mouseup', () => {
+            state.isDragging = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (state.isDragging) {
+                state.pan.x = e.clientX - state.dragStart.x;
+                state.pan.y = e.clientY - state.dragStart.y;
+                render();
+            }
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+            const mouseY = e.clientY - canvas.getBoundingClientRect().top;
+
+            // Zoom around mouse point
+            const geomX = (mouseX - state.pan.x) / state.zoom;
+            const geomY = (state.pan.y - mouseY) / state.zoom;
+
+            if (e.deltaY < 0) {
+                state.zoom *= (1 + zoomIntensity);
+            } else {
+                state.zoom /= (1 + zoomIntensity);
+            }
+            // Clamp zoom scale
+            state.zoom = Math.max(10, Math.min(100, state.zoom));
+
+            state.pan.x = mouseX - geomX * state.zoom;
+            state.pan.y = mouseY + geomY * state.zoom;
+
+            render();
+        }, { passive: false });
+
+        // Animation Loop Engine
+        function animationStep() {
+            if (!state.isAnimating) return;
+
+            state.animationTime += 0.015;
+            
+            // Loop left parallelogram's size between 2.0 and 8.0 rhythmically
+            const smoothA = 5.0 + Math.sin(state.animationTime) * 3.0;
+            // Morph co-skew factor smoothly between -1.5 and 1.5
+            const smoothS = Math.sin(state.animationTime * 0.7) * 1.2;
+
+            state.a = smoothA;
+            state.s = smoothS;
+
+            // Reflect state onto elements visually
+            sliderA.value = smoothA;
+            sliderS.value = smoothS;
+            valA.innerText = smoothA.toFixed(2);
+            valS.innerText = smoothS.toFixed(2);
+
+            render();
+            requestAnimationFrame(animationStep);
+        }
+
+        btnAnimate.addEventListener('click', () => {
+            state.isAnimating = !state.isAnimating;
+            if (state.isAnimating) {
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                btnAnimate.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+                btnAnimate.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                animateText.innerText = "Morphing...";
+                animationStep();
+            } else {
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                btnAnimate.classList.add('bg-indigo-600', 'hover:bg-indigo-500');
+                btnAnimate.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                animateText.innerText = "Auto Animate";
+            }
+        });
+
+        btnReset.addEventListener('click', () => {
+            state.isAnimating = false;
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            btnAnimate.classList.add('bg-indigo-600', 'hover:bg-indigo-500');
+            btnAnimate.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+            animateText.innerText = "Auto Animate";
+
+            sliderA.value = 4.5;
+            sliderS.value = 0.5;
+            initViewport();
+            updateFromSliders();
+        });
+
+        // Initialize Window Resize and setup viewport on boot
+        window.addEventListener('resize', () => {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.parentElement.clientWidth * dpr;
+            canvas.height = canvas.parentElement.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+            render();
+        });
+
+        window.onload = function() {
+            initViewport();
+            render();
+        };
+    </script>
+</body>
+</html>
