@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sphere Volume & Cross-Section Visualizer</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX for beautiful LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for canvas and range sliders */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0d9488; /* teal-600 */
+            cursor: pointer;
+            transition: background 0.15s ease-in-out;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #0f766e; /* teal-700 */
+        }
+        .math-glow {
+            text-shadow: 0 0 8px rgba(20, 184, 166, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-teal-500/10 rounded-lg text-teal-400">
+                    <i data-lucide="orbit" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Sphere Volume Visualizer</h1>
+                    <p class="text-xs text-slate-400">Interactive cross-section & formula derivation</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    Teacher Toolkit Active
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Side: Interactive Canvases (Lg span 7) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-full">
+                <!-- Visualizer Controls & Toggles -->
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-300">View Mode:</span>
+                        <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+                            <button id="btn-std-view" class="px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-teal-600 text-white shadow-sm">
+                                Standard Slicing
+                            </button>
+                            <button id="btn-cav-view" class="px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
+                                Cavalieri Comparison
+                            </button>
+                        </div>
+                    </div>
+                    <button id="btn-toggle-triangle" class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700 transition-all">
+                        <i data-lucide="triangle" class="w-3.5 h-3.5 text-rose-400"></i>
+                        <span>Hide Triangle</span>
+                    </button>
+                </div>
+
+                <!-- Display Canvases -->
+                <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 items-center justify-center">
+                    <!-- 3D Projected Canvas -->
+                    <div class="flex flex-col items-center bg-slate-900/40 rounded-xl p-4 border border-slate-850 relative">
+                        <span class="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider text-teal-500 bg-teal-950/50 px-2 py-0.5 rounded-md">
+                            3D Projection
+                        </span>
+                        <canvas id="canvas3d" class="w-full max-w-[340px] aspect-square cursor-ns-resize rounded-lg" title="Drag vertically to change height h"></canvas>
+                        <p class="text-xs text-slate-400 mt-2 text-center select-none">
+                            Drag sphere vertically to adjust height <span class="text-amber-400 font-bold">h</span>
+                        </p>
+                    </div>
+
+                    <!-- 2D Profile Canvas -->
+                    <div class="flex flex-col items-center bg-slate-900/40 rounded-xl p-4 border border-slate-850 relative">
+                        <span class="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider text-rose-500 bg-rose-950/50 px-2 py-0.5 rounded-md" id="view-mode-badge">
+                            2D Cross-section
+                        </span>
+                        <canvas id="canvas2d" class="w-full max-w-[340px] aspect-square cursor-ns-resize rounded-lg" title="Drag vertically to change height h"></canvas>
+                        <p class="text-xs text-slate-400 mt-2 text-center select-none" id="canvas2d-desc">
+                            Drag cross-section to adjust height <span class="text-amber-400 font-bold">h</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Live Color Legends -->
+                <div class="mt-6 pt-4 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="flex items-center justify-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-850">
+                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-lg shadow-rose-500/20"></span>
+                        <span class="text-slate-300">Sphere Radius (<span class="font-bold text-rose-400">r</span>)</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-850">
+                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-lg shadow-amber-500/20"></span>
+                        <span class="text-slate-300">Slice Height (<span class="font-bold text-amber-400">h</span>)</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-850">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-lg shadow-emerald-500/20"></span>
+                        <span class="text-slate-300">Slice Radius (<span class="font-bold text-emerald-400">r_s</span>)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Controls & Dynamic Calculations (Lg span 5) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Controls Card -->
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-md font-semibold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-teal-400"></i>
+                    Control Dashboard
+                </h2>
+
+                <!-- Slider 1: Radius -->
+                <div class="mb-5">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            Sphere Radius (<span class="text-rose-400 font-semibold">r</span>)
+                        </label>
+                        <span class="text-sm font-mono text-white bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-bold text-rose-400" id="val-r-display">
+                            5.00
+                        </span>
+                    </div>
+                    <input type="range" id="slider-r" min="2.0" max="8.0" step="0.05" value="5.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>Min (2.0)</span>
+                        <span>Max (8.0)</span>
+                    </div>
+                </div>
+
+                <!-- Slider 2: Slicing Height -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            Slice Height from Center (<span class="text-amber-400 font-semibold">h</span>)
+                        </label>
+                        <span class="text-sm font-mono text-white bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-bold text-amber-400" id="val-h-display">
+                            3.00
+                        </span>
+                    </div>
+                    <input type="range" id="slider-h" min="0.0" max="5.0" step="0.05" value="3.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                        <span>Center (0.0)</span>
+                        <span id="slider-h-max-label">Edge (5.00)</span>
+                    </div>
+                </div>
+
+                <!-- Animation Controls -->
+                <div class="flex items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-850">
+                    <button id="btn-play" class="p-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors shadow-lg shadow-teal-600/10 flex items-center justify-center">
+                        <i data-lucide="play" class="w-4 h-4" id="play-icon"></i>
+                    </button>
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-center text-[11px] text-slate-400 mb-0.5">
+                            <span>Interactive Slicing Loop</span>
+                            <span id="anim-speed-label">Speed: Normal</span>
+                        </div>
+                        <input type="range" id="slider-speed" min="1" max="5" value="3" class="w-full h-1 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-teal-600">
+                    </div>
+                    <button id="btn-reset" class="p-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg transition-colors border border-slate-700" title="Reset to default">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Live Math Display Card -->
+            <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex-grow flex flex-col justify-between">
+                <div>
+                    <h2 class="text-md font-semibold text-white mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+                        <i data-lucide="calculator" class="w-4 h-4 text-emerald-400"></i>
+                        Real-Time Dynamic Math
+                    </h2>
+
+                    <div class="space-y-4">
+                        <!-- Given inputs display -->
+                        <div class="bg-slate-900/40 border border-slate-850 rounded-xl p-3 text-sm flex justify-around text-center">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Sphere Radius</p>
+                                <p class="text-base font-bold text-rose-400 mt-1" id="katex-input-r"></p>
+                            </div>
+                            <div class="border-l border-slate-850"></div>
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Slice Height</p>
+                                <p class="text-base font-bold text-amber-400 mt-1" id="katex-input-h"></p>
+                            </div>
+                        </div>
+
+                        <!-- Step 1: Slice Radius via Pythagorean -->
+                        <div class="bg-slate-900/20 border border-slate-850/60 rounded-xl p-4 transition-all hover:bg-slate-900/30">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded">Step 1</span>
+                            <h3 class="text-sm font-semibold text-slate-200 mt-2 mb-1.5">Radius of Circular Slice ($r_s$)</h3>
+                            <div class="text-sm text-slate-300 py-2 border-l-2 border-emerald-500 pl-3 bg-slate-950/30 rounded-r-lg overflow-x-auto">
+                                <div id="katex-calc-rs" class="math-glow py-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Slice Area -->
+                        <div class="bg-slate-900/20 border border-slate-850/60 rounded-xl p-4 transition-all hover:bg-slate-900/30">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-950/40 px-2 py-0.5 rounded">Step 2</span>
+                            <h3 class="text-sm font-semibold text-slate-200 mt-2 mb-1.5">Area of Cross-section ($A_{\text{slice}}$)</h3>
+                            <div class="text-sm text-slate-300 py-2 border-l-2 border-teal-500 pl-3 bg-slate-950/30 rounded-r-lg overflow-x-auto">
+                                <div id="katex-calc-as" class="math-glow py-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Total Sphere Volume -->
+                        <div class="bg-slate-900/20 border border-slate-850/60 rounded-xl p-4 transition-all hover:bg-slate-900/30">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-950/40 px-2 py-0.5 rounded">Step 3</span>
+                            <h3 class="text-sm font-semibold text-slate-200 mt-2 mb-1.5">Total Volume of Sphere ($V_{\text{total}}$)</h3>
+                            <div class="text-sm text-slate-300 py-2 border-l-2 border-indigo-500 pl-3 bg-slate-950/30 rounded-r-lg overflow-x-auto">
+                                <div id="katex-calc-v" class="math-glow py-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detailed Classroom Explanations Section -->
+    <section class="max-w-7xl mx-auto px-4 pb-12 w-full mt-4">
+        <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+            <!-- Tabs Headers -->
+            <div class="flex border-b border-slate-800 pb-px mb-6 overflow-x-auto">
+                <button id="tab-intro" class="px-5 py-3 border-b-2 border-teal-500 text-teal-400 font-semibold text-sm transition-all focus:outline-none whitespace-nowrap">
+                    Visual Demonstration
+                </button>
+                <button id="tab-cavalieri" class="px-5 py-3 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-sm transition-all focus:outline-none whitespace-nowrap">
+                    Cavalieri's Principle Proof
+                </button>
+                <button id="tab-calculus" class="px-5 py-3 border-b-2 border-transparent text-slate-400 hover:text-white font-medium text-sm transition-all focus:outline-none whitespace-nowrap">
+                    Calculus Derivation
+                </button>
+            </div>
+
+            <!-- Tab Content 1: Visual Explanation -->
+            <div id="content-intro" class="space-y-4 text-slate-300 leading-relaxed text-sm">
+                <h3 class="text-lg font-bold text-white">How the Slicing Method Works</h3>
+                <p>
+                    A sphere is a perfectly symmetrical three-dimensional shape. By sliding the <span class="text-amber-400 font-semibold">Slice Height slider ($h$)</span>, we cut through the sphere horizontally. The resulting intersection is always a perfect flat circle, called a <strong>cross-section</strong>.
+                </p>
+                <p>
+                    By studying how the cross-section changes shape as it moves from the center to the poles of the sphere, we can build a physical and intuitive model for why the sphere volume matches the final formula of $V = \frac{4}{3} \pi r^3$.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-white mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            When $h = 0$ (The Equator)
+                        </h4>
+                        <p class="text-slate-400 text-xs">
+                            The cross-sectional plane slices directly through the center of the sphere. The radius of the slice ($r_s$) reaches its maximum value, exactly equal to the sphere's primary radius ($r$). The slice area is simply $\pi r^2$.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <h4 class="font-bold text-white mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            When $h = r$ (The Pole)
+                        </h4>
+                        <p class="text-slate-400 text-xs">
+                            The slicing plane barely touches the top of the sphere. The radius of the slice is reduced to exactly $0$, collapsing the cross-sectional circle into a single infinitesimal point with an area of $0$.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content 2: Cavalieri's Principle -->
+            <div id="content-cavalieri" class="hidden space-y-4 text-slate-300 leading-relaxed text-sm">
+                <h3 class="text-lg font-bold text-white">Cavalieri's Principle: Proof Without Calculus</h3>
+                <p>
+                    First discovered by ancient mathematicians, <strong>Cavalieri's Principle</strong> states that if two 3D solids have equal heights, and their parallel cross-sections at every height have equal areas, then the two solids must have the exact same total volume.
+                </p>
+                <p>
+                    We compare a <strong>Hemisphere of radius $r$</strong> side-by-side with a <strong>Cylinder of radius $r$ and height $r$</strong>, from which we have removed an <strong>inverted Cone</strong> of radius $r$ and height $r$.
+                </p>
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3 mt-2">
+                    <h4 class="font-bold text-white text-base">Mathematical Proof of Slices at Height $h$:</h4>
+                    <ul class="list-disc list-inside space-y-2 text-slate-300">
+                        <li>
+                            <strong>Area of Hemisphere Slice:</strong> Since $r_s = \sqrt{r^2 - h^2}$, the circular area is:
+                            <span class="text-emerald-400 font-semibold block my-1 pl-4">$A_{\text{sphere slice}} = \pi (r^2 - h^2)$</span>
+                        </li>
+                        <li>
+                            <strong>Area of Cylinder minus Cone Slice (Washer):</strong> The outer boundary is a cylinder (constant radius $r$, area $\pi r^2$). The inner cutout cone has a $45^\circ$ slope, meaning its radius at height $h$ is exactly $h$ (cone area is $\pi h^2$). Subtracting them gives a circular washer of area:
+                            <span class="text-teal-400 font-semibold block my-1 pl-4">$A_{\text{washer}} = A_{\text{cylinder}} - A_{\text{cone}} = \pi r^2 - \pi h^2 = \pi(r^2 - h^2)$</span>
+                        </li>
+                    </ul>
+                </div>
+                <p class="mt-2">
+                    Since the slice areas are mathematically identical at every single height $h$, the total volume of the hemisphere equals the volume of the cylinder minus the cone:
+                    $$V_{\text{hemisphere}} = V_{\text{cylinder}} - V_{\text{cone}} = \pi r^2 (r) - \frac{1}{3}\pi r^2 (r) = \frac{2}{3}\pi r^3$$
+                    Doubling this gives the total sphere volume: $$V_{\text{sphere}} = 2 \times \frac{2}{3}\pi r^3 = \frac{4}{3}\pi r^3$$
+                </p>
+            </div>
+
+            <!-- Tab Content 3: Calculus -->
+            <div id="content-calculus" class="hidden space-y-4 text-slate-300 leading-relaxed text-sm">
+                <h3 class="text-lg font-bold text-white">Calculus Proof: Integration of Slabs</h3>
+                <p>
+                    With calculus, we can model the volume of a sphere as the sum of infinitely many cylindrical "slices" or "disks" of differential height $dh$ stacked from bottom to top (from $h = -r$ to $h = r$).
+                </p>
+                <p>
+                    The volume of each tiny cylindrical disk at height $h$ is its base area times its thickness:
+                    $$dV = A_{\text{slice}} \cdot dh = \pi r_s^2 \, dh = \pi(r^2 - h^2) \, dh$$
+                </p>
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-3 mt-2">
+                    <h4 class="font-bold text-white text-base">Definite Integral:</h4>
+                    <p>
+                        We integrate from $h = -r$ to $h = r$:
+                        $$V_{\text{total}} = \int_{-r}^{r} \pi(r^2 - h^2) \, dh$$
+                    </p>
+                    <p>
+                        Using symmetry, we can calculate from $0$ to $r$ and double the result:
+                        $$V_{\text{total}} = 2 \int_{0}^{r} \pi(r^2 - h^2) \, dh$$
+                        $$V_{\text{total}} = 2\pi \left[ r^2 h - \frac{h^3}{3} \right]_{0}^{r}$$
+                        $$V_{\text{total}} = 2\pi \left( \left( r^3 - \frac{r^3}{3} \right) - 0 \right)$$
+                        $$V_{\text{total}} = 2\pi \left( \frac{2}{3}r^3 \right) = \frac{4}{3}\pi r^3$$
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+            <p>&copy; 2026 Interactive Mathematics Sandbox. Optimized for dynamic projector and smartboard teaching.</p>
+            <p>Made with standard HTML5 Canvas &bullet; Pure JavaScript &bullet; No Heavy 3D libraries required</p>
+        </div>
+    </footer>
+
+    <!-- Master Application Code -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Application State
+        const state = {
+            r: 5.0,
+            h: 3.0,
+            isAnimating: false,
+            animationTime: 0,
+            animationSpeedMultiplier: 1.0, // adjusted via speed slider
+            viewMode: 'standard', // 'standard' or 'cavalieri'
+            showTriangle: true
+        };
+
+        // DOM elements
+        const canvas3D = document.getElementById('canvas3d');
+        const canvas2D = document.getElementById('canvas2d');
+        const ctx3D = canvas3D.getContext('2d');
+        const ctx2D = canvas2D.getContext('2d');
+
+        const sliderR = document.getElementById('slider-r');
+        const sliderH = document.getElementById('slider-h');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const valRDisplay = document.getElementById('val-r-display');
+        const valHDisplay = document.getElementById('val-h-display');
+        const labelHMax = document.getElementById('slider-h-max-label');
+        const speedLabel = document.getElementById('anim-speed-label');
+
+        const btnStdView = document.getElementById('btn-std-view');
+        const btnCavView = document.getElementById('btn-cav-view');
+        const btnToggleTriangle = document.getElementById('btn-toggle-triangle');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+        const playIcon = document.getElementById('play-icon');
+
+        const tabIntro = document.getElementById('tab-intro');
+        const tabCavalieri = document.getElementById('tab-cavalieri');
+        const tabCalculus = document.getElementById('tab-calculus');
+        const contentIntro = document.getElementById('content-intro');
+        const contentCavalieri = document.getElementById('content-cavalieri');
+        const contentCalculus = document.getElementById('content-calculus');
+
+        const viewModeBadge = document.getElementById('view-mode-badge');
+        const canvas2DDesc = document.getElementById('canvas2d-desc');
+
+        // Coordinate scaling configurations
+        const maxRadius = 8.0; // static scaling reference
+        let scale = 1.0;
+        const tilt = 0.35; // 3D projection viewing angle (tilt around x-axis in radians)
+
+        // Setup Canvas Resolution handling (High DPI/Retina support)
+        function resizeCanvases() {
+            const pixelRatio = window.devicePixelRatio || 1;
+            
+            // Handle 3D Canvas
+            const rect3D = canvas3D.getBoundingClientRect();
+            canvas3D.width = rect3D.width * pixelRatio;
+            canvas3D.height = rect3D.height * pixelRatio;
+            ctx3D.scale(pixelRatio, pixelRatio);
+
+            // Handle 2D Canvas
+            const rect2D = canvas2D.getBoundingClientRect();
+            canvas2D.width = rect2D.width * pixelRatio;
+            canvas2D.height = rect2D.height * pixelRatio;
+            ctx2D.scale(pixelRatio, pixelRatio);
+
+            // Dynamically recalculate scale depending on mode & container sizes
+            if (state.viewMode === 'cavalieri') {
+                scale = (rect2D.width * 0.22) / maxRadius; // split scale
+            } else {
+                scale = (rect2D.width * 0.4) / maxRadius; // standard single scale
+            }
+
+            draw();
+        }
+
+        // Wait for KaTeX to safely initialize, then render
+        function tryRenderMath(latex, containerId) {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            if (typeof katex !== 'undefined') {
+                try {
+                    katex.render(latex, el, { throwOnError: false, displayMode: false });
+                } catch (e) {
+                    el.textContent = latex;
+                }
+            } else {
+                el.textContent = latex;
+            }
+        }
+
+        // Calculations & UI math updates
+        function updateMath() {
+            const r = state.r;
+            const h = state.h;
+            const rs = Math.sqrt(Math.max(0, r * r - h * h));
+            const area = Math.PI * rs * rs;
+            const volume = (4/3) * Math.PI * Math.pow(r, 3);
+
+            // Input monitors
+            tryRenderMath(`r = ${r.toFixed(2)}`, 'katex-input-r');
+            tryRenderMath(`h = ${h.toFixed(2)}`, 'katex-input-h');
+
+            // Step 1: Pythagorean slice radius calculation
+            const step1Latex = `r_s = \\sqrt{r^2 - h^2} = \\sqrt{${r.toFixed(2)}^2 - ${h.toFixed(2)}^2} = \\sqrt{${(r*r).toFixed(2)} - ${(h*h).toFixed(2)}} = \\mathbf{${rs.toFixed(2)}}`;
+            tryRenderMath(step1Latex, 'katex-calc-rs');
+
+            // Step 2: Slice Area
+            const step2Latex = `A_{\\text{slice}} = \\pi r_s^2 = \\pi \\times ${rs.toFixed(2)}^2 = ${(rs*rs).toFixed(2)}\\pi \\approx \\mathbf{${area.toFixed(2)}}`;
+            tryRenderMath(step2Latex, 'katex-calc-as');
+
+            // Step 3: Total Sphere Volume
+            const step3Latex = `V_{\\text{total}} = \\frac{4}{3} \\pi r^3 = \\frac{4}{3} \\pi \\times ${r.toFixed(2)}^3 \\approx \\mathbf{${volume.toFixed(2)}}`;
+            tryRenderMath(step3Latex, 'katex-calc-v');
+        }
+
+        // Canvas Drawing Modules
+        function draw() {
+            const rect3D = canvas3D.getBoundingClientRect();
+            const rect2D = canvas2D.getBoundingClientRect();
+            
+            ctx3D.clearRect(0, 0, rect3D.width, rect3D.height);
+            ctx2D.clearRect(0, 0, rect2D.width, rect2D.height);
+
+            draw3D(rect3D.width, rect3D.height);
+            if (state.viewMode === 'cavalieri') {
+                draw2DCavalieri(rect2D.width, rect2D.height);
+            } else {
+                draw2DStandard(rect2D.width, rect2D.height);
+            }
+        }
+
+        // Draw 3D Sphere Visualizer
+        function draw3D(width, height) {
+            const cx = width / 2;
+            const cy = height / 2;
+            const rPx = state.r * scale;
+            const hPx = state.h * scale;
+            const rsPx = Math.sqrt(Math.max(0, state.r * state.r - state.h * state.h)) * scale;
+
+            // Draw clean background mathematical grid lines
+            ctx3D.strokeStyle = 'rgba(30, 41, 59, 0.5)';
+            ctx3D.lineWidth = 1;
+            ctx3D.setLineDash([5, 5]);
+            // Horizontal grid
+            ctx3D.beginPath();
+            ctx3D.moveTo(0, cy); ctx3D.lineTo(width, cy);
+            ctx3D.stroke();
+            // Vertical axis grid
+            ctx3D.beginPath();
+            ctx3D.moveTo(cx, 0); ctx3D.lineTo(cx, height);
+            ctx3D.stroke();
+            ctx3D.setLineDash([]);
+
+            // 1. Shaded Sphere Base (radial gradient simulating ambient shadows)
+            const sphereGrad = ctx3D.createRadialGradient(cx - rPx/3, cy - rPx/3, rPx/10, cx, cy, rPx);
+            sphereGrad.addColorStop(0, 'rgba(51, 65, 85, 0.45)');
+            sphereGrad.addColorStop(0.7, 'rgba(30, 41, 59, 0.7)');
+            sphereGrad.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+
+            ctx3D.fillStyle = sphereGrad;
+            ctx3D.beginPath();
+            ctx3D.arc(cx, cy, rPx, 0, 2 * Math.PI);
+            ctx3D.fill();
+
+            // Outline of the sphere
+            ctx3D.strokeStyle = 'rgba(71, 85, 105, 0.5)';
+            ctx3D.lineWidth = 1.5;
+            ctx3D.beginPath();
+            ctx3D.arc(cx, cy, rPx, 0, 2 * Math.PI);
+            ctx3D.stroke();
+
+            // 2. Spherical Latitudinal & Longitudinal guide paths (Wireframe effect)
+            ctx3D.strokeStyle = 'rgba(71, 85, 105, 0.2)';
+            ctx3D.lineWidth = 1;
+            
+            // Equator wireframe
+            ctx3D.beginPath();
+            ctx3D.ellipse(cx, cy, rPx, rPx * Math.sin(tilt), 0, 0, 2 * Math.PI);
+            ctx3D.stroke();
+
+            // Prime meridian wireframe
+            ctx3D.beginPath();
+            ctx3D.ellipse(cx, cy, rPx * Math.sin(tilt), rPx, 0, 0, 2 * Math.PI);
+            ctx3D.stroke();
+
+            // 3. Slicing Plane Ellipse representation (Calculated height with view tilt)
+            const ellipseY = cy - hPx * Math.cos(tilt);
+            const ellipseRx = rsPx;
+            const ellipseRy = rsPx * Math.sin(tilt);
+
+            // Fill active sliced disk
+            if (ellipseRx > 0.05) {
+                ctx3D.fillStyle = 'rgba(20, 184, 166, 0.22)'; // Transparent teal
+                ctx3D.beginPath();
+                ctx3D.ellipse(cx, ellipseY, ellipseRx, ellipseRy, 0, 0, 2 * Math.PI);
+                ctx3D.fill();
+
+                // Draw glowing active circumference loop
+                ctx3D.shadowBlur = 10;
+                ctx3D.shadowColor = 'rgba(20, 184, 166, 0.6)';
+                ctx3D.strokeStyle = '#0d9488'; // Vibrant teal border
+                ctx3D.lineWidth = 2.5;
+                ctx3D.beginPath();
+                ctx3D.ellipse(cx, ellipseY, ellipseRx, ellipseRy, 0, 0, 2 * Math.PI);
+                ctx3D.stroke();
+                // Reset shadows
+                ctx3D.shadowBlur = 0;
+            }
+
+            // 4. Central Triangle mapping (r, h, r_s)
+            if (state.showTriangle) {
+                const centerNode = { x: cx, y: cy };
+                const sliceCenterNode = { x: cx, y: ellipseY };
+                const sliceEdgeNode = { x: cx + rsPx, y: ellipseY };
+
+                // Draw right-angle indicator symbol at slice center
+                if (state.h > 0.1 && rsPx > 0.1) {
+                    const rSize = 8;
+                    ctx3D.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+                    ctx3D.lineWidth = 1;
+                    ctx3D.beginPath();
+                    ctx3D.moveTo(sliceCenterNode.x, sliceCenterNode.y + rSize);
+                    ctx3D.lineTo(sliceCenterNode.x + rSize, sliceCenterNode.y + rSize);
+                    ctx3D.lineTo(sliceCenterNode.x + rSize, sliceCenterNode.y);
+                    ctx3D.stroke();
+                }
+
+                // Vertical Leg: Height (h) [Amber]
+                ctx3D.strokeStyle = '#f59e0b';
+                ctx3D.lineWidth = 3;
+                ctx3D.beginPath();
+                ctx3D.moveTo(centerNode.x, centerNode.y);
+                ctx3D.lineTo(sliceCenterNode.x, sliceCenterNode.y);
+                ctx3D.stroke();
+
+                // Horizontal Leg: Slice Radius (rs) [Emerald/Teal]
+                ctx3D.strokeStyle = '#10b981';
+                ctx3D.lineWidth = 3;
+                ctx3D.beginPath();
+                ctx3D.moveTo(sliceCenterNode.x, sliceCenterNode.y);
+                ctx3D.lineTo(sliceEdgeNode.x, sliceEdgeNode.y);
+                ctx3D.stroke();
+
+                // Hypotenuse: Sphere Radius (r) [Rose]
+                ctx3D.strokeStyle = '#f43f5e';
+                ctx3D.lineWidth = 3;
+                ctx3D.beginPath();
+                ctx3D.moveTo(centerNode.x, centerNode.y);
+                ctx3D.lineTo(sliceEdgeNode.x, sliceEdgeNode.y);
+                ctx3D.stroke();
+
+                // Vertex connection pin nodes
+                ctx3D.fillStyle = '#ffffff';
+                ctx3D.beginPath();
+                ctx3D.arc(centerNode.x, centerNode.y, 4, 0, 2*Math.PI);
+                ctx3D.arc(sliceCenterNode.x, sliceCenterNode.y, 4, 0, 2*Math.PI);
+                ctx3D.arc(sliceEdgeNode.x, sliceEdgeNode.y, 4, 0, 2*Math.PI);
+                ctx3D.fill();
+
+                // Dynamic text values inside the projection area
+                ctx3D.font = 'bold 11px sans-serif';
+                ctx3D.fillStyle = '#ffffff';
+
+                // h label
+                if (state.h > 0.4) {
+                    ctx3D.fillStyle = '#f59e0b';
+                    ctx3D.fillText(`h = ${state.h.toFixed(1)}`, sliceCenterNode.x - 45, (centerNode.y + sliceCenterNode.y) / 2 + 4);
+                }
+                // r_s label
+                if (rsPx > 0.4) {
+                    ctx3D.fillStyle = '#10b981';
+                    ctx3D.fillText(`r_s = ${ (rsPx/scale).toFixed(1) }`, (sliceCenterNode.x + sliceEdgeNode.x) / 2 - 18, sliceCenterNode.y - 8);
+                }
+                // r label
+                ctx3D.fillStyle = '#f43f5e';
+                ctx3D.fillText(`r = ${state.r.toFixed(1)}`, (centerNode.x + sliceEdgeNode.x) / 2 + 10, (centerNode.y + sliceEdgeNode.y) / 2 + 12);
+            }
+        }
+
+        // Draw standard 2D projection
+        function draw2DStandard(width, height) {
+            const cx = width / 2;
+            const cy = height / 2;
+            const rPx = state.r * scale;
+            const hPx = state.h * scale;
+            const rsPx = Math.sqrt(Math.max(0, state.r * state.r - state.h * state.h)) * scale;
+
+            // Draw mathematical grid
+            ctx2D.strokeStyle = 'rgba(30, 41, 59, 0.5)';
+            ctx2D.lineWidth = 1;
+            ctx2D.setLineDash([5, 5]);
+            ctx2D.beginPath();
+            ctx2D.moveTo(0, cy); ctx2D.lineTo(width, cy);
+            ctx2D.moveTo(cx, 0); ctx2D.lineTo(cx, height);
+            ctx2D.stroke();
+            ctx2D.setLineDash([]);
+
+            // 1. Shaded Circle
+            ctx2D.fillStyle = 'rgba(30, 41, 59, 0.4)';
+            ctx2D.beginPath();
+            ctx2D.arc(cx, cy, rPx, 0, 2*Math.PI);
+            ctx2D.fill();
+
+            ctx2D.strokeStyle = 'rgba(71, 85, 105, 0.6)';
+            ctx2D.lineWidth = 1.5;
+            ctx2D.beginPath();
+            ctx2D.arc(cx, cy, rPx, 0, 2*Math.PI);
+            ctx2D.stroke();
+
+            // 2. Horizontal Slicing Plane Line (Viewed edge-on)
+            const sliceY = cy - hPx;
+            ctx2D.strokeStyle = '#0d9488';
+            ctx2D.lineWidth = 2.5;
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx - rsPx, sliceY);
+            ctx2D.lineTo(cx + rsPx, sliceY);
+            ctx2D.stroke();
+
+            // Highlight Slice Ends
+            ctx2D.fillStyle = '#0d9488';
+            ctx2D.beginPath();
+            ctx2D.arc(cx - rsPx, sliceY, 3, 0, 2*Math.PI);
+            ctx2D.arc(cx + rsPx, sliceY, 3, 0, 2*Math.PI);
+            ctx2D.fill();
+
+            // 3. Triangle layout
+            if (state.showTriangle) {
+                // Right angle square at center of slice
+                if (state.h > 0.1 && rsPx > 0.1) {
+                    const rSize = 8;
+                    ctx2D.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+                    ctx2D.lineWidth = 1;
+                    ctx2D.beginPath();
+                    ctx2D.rect(cx, sliceY, rSize, rSize);
+                    ctx2D.stroke();
+                }
+
+                // Vertical height leg [Amber]
+                ctx2D.strokeStyle = '#f59e0b';
+                ctx2D.lineWidth = 3;
+                ctx2D.beginPath();
+                ctx2D.moveTo(cx, cy);
+                ctx2D.lineTo(cx, sliceY);
+                ctx2D.stroke();
+
+                // Slice radius leg [Emerald]
+                ctx2D.strokeStyle = '#10b981';
+                ctx2D.lineWidth = 3;
+                ctx2D.beginPath();
+                ctx2D.moveTo(cx, sliceY);
+                ctx2D.lineTo(cx + rsPx, sliceY);
+                ctx2D.stroke();
+
+                // Sphere radius hypotenuse [Rose]
+                ctx2D.strokeStyle = '#f43f5e';
+                ctx2D.lineWidth = 3;
+                ctx2D.beginPath();
+                ctx2D.moveTo(cx, cy);
+                ctx2D.lineTo(cx + rsPx, sliceY);
+                ctx2D.stroke();
+
+                // Pin Nodes
+                ctx2D.fillStyle = '#ffffff';
+                ctx2D.beginPath();
+                ctx2D.arc(cx, cy, 4, 0, 2*Math.PI);
+                ctx2D.arc(cx, sliceY, 4, 0, 2*Math.PI);
+                ctx2D.arc(cx + rsPx, sliceY, 4, 0, 2*Math.PI);
+                ctx2D.fill();
+
+                // Text labels on flat canvas
+                ctx2D.font = 'bold 11px sans-serif';
+                if (state.h > 0.4) {
+                    ctx2D.fillStyle = '#f59e0b';
+                    ctx2D.fillText(`h = ${state.h.toFixed(1)}`, cx - 35, (cy + sliceY)/2 + 4);
+                }
+                if (rsPx > 0.4) {
+                    ctx2D.fillStyle = '#10b981';
+                    ctx2D.fillText(`r_s = ${(rsPx/scale).toFixed(1)}`, cx + rsPx/2 - 15, sliceY - 8);
+                }
+                ctx2D.fillStyle = '#f43f5e';
+                ctx2D.fillText(`r = ${state.r.toFixed(1)}`, cx + rsPx/2 + 10, (cy + sliceY)/2 + 10);
+            }
+        }
+
+        // Draw Cavalieri comparison views side-by-side
+        function draw2DCavalieri(width, height) {
+            const cx1 = width * 0.28; // Sphere center
+            const cx2 = width * 0.72; // Cylinder center
+            const cy = height * 0.52; // Vertical alignment
+            const rPx = state.r * scale;
+            const hPx = state.h * scale;
+            const rsPx = Math.sqrt(Math.max(0, state.r * state.r - state.h * state.h)) * scale;
+
+            // Draw divider
+            ctx2D.strokeStyle = 'rgba(71, 85, 105, 0.2)';
+            ctx2D.lineWidth = 1;
+            ctx2D.beginPath();
+            ctx2D.moveTo(width / 2, 0); ctx2D.lineTo(width / 2, height);
+            ctx2D.stroke();
+
+            // Label the sides
+            ctx2D.font = 'bold 10px sans-serif';
+            ctx2D.fillStyle = 'rgba(148, 163, 184, 0.8)';
+            ctx2D.fillText("HEMISPHERE SLICE", cx1 - 45, 25);
+            ctx2D.fillText("CYLINDER MINUS CONE", cx2 - 55, 25);
+
+            // ================== LEFT SIDE: Hemisphere Cross-Section ==================
+            // Hemispherical base outline (only positive side of h is integrated in standard models)
+            ctx2D.fillStyle = 'rgba(30, 41, 59, 0.4)';
+            ctx2D.beginPath();
+            ctx2D.arc(cx1, cy, rPx, Math.PI, 0); // Upper half circle
+            ctx2D.lineTo(cx1 + rPx, cy);
+            ctx2D.lineTo(cx1 - rPx, cy);
+            ctx2D.fill();
+
+            ctx2D.strokeStyle = 'rgba(71, 85, 105, 0.6)';
+            ctx2D.lineWidth = 1.5;
+            ctx2D.beginPath();
+            ctx2D.arc(cx1, cy, rPx, Math.PI, 0);
+            ctx2D.lineTo(cx1 - rPx, cy);
+            ctx2D.stroke();
+
+            // Horizontal slice slice
+            const sliceY = cy - hPx;
+            ctx2D.strokeStyle = '#0d9488';
+            ctx2D.lineWidth = 3;
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx1 - rsPx, sliceY);
+            ctx2D.lineTo(cx1 + rsPx, sliceY);
+            ctx2D.stroke();
+
+            // Highlight dots
+            ctx2D.fillStyle = '#0d9488';
+            ctx2D.beginPath();
+            ctx2D.arc(cx1 - rsPx, sliceY, 3.5, 0, 2*Math.PI);
+            ctx2D.arc(cx1 + rsPx, sliceY, 3.5, 0, 2*Math.PI);
+            ctx2D.fill();
+
+            // Sliced Area Indicator
+            ctx2D.font = 'bold 10px sans-serif';
+            ctx2D.fillStyle = '#10b981';
+            ctx2D.fillText(`Area = \u03C0(r\u00B2 - h\u00B2)`, cx1 - 40, cy + 25);
+
+            // ================== RIGHT SIDE: Cylinder Minus Cone (Washer) ==================
+            // Draw Cylinder Profile (Rectangle of width 2r and height r)
+            ctx2D.fillStyle = 'rgba(30, 41, 59, 0.2)';
+            ctx2D.fillRect(cx2 - rPx, cy - rPx, 2 * rPx, rPx);
+            ctx2D.strokeStyle = 'rgba(71, 85, 105, 0.4)';
+            ctx2D.lineWidth = 1;
+            ctx2D.strokeRect(cx2 - rPx, cy - rPx, 2 * rPx, rPx);
+
+            // Draw Inverted Cone profile (Triangle with tip at bottom center)
+            ctx2D.fillStyle = 'rgba(15, 23, 42, 0.95)';
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx2, cy);
+            ctx2D.lineTo(cx2 - rPx, cy - rPx);
+            ctx2D.lineTo(cx2 + rPx, cy - rPx);
+            ctx2D.closePath();
+            ctx2D.fill();
+            ctx2D.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+            ctx2D.stroke();
+
+            // Slicing Line at height h intersects cylinder at rPx and cone at hPx
+            // The resulting solid cross section consists of two strips on either side:
+            // Left strip: [-r, -h], Right strip: [h, r]
+            ctx2D.strokeStyle = '#0d9488';
+            ctx2D.lineWidth = 3;
+            
+            // Left segment
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx2 - rPx, sliceY);
+            ctx2D.lineTo(cx2 - hPx, sliceY);
+            ctx2D.stroke();
+
+            // Right segment
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx2 + hPx, sliceY);
+            ctx2D.lineTo(cx2 + rPx, sliceY);
+            ctx2D.stroke();
+
+            // Draw red dotted connector for cutout cone boundaries
+            ctx2D.strokeStyle = 'rgba(244, 63, 94, 0.6)';
+            ctx2D.setLineDash([3, 3]);
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx2 - hPx, sliceY);
+            ctx2D.lineTo(cx2 + hPx, sliceY);
+            ctx2D.stroke();
+            ctx2D.setLineDash([]);
+
+            // Washer Area Formula
+            ctx2D.fillStyle = '#10b981';
+            ctx2D.fillText(`Area = \u03C0r\u00B2 - \u03C0h\u00B2`, cx2 - 42, cy + 25);
+
+            // Highlight connection heights
+            ctx2D.strokeStyle = 'rgba(245, 158, 11, 0.3)';
+            ctx2D.setLineDash([4, 4]);
+            ctx2D.beginPath();
+            ctx2D.moveTo(cx1, sliceY);
+            ctx2D.lineTo(cx2, sliceY);
+            ctx2D.stroke();
+            ctx2D.setLineDash([]);
+        }
+
+        // Handle direct canvas interaction dragging to adjust slicing plane
+        function handleDrag(e, canvas, is3DCanvas) {
+            const rect = canvas.getBoundingClientRect();
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const canvasY = clientY - rect.top;
+            
+            // Sphere center relative to canvas height
+            const cy = rect.height / 2;
+            const dy = cy - canvasY; // Positive represents up, negative down
+
+            let targetH;
+            if (is3DCanvas) {
+                // Correct for viewing projection tilt
+                targetH = dy / (scale * Math.cos(tilt));
+            } else {
+                targetH = dy / scale;
+            }
+
+            // Cap inputs
+            targetH = Math.max(0, Math.min(state.r, targetH));
+            state.h = targetH;
+            sliderH.value = targetH.toFixed(2);
+            valHDisplay.textContent = targetH.toFixed(2);
+
+            updateMath();
+            draw();
+        }
+
+        // Set dragging Event Listeners
+        let isDragging3D = false;
+        let isDragging2D = false;
+
+        function addDragListeners(canvas, is3D) {
+            const startDrag = (e) => {
+                if (is3D) isDragging3D = true;
+                else isDragging2D = true;
+                handleDrag(e, canvas, is3);
+            };
+
+            const drag = (e) => {
+                if (is3D && isDragging3D) {
+                    e.preventDefault();
+                    handleDrag(e, canvas, true);
+                }
+                if (!is3D && isDragging2D) {
+                    e.preventDefault();
+                    handleDrag(e, canvas, false);
+                }
+            };
+
+            const stopDrag = () => {
+                isDragging3D = false;
+                isDragging2D = false;
+            };
+
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', stopDrag);
+
+            canvas.addEventListener('touchstart', startDrag, { passive: false });
+            canvas.addEventListener('touchmove', drag, { passive: false });
+            window.addEventListener('touchend', stopDrag);
+        }
+
+        addDragListeners(canvas3D, true);
+        addDragListeners(canvas2D, false);
+
+        // Control Inputs Interactions
+        sliderR.addEventListener('input', (e) => {
+            const newR = parseFloat(e.target.value);
+            state.r = newR;
+            valRDisplay.textContent = newR.toFixed(2);
+
+            // Slicing height cannot exceed sphere radius
+            sliderH.max = newR.toFixed(2);
+            labelHMax.textContent = `Edge (${newR.toFixed(2)})`;
+            if (state.h > newR) {
+                state.h = newR;
+                sliderH.value = newR.toFixed(2);
+                valHDisplay.textContent = newR.toFixed(2);
+            }
+
+            updateMath();
+            draw();
+        });
+
+        sliderH.addEventListener('input', (e) => {
+            const newH = parseFloat(e.target.value);
+            state.h = Math.min(newH, state.r);
+            valHDisplay.textContent = state.h.toFixed(2);
+
+            updateMath();
+            draw();
+        });
+
+        // Animation Loop logic
+        let lastTime = 0;
+        function animationStep(timestamp) {
+            if (!state.isAnimating) return;
+
+            if (!lastTime) lastTime = timestamp;
+            const elapsed = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Oscillate slicing plane smoothly up and down using sin wave
+            state.animationTime += (elapsed * 0.001 * state.animationSpeedMultiplier);
+            const wave = (Math.sin(state.animationTime) + 1) / 2; // bound [0, 1]
+            state.h = wave * state.r;
+
+            // Update UI representations
+            sliderH.value = state.h.toFixed(2);
+            valHDisplay.textContent = state.h.toFixed(2);
+
+            updateMath();
+            draw();
+
+            requestAnimationFrame(animationStep);
+        }
+
+        // Play/Pause toggler
+        btnPlay.addEventListener('click', () => {
+            state.isAnimating = !state.isAnimating;
+            if (state.isAnimating) {
+                lastTime = 0;
+                playIcon.setAttribute('data-lucide', 'pause');
+                btnPlay.classList.remove('bg-teal-600', 'hover:bg-teal-700');
+                btnPlay.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                lucide.createIcons();
+                requestAnimationFrame(animationStep);
+            } else {
+                playIcon.setAttribute('data-lucide', 'play');
+                btnPlay.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                btnPlay.classList.add('bg-teal-600', 'hover:bg-teal-700');
+                lucide.createIcons();
+            }
+        });
+
+        // Speed adjustment
+        sliderSpeed.addEventListener('input', (e) => {
+            const multiplier = parseFloat(e.target.value);
+            state.animationSpeedMultiplier = multiplier * 0.5;
+            
+            const labels = ["Very Slow", "Slow", "Normal", "Fast", "Insane"];
+            speedLabel.textContent = `Speed: ${labels[multiplier - 1]}`;
+        });
+
+        // Reset settings
+        btnReset.addEventListener('click', () => {
+            state.r = 5.0;
+            state.h = 3.0;
+            state.isAnimating = false;
+            state.animationTime = 0;
+
+            playIcon.setAttribute('data-lucide', 'play');
+            btnPlay.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+            btnPlay.classList.add('bg-teal-600', 'hover:bg-teal-700');
+            lucide.createIcons();
+
+            sliderR.value = "5.0";
+            sliderH.value = "3.0";
+            sliderH.max = "5.0";
+            labelHMax.textContent = "Edge (5.00)";
+            valRDisplay.textContent = "5.00";
+            valHDisplay.textContent = "3.00";
+
+            updateMath();
+            draw();
+        });
+
+        // Standard vs Cavalieri mode selectors
+        btnStdView.addEventListener('click', () => {
+            state.viewMode = 'standard';
+            btnStdView.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-teal-600 text-white shadow-sm";
+            btnCavView.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white";
+            
+            viewModeBadge.textContent = "2D Cross-section";
+            viewModeBadge.className = "absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider text-rose-500 bg-rose-950/50 px-2 py-0.5 rounded-md";
+            canvas2DDesc.innerHTML = 'Drag cross-section to adjust height <span class="text-amber-400 font-bold">h</span>';
+
+            resizeCanvases();
+        });
+
+        btnCavView.addEventListener('click', () => {
+            state.viewMode = 'cavalieri';
+            btnCavView.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-teal-600 text-white shadow-sm";
+            btnStdView.className = "px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white";
+
+            viewModeBadge.textContent = "Cavalieri Proof Profile";
+            viewModeBadge.className = "absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-950/50 px-2 py-0.5 rounded-md";
+            canvas2DDesc.innerHTML = 'Comparing hemisphere slices to a cylinder minus cone';
+
+            resizeCanvases();
+        });
+
+        // Hide/Show triangle overlays
+        btnToggleTriangle.addEventListener('click', () => {
+            state.showTriangle = !state.showTriangle;
+            const span = btnToggleTriangle.querySelector('span');
+            const icon = btnToggleTriangle.querySelector('i');
+            
+            if (state.showTriangle) {
+                span.textContent = "Hide Triangle";
+                btnToggleTriangle.classList.remove('border-slate-800');
+                btnToggleTriangle.classList.add('border-slate-700');
+                icon.className = "w-3.5 h-3.5 text-rose-400";
+            } else {
+                span.textContent = "Show Triangle";
+                btnToggleTriangle.classList.remove('border-slate-700');
+                btnToggleTriangle.classList.add('border-slate-800');
+                icon.className = "w-3.5 h-3.5 text-slate-500";
+            }
+            draw();
+        });
+
+        // Explanations Tabs management
+        function setupTabs() {
+            const tabs = [
+                { button: tabIntro, content: contentIntro },
+                { button: tabCavalieri, content: contentCavalieri },
+                { button: tabCalculus, content: contentCalculus }
+            ];
+
+            tabs.forEach(tab => {
+                tab.button.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.button.classList.remove('border-teal-500', 'text-teal-400', 'font-semibold');
+                        t.button.classList.add('border-transparent', 'text-slate-400', 'font-medium');
+                        t.content.classList.add('hidden');
+                    });
+                    tab.button.classList.add('border-teal-500', 'text-teal-400', 'font-semibold');
+                    tab.button.classList.remove('border-transparent', 'text-slate-400', 'font-medium');
+                    tab.content.classList.remove('hidden');
+                });
+            });
+        }
+        setupTabs();
+
+        // Responsive handling on window changes
+        window.addEventListener('resize', resizeCanvases);
+
+        // Bootstrap on load
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeCanvases();
+
+            // Set dynamic polling checking when KaTeX loads
+            const mathPoller = setInterval(() => {
+                if (typeof katex !== 'undefined') {
+                    clearInterval(mathPoller);
+                    updateMath();
+                }
+            }, 100);
+
+            // Initial mathematical values
+            updateMath();
+        });
+    </script>
+</body>
+</html>

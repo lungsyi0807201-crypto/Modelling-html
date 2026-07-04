@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Cone & Cylinder Volume Demonstrator</title>
+    <!-- Tailwind CSS for modern design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX for beautiful real-time math equations -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <!-- Google Fonts for professional typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+        }
+        /* Custom styling for sliders */
+        input[type="range"]::-webkit-slider-thumb {
+            background-color: #6366f1;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            appearance: none;
+            transition: all 0.15s ease-in-out;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background-color: #4f46e5;
+        }
+        canvas {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs font-semibold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2.5 py-1 rounded-full">Geometry Lesson Tool</span>
+                <h1 class="text-2xl font-bold mt-1 text-white">Why is Cone Volume <span class="text-indigo-400">$\frac{1}{3} \pi r^2 h$?</span></h1>
+                <p class="text-xs text-slate-400 mt-1">An interactive exploration of volume, radius, and height ratios.</p>
+            </div>
+            <!-- Live Status Alert Box -->
+            <div id="simulation-status" class="bg-indigo-500/10 border border-indigo-500/20 px-4 py-3 rounded-lg flex items-center gap-3 text-sm text-indigo-300">
+                <div class="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-ping"></div>
+                <span>Adjust dimensions or click <strong>"Pour Cone"</strong> below!</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto w-full p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- Left Column: Canvas & Animation Controls (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Canvas Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl relative flex flex-col">
+                <!-- Camera Preset Buttons -->
+                <div class="absolute top-4 left-4 z-10 flex gap-2 bg-slate-950/80 backdrop-blur p-1 rounded-lg border border-slate-800">
+                    <button id="view-isometric" class="text-xs px-3 py-1.5 rounded font-medium bg-indigo-600 text-white transition">Isometric</button>
+                    <button id="view-front" class="text-xs px-3 py-1.5 rounded font-medium text-slate-400 hover:text-white transition">Front (2D)</button>
+                    <button id="view-top" class="text-xs px-3 py-1.5 rounded font-medium text-slate-400 hover:text-white transition">Top (Base)</button>
+                </div>
+                
+                <div class="absolute top-4 right-4 z-10 text-xs text-slate-400 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
+                    <svg class="w-3 h-3 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                    </svg>
+                    Drag to Rotate 3D Space
+                </div>
+
+                <!-- Canvas container -->
+                <div class="bg-gradient-to-b from-slate-950 to-slate-900 flex-grow flex items-center justify-center p-2 min-h-[400px]">
+                    <canvas id="geometryCanvas" width="900" height="500" class="w-full h-auto max-w-full cursor-grab active:cursor-grabbing"></canvas>
+                </div>
+
+                <!-- Live Ratio visual scale -->
+                <div class="bg-slate-950 border-t border-slate-800 p-4 grid grid-cols-3 text-center gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-400 block mb-1">Cone Volume Unit</span>
+                        <div class="h-2 bg-slate-800 rounded-full overflow-hidden w-full max-w-[120px] mx-auto border border-slate-700">
+                            <div class="h-full bg-cyan-400 w-full"></div>
+                        </div>
+                        <span class="text-cyan-400 font-bold block mt-1">1x</span>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <span class="text-slate-500 text-lg font-bold">× 3 =</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-1">Cylinder Capacity</span>
+                        <div class="h-2 bg-slate-800 rounded-full overflow-hidden w-full max-w-[120px] mx-auto border border-slate-700">
+                            <div id="cylinder-fill-bar" class="h-full bg-cyan-500 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <span class="text-cyan-400 font-bold block mt-1" id="cylinder-fill-label">0 / 3 Cones</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation Controls -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    Interactive Demonstration Lab
+                </h3>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="btn-pour" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-lg transition shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                        Pour Cone into Cylinder
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-lg transition border border-slate-700 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H19" />
+                        </svg>
+                        Reset Cylinder Water
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Sliders & Live Math Proofs (5 Cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Controls Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col gap-5">
+                <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-indigo-500 rounded-full"></span>
+                    Adjust Cone Dimensions
+                </h2>
+
+                <!-- Radius Slider -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label for="radius-slider" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            <span class="w-4 h-4 bg-rose-500 rounded-full inline-block"></span>
+                            Base Radius (<span class="text-rose-400 font-bold">$r$</span>)
+                        </label>
+                        <span id="radius-val" class="text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-md">3.0 units</span>
+                    </div>
+                    <input type="range" id="radius-slider" min="1.0" max="5.0" step="0.1" value="3.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    <span class="text-[10px] text-slate-400 flex justify-between"><span>Minimum: 1.0</span><span>Maximum: 5.0</span></span>
+                </div>
+
+                <!-- Height Slider -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label for="height-slider" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            <span class="w-4 h-4 bg-amber-500 rounded-full inline-block"></span>
+                            Height (<span class="text-amber-400 font-bold">$h$</span>)
+                        </label>
+                        <span id="height-val" class="text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-md">6.0 units</span>
+                    </div>
+                    <input type="range" id="height-slider" min="2.0" max="8.0" step="0.1" value="6.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    <span class="text-[10px] text-slate-400 flex justify-between"><span>Minimum: 2.0</span><span>Maximum: 8.0</span></span>
+                </div>
+            </div>
+
+            <!-- Mathematical Breakdown Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-cyan-500 rounded-full"></span>
+                    Step-by-Step Math Breakdown
+                </h2>
+
+                <!-- Dimension inputs readouts -->
+                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
+                    <div>
+                        <span class="text-[11px] uppercase text-slate-400 block tracking-wider">Current Radius</span>
+                        <div id="math-r" class="text-rose-400 font-semibold mt-1"></div>
+                    </div>
+                    <div>
+                        <span class="text-[11px] uppercase text-slate-400 block tracking-wider">Current Height</span>
+                        <div id="math-h" class="text-amber-400 font-semibold mt-1"></div>
+                    </div>
+                </div>
+
+                <!-- Base Area Formula Block -->
+                <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <div class="text-xs text-indigo-400 font-semibold uppercase tracking-wider mb-2">Step 1: Calculate Circular Base Area ($A_{\text{base}}$)</div>
+                    <div id="math-base" class="text-sm font-medium overflow-x-auto text-white py-1"></div>
+                </div>
+
+                <!-- Cone Volume Formula Block -->
+                <div class="bg-slate-950 p-4 rounded-lg border border-indigo-500/30 bg-indigo-500/[0.02] hover:border-indigo-500/50 transition">
+                    <div class="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-2">Step 2: Calculate Cone Volume ($V_{\text{cone}}$)</div>
+                    <div id="math-volume" class="text-sm font-medium overflow-x-auto text-white py-1"></div>
+                </div>
+
+                <!-- Cylinder Comparison Block -->
+                <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+                    <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Step 3: Cylinder Volume ($V_{\text{cylinder}}$) & Ratio</div>
+                    <div id="math-cylinder" class="text-sm font-medium overflow-x-auto text-slate-300 py-1"></div>
+                    <div id="math-ratio" class="text-sm font-bold overflow-x-auto text-indigo-300 py-1 mt-2 border-t border-slate-800 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- Conceptual Explanation for Students -->
+            <div class="bg-indigo-950/20 border border-indigo-900/40 rounded-xl p-5 shadow-lg">
+                <h4 class="text-sm font-bold text-indigo-300 mb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Did you know?
+                </h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    This formula works for all pyramids and cones! If you slice up any pyramid or cone into infinite micro-thin layers, we can use the method of exhaustion (or integration in Calculus) to prove that their volumes are always exactly $\frac{1}{3}$ of the surrounding cylinder or prism.
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-900/50 py-4 px-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Sandbox Geometry Lab. Rendered flawlessly in pure HTML5 standard projection matrix.</p>
+    </footer>
+
+    <!-- Interactive Logic & Render Script -->
+    <script>
+        // --- STATE MANAGEMENT ---
+        let r = 3.0; // Math radius
+        let h = 6.0; // Math height
+
+        // Interactive camera pitch & yaw
+        let pitch = 0.35; // Looking slightly down (Isometric)
+        let yaw = -0.6;   // Slanted view for 3D depth
+
+        // Target rotation coordinates for smooth cinematic animations
+        let targetPitch = 0.35;
+        let targetYaw = -0.6;
+
+        // Visual animation variables for pouring simulation
+        let isPouring = false;
+        let pourProgress = 0.0; // 0 to 1
+        let coneLiquidLevel = 1.0; // 0 to 1 representing how full the cone is
+        let cylinderLiquidLevel = 0.0; // 0 to 3 cones full
+        let startCylinderLevel = 0.0;
+        let targetCylinderLevel = 0.0;
+
+        // Layout constants for canvas
+        const canvas = document.getElementById('geometryCanvas');
+        const ctx = canvas.getContext('2d');
+        let frameCount = 0;
+
+        // Interaction Mouse/Touch Tracker
+        let isDragging = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+
+        // Setup DOM event triggers
+        const radiusSlider = document.getElementById('radius-slider');
+        const heightSlider = document.getElementById('height-slider');
+        const radiusValLabel = document.getElementById('radius-val');
+        const heightValLabel = document.getElementById('height-val');
+        const btnPour = document.getElementById('btn-pour');
+        const btnReset = document.getElementById('btn-reset');
+        const statusAlert = document.getElementById('simulation-status');
+        const cylFillBar = document.getElementById('cylinder-fill-bar');
+        const cylFillLabel = document.getElementById('cylinder-fill-label');
+
+        // Preset Camera Angles
+        document.getElementById('view-isometric').addEventListener('click', () => {
+            targetPitch = 0.35;
+            targetYaw = -0.6;
+            updateCameraPresetButtons('view-isometric');
+        });
+        document.getElementById('view-front').addEventListener('click', () => {
+            targetPitch = 0.0;
+            targetYaw = 0.0;
+            updateCameraPresetButtons('view-front');
+        });
+        document.getElementById('view-top').addEventListener('click', () => {
+            targetPitch = Math.PI / 2; // Look straight down
+            targetYaw = 0.0;
+            updateCameraPresetButtons('view-top');
+        });
+
+        function updateCameraPresetButtons(activeId) {
+            const ids = ['view-isometric', 'view-front', 'view-top'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === activeId) {
+                    el.classList.add('bg-indigo-600', 'text-white');
+                    el.classList.remove('text-slate-400');
+                } else {
+                    el.classList.remove('bg-indigo-600', 'text-white');
+                    el.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        // Slider listeners
+        radiusSlider.addEventListener('input', (e) => {
+            r = parseFloat(e.target.value);
+            radiusValLabel.innerText = r.toFixed(1) + ' units';
+            updateMathBreakdown();
+        });
+
+        heightSlider.addEventListener('input', (e) => {
+            h = parseFloat(e.target.value);
+            heightValLabel.innerText = h.toFixed(1) + ' units';
+            updateMathBreakdown();
+        });
+
+        // Click actions
+        btnPour.addEventListener('click', () => {
+            if (isPouring) return;
+            if (cylinderLiquidLevel >= 3.0) {
+                statusAlert.innerHTML = `
+                    <div class="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></div>
+                    <span class="text-rose-300">The cylinder is fully filled! Click <strong>"Reset Cylinder"</strong>.</span>
+                `;
+                return;
+            }
+
+            // Start water pouring sequence
+            isPouring = true;
+            pourProgress = 0.0;
+            startCylinderLevel = cylinderLiquidLevel;
+            targetCylinderLevel = Math.min(3.0, cylinderLiquidLevel + 1.0);
+            
+            statusAlert.innerHTML = `
+                <div class="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-ping"></div>
+                <span class="text-cyan-300">Pouring cone capacity into cylinder...</span>
+            `;
+        });
+
+        btnReset.addEventListener('click', () => {
+            cylinderLiquidLevel = 0.0;
+            coneLiquidLevel = 1.0;
+            isPouring = false;
+            updateProgressIndicators();
+            statusAlert.innerHTML = `
+                <div class="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-ping"></div>
+                <span>Cylinder reset! Ready to measure volumes again.</span>
+            `;
+        });
+
+        function updateProgressIndicators() {
+            const fillPercent = (cylinderLiquidLevel / 3.0) * 100;
+            cylFillBar.style.width = fillPercent + '%';
+            cylFillLabel.innerText = cylinderLiquidLevel.toFixed(0) + ' / 3 Cones';
+        }
+
+        // Mouse Drag to rotate canvas logic
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || isPouring) return;
+            const deltaX = e.clientX - previousMouseX;
+            const deltaY = e.clientY - previousMouseY;
+
+            // Adjust rotations
+            targetYaw += deltaX * 0.007;
+            targetPitch += deltaY * 0.007;
+
+            // Restrict camera flipping over top or bottom
+            targetPitch = Math.max(-0.2, Math.min(Math.PI / 2, targetPitch));
+
+            previousMouseX = e.clientX;
+            previousMouseY = e.clientY;
+        });
+
+        // Support standard touch interfaces for tablets/mobile screens
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMouseX = e.touches[0].clientX;
+                previousMouseY = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDragging || isPouring || e.touches.length !== 1) return;
+            const deltaX = e.touches[0].clientX - previousMouseX;
+            const deltaY = e.touches[0].clientY - previousMouseY;
+
+            targetYaw += deltaX * 0.009;
+            targetPitch += deltaY * 0.009;
+            targetPitch = Math.max(-0.2, Math.min(Math.PI / 2, targetPitch));
+
+            previousMouseX = e.touches[0].clientX;
+            previousMouseY = e.touches[0].clientY;
+        });
+
+        // --- MATH RENDERING (LaTeX with KaTeX) ---
+        function updateMathBreakdown() {
+            if (typeof katex === 'undefined') return;
+
+            const baseArea = Math.PI * r * r;
+            const coneVolume = (1/3) * baseArea * h;
+            const cylVolume = baseArea * h;
+
+            // Math headers
+            katex.render(`r = ${r.toFixed(1)}\\text{ units}`, document.getElementById('math-r'));
+            katex.render(`h = ${h.toFixed(1)}\\text{ units}`, document.getElementById('math-h'));
+
+            // Step 1: Base Area
+            katex.render(`A_{\\text{base}} = \\pi \\times r^2 = \\pi \\times ${r.toFixed(1)}^2 \\approx ${baseArea.toFixed(2)}\\text{ units}^2`, document.getElementById('math-base'));
+
+            // Step 2: Cone Volume
+            katex.render(`V_{\\text{cone}} = \\frac{1}{3} \\times A_{\\text{base}} \\times h = \\frac{1}{3} \\times ${baseArea.toFixed(2)} \\times ${h.toFixed(1)} \\approx ${coneVolume.toFixed(2)}\\text{ units}^3`, document.getElementById('math-volume'));
+
+            // Step 3: Cylinder Volume
+            katex.render(`V_{\\text{cylinder}} = A_{\\text{base}} \\times h = ${baseArea.toFixed(2)} \\times ${h.toFixed(1)} \\approx ${cylVolume.toFixed(2)}\\text{ units}^3`, document.getElementById('math-cylinder'));
+
+            // Ratio summary
+            katex.render(`\\text{Visual Ratio: } \\frac{V_{\\text{cylinder}}}{V_{\\text{cone}}} = \\frac{${cylVolume.toFixed(2)}}{${coneVolume.toFixed(2)}} = 3.00`, document.getElementById('math-ratio'));
+        }
+
+        // --- 3D RENDERING MATRIX ENGINE (Vanilla HTML5 Canvas) ---
+
+        // Simple Orthographic/Perspective rotation projector
+        function project(x, y, z) {
+            // Apply Camera Rotations
+            // 1. Rotate Y (Yaw)
+            const cosY = Math.cos(yaw);
+            const sinY = Math.sin(yaw);
+            const x1 = x * cosY - z * sinY;
+            const z1 = x * sinY + z * cosY;
+
+            // 2. Rotate X (Pitch)
+            const cosX = Math.cos(pitch);
+            const sinX = Math.sin(pitch);
+            const y2 = y * cosX - z1 * sinX;
+            const z2 = y * sinX + z1 * cosX;
+
+            // Dynamic camera scaling
+            const scale = Math.min(canvas.width, canvas.height) / 20;
+
+            // Anchor base platform at -2.5 in standard 3D coordinates
+            return {
+                x: canvas.width / 2 + x1 * scale,
+                y: canvas.height * 0.65 - y2 * scale,
+                depth: z2
+            };
+        }
+
+        // Returns path points for standard flat circular planes at specified Heights
+        function get3DCirclePoints(centerX, centerY, centerZ, radius, segments = 64) {
+            const points = [];
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                points.push({
+                    x: centerX + radius * Math.cos(theta),
+                    y: centerY,
+                    z: centerZ + radius * Math.sin(theta)
+                });
+            }
+            return points;
+        }
+
+        // Draw flat horizontal circles on the platform
+        function draw3DCircle(centerX, centerY, centerZ, radius, strokeStyle, fillStyle) {
+            const points = get3DCirclePoints(centerX, centerY, centerZ, radius);
+            ctx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const p = project(points[i].x, points[i].y, points[i].z);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            if (fillStyle) {
+                ctx.fillStyle = fillStyle;
+                ctx.fill();
+            }
+            if (strokeStyle) {
+                ctx.strokeStyle = strokeStyle;
+                ctx.stroke();
+            }
+        }
+
+        // Custom dimension label with a clear background backdrop
+        function drawDimensionLabel(text, projPoint, color, borderClr) {
+            ctx.save();
+            ctx.font = 'bold 11px Inter, sans-serif';
+            const width = ctx.measureText(text).width + 12;
+            const height = 20;
+            ctx.fillStyle = 'rgba(11, 15, 25, 0.9)';
+            ctx.strokeStyle = borderClr;
+            ctx.lineWidth = 1;
+            
+            // Draw round container
+            ctx.beginPath();
+            ctx.roundRect(projPoint.x - width / 2, projPoint.y - height / 2, width, height, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // Text
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, projPoint.x, projPoint.y);
+            ctx.restore();
+        }
+
+        // Rendering single frame loop
+        function drawScene() {
+            // Smooth Camera Interpolation for cinematic transition
+            yaw += (targetYaw - yaw) * 0.1;
+            pitch += (targetPitch - pitch) * 0.1;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            frameCount++;
+
+            // Global offset layout
+            const coneX = -5.0;
+            const cylinderX = 5.0;
+            const floorY = -3.0;
+
+            // 1. Draw Lab Floor Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = -12; i <= 12; i += 2) {
+                // Lines parallel to Depth Z
+                ctx.beginPath();
+                const p1 = project(i, floorY, -6);
+                const p2 = project(i, floorY, 6);
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                // Lines parallel to Width X
+                ctx.beginPath();
+                const p3 = project(-12, floorY, i / 2);
+                const p4 = project(12, floorY, i / 2);
+                ctx.moveTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.stroke();
+            }
+
+            // --- ANIMATE POURING SYSTEM PHYSICS ---
+            if (isPouring) {
+                pourProgress += 0.01;
+                if (pourProgress >= 1.0) {
+                    pourProgress = 1.0;
+                    isPouring = false;
+                    coneLiquidLevel = 1.0; // Instantly refill cone for lesson convenience
+                    cylinderLiquidLevel = targetCylinderLevel;
+                    updateProgressIndicators();
+
+                    if (cylinderLiquidLevel >= 3.0) {
+                        statusAlert.innerHTML = `
+                            <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
+                            <span class="text-emerald-300"><strong>Exactly 3 Cones filled the cylinder!</strong> Try changing dimensions to prove it again.</span>
+                        `;
+                    } else {
+                        statusAlert.innerHTML = `
+                            <div class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></div>
+                            <span>Cone successfully poured. Current level: <strong>${cylinderLiquidLevel.toFixed(0)} / 3</strong> Cones.</span>
+                        `;
+                    }
+                } else {
+                    // Pour progress mapping
+                    coneLiquidLevel = 1.0 - pourProgress;
+                    cylinderLiquidLevel = startCylinderLevel + (pourProgress * (targetCylinderLevel - startCylinderLevel));
+                    updateProgressIndicators();
+                }
+            }
+
+            // --- CONE DRAWING & SHADING ---
+            const apexY = floorY + h;
+            const coneBasePoints = get3DCirclePoints(coneX, floorY, 0, r);
+            let minConeX = Infinity, maxConeX = -Infinity;
+            let minConeIdx = 0, maxConeIdx = 0;
+
+            const projConeBase = coneBasePoints.map((pt, idx) => {
+                const p = project(pt.x, pt.y, pt.z);
+                if (p.x < minConeX) { minConeX = p.x; minConeIdx = idx; }
+                if (p.x > maxConeX) { maxConeX = p.x; maxConeIdx = idx; }
+                return p;
+            });
+
+            // Draw Base Solid Plate
+            draw3DCircle(coneX, floorY, 0, r, 'rgba(99, 102, 241, 0.4)', 'rgba(99, 102, 241, 0.08)');
+
+            // Shaded Cone Shell body
+            const projApex = project(coneX, apexY, 0);
+            ctx.beginPath();
+            ctx.moveTo(projApex.x, projApex.y);
+            ctx.lineTo(projConeBase[minConeIdx].x, projConeBase[minConeIdx].y);
+            
+            // Draw along the front base curve
+            let idx = minConeIdx;
+            while (idx !== maxConeIdx) {
+                ctx.lineTo(projConeBase[idx].x, projConeBase[idx].y);
+                idx = (idx + 1) % projConeBase.length;
+            }
+            ctx.lineTo(projConeBase[maxConeIdx].x, projConeBase[maxConeIdx].y);
+            ctx.closePath();
+
+            // Gradient for cylindrical realism
+            const gradCone = ctx.createLinearGradient(minConeX, projApex.y, maxConeX, projApex.y);
+            gradCone.addColorStop(0, 'rgba(129, 140, 248, 0.15)');
+            gradCone.addColorStop(0.3, 'rgba(99, 102, 241, 0.25)');
+            gradCone.addColorStop(0.8, 'rgba(49, 46, 129, 0.4)');
+            ctx.fillStyle = gradCone;
+            ctx.fill();
+
+            // Outlines
+            ctx.strokeStyle = 'rgba(129, 140, 248, 0.7)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Draw liquid content inside cone
+            if (coneLiquidLevel > 0) {
+                // Inside a cone, liquid is a truncated cone (frustum) of liquid height H_L = h * level
+                const liqHeight = h * coneLiquidLevel;
+                const liqRadius = r * coneLiquidLevel; // Top radius of the liquid cone frustum
+                const liqY = floorY + liqHeight;
+
+                const liqBasePoints = get3DCirclePoints(coneX, floorY, 0, r);
+                const liqTopPoints = get3DCirclePoints(coneX, liqY, 0, r - liqRadius);
+
+                // Find projection boundaries
+                let minLiqX = Infinity, maxLiqX = -Infinity;
+                let minLiqIdx = 0, maxLiqIdx = 0;
+                
+                const projLiqBase = liqBasePoints.map((pt) => project(pt.x, pt.y, pt.z));
+                const projLiqTop = liqTopPoints.map((pt, idx) => {
+                    const p = project(pt.x, pt.y, pt.z);
+                    if (p.x < minLiqX) { minLiqX = p.x; minLiqIdx = idx; }
+                    if (p.x > maxLiqX) { maxLiqX = p.x; maxLiqIdx = idx; }
+                    return p;
+                });
+
+                // Render filled bottom cone shape
+                ctx.beginPath();
+                ctx.moveTo(projLiqTop[minLiqIdx].x, projLiqTop[minLiqIdx].y);
+                
+                // Track down the curved container of bottom cone base
+                let idxB = minConeIdx;
+                while (idxB !== maxConeIdx) {
+                    ctx.lineTo(projConeBase[idxB].x, projConeBase[idxB].y);
+                    idxB = (idxB + 1) % projConeBase.length;
+                }
+                ctx.lineTo(projConeBase[maxConeIdx].x, projConeBase[maxConeIdx].y);
+                ctx.lineTo(projLiqTop[maxLiqIdx].x, projLiqTop[maxLiqIdx].y);
+                
+                // Track back along the top liquid circle
+                let idxT = maxLiqIdx;
+                while (idxT !== minLiqIdx) {
+                    ctx.lineTo(projLiqTop[idxT].x, projLiqTop[idxT].y);
+                    idxT = (idxT - 1 + projLiqTop.length) % projLiqTop.length;
+                }
+                ctx.closePath();
+
+                const gradWater = ctx.createLinearGradient(minLiqX, liqY, maxLiqX, liqY);
+                gradWater.addColorStop(0, 'rgba(14, 165, 233, 0.45)');
+                gradWater.addColorStop(0.5, 'rgba(2, 132, 199, 0.65)');
+                gradWater.addColorStop(1, 'rgba(3, 105, 161, 0.75)');
+                ctx.fillStyle = gradWater;
+                ctx.fill();
+
+                // Draw top surface of liquid in the cone
+                draw3DCircle(coneX, liqY, 0, r - liqRadius, 'rgba(14, 165, 233, 0.9)', 'rgba(56, 189, 248, 0.8)');
+            }
+
+            // Draw dimension annotations for Cone
+            // Base Radius Line
+            ctx.beginPath();
+            ctx.strokeStyle = '#f43f5e'; // Rose
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            const coneCenterProj = project(coneX, floorY, 0);
+            const coneRadiusProj = project(coneX + r, floorY, 0);
+            ctx.moveTo(coneCenterProj.x, coneCenterProj.y);
+            ctx.lineTo(coneRadiusProj.x, coneRadiusProj.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Height Line
+            ctx.beginPath();
+            ctx.strokeStyle = '#f59e0b'; // Amber
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.moveTo(coneCenterProj.x, coneCenterProj.y);
+            ctx.lineTo(projApex.x, projApex.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Labels in 3D
+            if (pitch > 0.05) {
+                const labelR = { x: (coneCenterProj.x + coneRadiusProj.x) / 2, y: coneCenterProj.y + 12 };
+                const labelH = { x: coneCenterProj.x - 22, y: (coneCenterProj.y + projApex.y) / 2 };
+                drawDimensionLabel(`r = ${r.toFixed(1)}`, labelR, '#fda4af', '#f43f5e');
+                drawDimensionLabel(`h = ${h.toFixed(1)}`, labelH, '#fde68a', '#f59e0b');
+            }
+
+
+            // --- CYLINDER DRAWING & SHADING ---
+            const cylinderBasePoints = get3DCirclePoints(cylinderX, floorY, 0, r);
+            const cylinderTopPoints = get3DCirclePoints(cylinderX, floorY + h, 0, r);
+            let minCylX = Infinity, maxCylX = -Infinity;
+            let minCylIdx = 0, maxCylIdx = 0;
+
+            const projCylBase = cylinderBasePoints.map((pt, idx) => {
+                const p = project(pt.x, pt.y, pt.z);
+                if (p.x < minCylX) { minCylX = p.x; minCylIdx = idx; }
+                if (p.x > maxCylX) { maxCylX = p.x; maxCylIdx = idx; }
+                return p;
+            });
+
+            const projCylTop = cylinderTopPoints.map((pt) => project(pt.x, pt.y, pt.z));
+
+            // Bottom Plate
+            draw3DCircle(cylinderX, floorY, 0, r, 'rgba(148, 163, 184, 0.4)', 'rgba(148, 163, 184, 0.08)');
+
+            // Outer Shell
+            ctx.beginPath();
+            ctx.moveTo(projCylBase[minCylIdx].x, projCylBase[minCylIdx].y);
+            ctx.lineTo(projCylTop[minCylIdx].x, projCylTop[minCylIdx].y);
+            
+            // Loop along top circle
+            let cylIdx = minCylIdx;
+            while (cylIdx !== maxCylIdx) {
+                ctx.lineTo(projCylTop[cylIdx].x, projCylTop[cylIdx].y);
+                cylIdx = (cylIdx + 1) % projCylTop.length;
+            }
+            ctx.lineTo(projCylTop[maxCylIdx].x, projCylTop[maxCylIdx].y);
+            ctx.lineTo(projCylBase[maxCylIdx].x, projCylBase[maxCylIdx].y);
+            ctx.closePath();
+
+            const gradCyl = ctx.createLinearGradient(minCylX, projCylTop[0].y, maxCylX, projCylTop[0].y);
+            gradCyl.addColorStop(0, 'rgba(148, 163, 184, 0.1)');
+            gradCyl.addColorStop(0.3, 'rgba(148, 163, 184, 0.25)');
+            gradCyl.addColorStop(0.8, 'rgba(71, 85, 105, 0.35)');
+            ctx.fillStyle = gradCyl;
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+            ctx.stroke();
+
+            // Draw Cylinder top rim ellipse
+            draw3DCircle(cylinderX, floorY + h, 0, r, 'rgba(148, 163, 184, 0.65)', null);
+
+            // --- CYLINDER LIQUID (WATER LEVEL) ---
+            if (cylinderLiquidLevel > 0) {
+                // Cylinder water height scales perfectly as cylinderLiquidLevel / 3.0 of total height
+                const waterHeightRatio = cylinderLiquidLevel / 3.0;
+                const waterHeight = h * waterHeightRatio;
+                const waterY = floorY + waterHeight;
+
+                const waterBasePoints = get3DCirclePoints(cylinderX, floorY, 0, r);
+                const waterTopPoints = get3DCirclePoints(cylinderX, waterY, 0, r);
+
+                let minWaterX = Infinity, maxWaterX = -Infinity;
+                let minWaterIdx = 0, maxWaterIdx = 0;
+
+                const projWaterBase = waterBasePoints.map((pt) => project(pt.x, pt.y, pt.z));
+                const projWaterTop = waterTopPoints.map((pt, idx) => {
+                    const p = project(pt.x, pt.y, pt.z);
+                    if (p.x < minWaterX) { minWaterX = p.x; minWaterIdx = idx; }
+                    if (p.x > maxWaterX) { maxWaterX = p.x; maxWaterIdx = idx; }
+                    return p;
+                });
+
+                // Liquid fill block
+                ctx.beginPath();
+                ctx.moveTo(projWaterTop[minWaterIdx].x, projWaterTop[minWaterIdx].y);
+                ctx.lineTo(projWaterBase[minWaterIdx].x, projWaterBase[minWaterIdx].y);
+
+                let idxWB = minWaterIdx;
+                while (idxWB !== maxWaterIdx) {
+                    ctx.lineTo(projWaterBase[idxWB].x, projWaterBase[idxWB].y);
+                    idxWB = (idxWB + 1) % projWaterBase.length;
+                }
+                ctx.lineTo(projWaterBase[maxWaterIdx].x, projWaterBase[maxWaterIdx].y);
+                ctx.lineTo(projWaterTop[maxWaterIdx].x, projWaterTop[maxWaterIdx].y);
+
+                let idxWT = maxWaterIdx;
+                while (idxWT !== minWaterIdx) {
+                    ctx.lineTo(projWaterTop[idxWT].x, projWaterTop[idxWT].y);
+                    idxWT = (idxWT - 1 + projWaterTop.length) % projWaterTop.length;
+                }
+                ctx.closePath();
+
+                const gradCylWater = ctx.createLinearGradient(minWaterX, waterY, maxWaterX, waterY);
+                gradCylWater.addColorStop(0, 'rgba(14, 165, 233, 0.45)');
+                gradCylWater.addColorStop(0.5, 'rgba(2, 132, 199, 0.65)');
+                gradCylWater.addColorStop(1, 'rgba(3, 105, 161, 0.75)');
+                ctx.fillStyle = gradCylWater;
+                ctx.fill();
+
+                // Draw water surface lid ellipse
+                draw3DCircle(cylinderX, waterY, 0, r, 'rgba(14, 165, 233, 0.9)', 'rgba(56, 189, 248, 0.8)');
+            }
+
+            // Draw visual marking lines at exactly 1/3 and 2/3 capacities of the Cylinder height
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            
+            // 1/3 Marker line
+            draw3DCircle(cylinderX, floorY + h/3, 0, r, 'rgba(255, 255, 255, 0.25)', null);
+            // 2/3 Marker line
+            draw3DCircle(cylinderX, floorY + 2*h/3, 0, r, 'rgba(255, 255, 255, 0.25)', null);
+            ctx.setLineDash([]);
+
+            // Markings text in 3D
+            if (pitch > 0.05) {
+                const mark13 = project(cylinderX + r + 0.3, floorY + h/3, 0);
+                const mark23 = project(cylinderX + r + 0.3, floorY + 2*h/3, 0);
+                const markFull = project(cylinderX + r + 0.3, floorY + h, 0);
+                
+                ctx.font = '9px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillText("1/3 Full (1 Cone)", mark13.x, mark13.y);
+                ctx.fillText("2/3 Full (2 Cones)", mark23.x, mark23.y);
+                ctx.fillText("3/3 Full (3 Cones)", markFull.x, markFull.y);
+            }
+
+
+            // --- ANIMATE FLOWING WATER STREAM (DURING POUR) ---
+            if (isPouring) {
+                // Create bezier water trajectory from Cone side to Cylinder top mouth
+                const pSource = project(coneX, apexY, 0);
+                const pDest = project(cylinderX, floorY + h + 0.5, 0);
+                const pControl = {
+                    x: (pSource.x + pDest.x) / 2,
+                    y: Math.min(pSource.y, pDest.y) - 60
+                };
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(pSource.x, pSource.y);
+                ctx.quadraticCurveTo(pControl.x, pControl.y, pDest.x, pDest.y);
+                
+                // Dynamic dash offset creates a seamless scrolling fluid current effect
+                ctx.strokeStyle = 'rgba(14, 165, 233, 0.85)';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([8, 8]);
+                ctx.lineDashOffset = -frameCount * 2.5;
+                ctx.stroke();
+                ctx.restore();
+
+                // Small droplets splash particle at destination mouth
+                ctx.beginPath();
+                ctx.arc(pDest.x, pDest.y, 3 + Math.sin(frameCount * 0.5) * 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+                ctx.fill();
+            }
+
+            requestAnimationFrame(drawScene);
+        }
+
+        // Initialize script logic
+        window.onload = function() {
+            updateMathBreakdown();
+            drawScene();
+        }
+    </script>
+</body>
+</html>
