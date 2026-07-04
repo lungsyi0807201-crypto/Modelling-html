@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Sphere Plane Projection Sandbox</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #000000;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom Glowing effects */
+        .neon-glow-green {
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);
+            border-color: rgba(52, 211, 153, 1);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+        }
+        .neon-text-purple {
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+        }
+        .neon-text-blue {
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- HUD Header Panel -->
+    <header class="absolute top-0 left-0 w-full z-20 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="pointer-events-auto">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600/20 border border-indigo-500/40 p-2 rounded-xl">
+                        <i class="fa-solid fa-arrows-spin text-indigo-400 text-lg animate-spin" style="animation-duration: 6s;"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold tracking-tight text-white font-display">Dimensional Intersect Engine</h1>
+                        <p class="text-xs text-indigo-400 font-medium">4D Hypersphere &rarr; 3D Laboratory Room Slice Simulator</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 pointer-events-auto">
+                <!-- Mode Selector Switches -->
+                <button id="btn-view-3d" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-lg border border-indigo-500/50 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cubes"></i> 3D Laboratory Room
+                </button>
+                <button id="btn-view-2d" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i> Flatland Analogy
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 z-0 w-full h-full"></div>
+
+    <!-- Right-Hand Instrument Control Console HUD -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-6 z-10 w-[92%] md:w-[360px] max-h-[85vh] overflow-y-auto bg-black/85 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
+        
+        <!-- Live Instrument Readouts -->
+        <div class="border-b border-slate-800/60 pb-3 flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Hologram Telemetry Instruments</span>
+                <span id="txt-simulation-state" class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">INITIATING</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center mt-1">
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold">W-Offset</div>
+                    <div id="val-y-pos" class="text-sm font-mono font-semibold text-blue-400 neon-text-blue mt-0.5">+0.00 m</div>
+                </div>
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold">Slice Rad (r)</div>
+                    <div id="val-intersect-radius" class="text-sm font-mono font-semibold text-purple-400 neon-text-purple mt-0.5">0.00 m</div>
+                </div>
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold">Slice Vol (V)</div>
+                    <div id="val-intersect-area" class="text-sm font-mono font-semibold text-purple-400 neon-text-purple mt-0.5">0.00 m³</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slider controls -->
+        <div class="flex flex-col gap-4">
+            <!-- Manual Height Slider -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">W-Axis Position (Hyperspace Coordinate)</span>
+                    <span id="slider-height-badge" class="font-mono text-indigo-400 bg-indigo-950/40 px-1.5 py-0.5 rounded text-[10px] border border-indigo-900/30">0.00 m</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-height" 
+                    min="-4" 
+                    max="4" 
+                    step="0.02" 
+                    value="4" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none"
+                >
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+                    <span>Hidden (-W)</span>
+                    <span>Max Size (W=0)</span>
+                    <span>Hidden (+W)</span>
+                </div>
+            </div>
+
+            <!-- Sphere Size/Radius Slider -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">4D Hyper-Radius (Max R)</span>
+                    <span id="slider-radius-badge" class="font-mono text-purple-400 bg-purple-950/40 px-1.5 py-0.5 rounded text-[10px] border border-purple-900/30">R = 2.00m</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-radius" 
+                    min="1.0" 
+                    max="3.0" 
+                    step="0.05" 
+                    value="2.0" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500 focus:outline-none"
+                >
+            </div>
+            
+            <!-- Animation Controls -->
+            <div class="border-t border-slate-800/60 pt-3 flex flex-col gap-3">
+                <div class="flex gap-2.5">
+                    <button id="btn-play-pause" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/10">
+                        <i id="play-icon" class="fa-solid fa-play"></i>
+                        <span id="play-text">Auto Transition Loop</span>
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all text-slate-300 py-2 px-3.5 rounded-xl text-xs font-semibold flex items-center justify-center border border-slate-700">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-slate-400 font-medium">Automatic Transition Speed</label>
+                    <input 
+                        type="range" 
+                        id="slider-speed" 
+                        min="0.005" 
+                        max="0.04" 
+                        step="0.005" 
+                        value="0.015" 
+                        class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+                    >
+                </div>
+            </div>
+
+            <!-- Context Info Text -->
+            <div id="instructional-tip" class="border-t border-slate-800/60 pt-3 bg-indigo-950/10 p-3 rounded-xl border border-indigo-900/10 text-[11px] text-slate-400 leading-relaxed">
+                <strong class="text-slate-200">Geometric Intuition:</strong> 
+                The 4D Hypersphere does not move physically in our room. As it moves through the W-axis, we only witness a 3D slice of its volume expanding and shrinking symmetrically from the center!
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls Library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Simulation Script Logic -->
+    <script>
+        window.onload = function () {
+            // Scene Setup
+            const container = document.getElementById("canvas-container");
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            // Camera Setup
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            // Renderer Setup
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Orbit Controls setup
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Restrict camera from dipping too far below grid floor
+
+            // Camera position setters
+            function resetCamera3D() {
+                camera.position.set(6, 4.5, 7.5);
+                controls.target.set(0, 0, 0);
+                controls.enabled = true;
+                controls.update();
+            }
+            
+            function resetCamera2D() {
+                camera.position.set(0, 10, 0.001); // top down for Flatland analog view
+                controls.target.set(0, 0, 0);
+                controls.enabled = false; // lock rotation to enforce Flatlander perspective
+                controls.update();
+            }
+
+            resetCamera3D();
+
+            // Lighting Setup - Cinematic Studio Setup
+            const ambientLight = new THREE.AmbientLight(0x080810, 0.5);
+            scene.add(ambientLight);
+
+            // Magenta Key Light (represented inside the laboratory theme)
+            const lightMagenta = new THREE.DirectionalLight(0xd946ef, 1.5);
+            lightMagenta.position.set(5, 7, 5);
+            scene.add(lightMagenta);
+
+            // Cyan Fill Light
+            const lightCyan = new THREE.DirectionalLight(0x06b6d4, 0.8);
+            lightCyan.position.set(-5, 4, -5);
+            scene.add(lightCyan);
+
+            // Strong White Rim Light pointing up from underneath the grid
+            const lightWhiteRim = new THREE.DirectionalLight(0x38bdf8, 1.2);
+            lightWhiteRim.position.set(0, -6, 0);
+            scene.add(lightWhiteRim);
+
+            // 1. GRID FLOOR (Providing laboratory perspective)
+            const floorGrid = new THREE.GridHelper(15, 30, 0x1e293b, 0x080c14);
+            floorGrid.position.y = -2.5;
+            floorGrid.material.opacity = 0.4;
+            floorGrid.material.transparent = true;
+            scene.add(floorGrid);
+
+            // 2. THE 3D LAB ROOM CUBE (Faint Neon-Blue Holographic Frame)
+            // Centered at (0,0,0) inside our viewport
+            const boxSize = 5.0;
+            const boxGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+            const boxEdges = new THREE.EdgesGeometry(boxGeo);
+            const boxLineMat = new THREE.LineBasicMaterial({
+                color: 0x00d2ff,
+                transparent: true,
+                opacity: 0.18,
+                linewidth: 2
+            });
+            const roomFrame = new THREE.LineSegments(boxEdges, boxLineMat);
+            scene.add(roomFrame);
+
+            // Solid semi-transparent room backdrop faces to catch light
+            const roomBackdropGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+            const roomBackdropMat = new THREE.MeshBasicMaterial({
+                color: 0x010409,
+                transparent: true,
+                opacity: 0.05,
+                side: THREE.BackSide
+            });
+            const roomBackdrop = new THREE.Mesh(roomBackdropGeo, roomBackdropMat);
+            scene.add(roomBackdrop);
+
+            // 3. GLOWING HOLOGRAPHIC PURPLE SPHERE
+            // Suspended at the exact center (0,0,0) of our room cage
+            let hyperRadius = 2.0; // R
+            let wOffset = 4.0; // starts completely out-of-phase
+
+            const sphereGeo = new THREE.SphereGeometry(1, 64, 64); // normalized radius=1
+            const sphereMat = new THREE.MeshStandardMaterial({
+                color: 0xc084fc,          // Light Purple Core
+                emissive: 0x581c87,       // Deep Violet Glow Shading
+                roughness: 0.05,
+                metalness: 0.9,
+                transparent: true,
+                opacity: 0.85
+            });
+            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            scene.add(sphereMesh);
+
+            // Fine wireframe wrapper to give the sphere a tech/hologram grid texture
+            const sphereWireMat = new THREE.MeshBasicMaterial({
+                color: 0xe879f9,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.06
+            });
+            const sphereWire = new THREE.Mesh(sphereGeo, sphereWireMat);
+            sphereWire.scale.set(1.005, 1.005, 1.005); // slightly larger to avoid rendering overlaps
+            sphereMesh.add(sphereWire);
+
+            // 4. NEON-GREEN INTERSECTION RING
+            // Shown when in "Flatland Analogy" mode or as a coordinate slice guide
+            const ringGeo = new THREE.RingGeometry(0.97, 1.0, 64);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x10b981,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide
+            });
+            const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            ringMesh.rotation.x = -Math.PI / 2;
+            ringMesh.position.y = 0; // sits at plane center
+            scene.add(ringMesh);
+
+            const innerAreaGeo = new THREE.CircleGeometry(0.97, 64);
+            const innerAreaMat = new THREE.MeshBasicMaterial({
+                color: 0x10b981,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide
+            });
+            const innerAreaMesh = new THREE.Mesh(innerAreaGeo, innerAreaMat);
+            innerAreaMesh.rotation.x = -Math.PI / 2;
+            innerAreaMesh.position.y = -0.001; // prevent ring Z-overlap
+            scene.add(innerAreaMesh);
+
+            // UI Elements
+            const view3dBtn = document.getElementById("btn-view-3d");
+            const view2dBtn = document.getElementById("btn-view-2d");
+            const heightSlider = document.getElementById("slider-height");
+            const radiusSlider = document.getElementById("slider-radius");
+            const playPauseBtn = document.getElementById("btn-play-pause");
+            const playIcon = document.getElementById("play-icon");
+            const playText = document.getElementById("play-text");
+            const resetBtn = document.getElementById("btn-reset");
+            const speedSlider = document.getElementById("slider-speed");
+            
+            // HUD readouts
+            const valWPos = document.getElementById("val-y-pos");
+            const valRadius = document.getElementById("val-intersect-radius");
+            const valVol = document.getElementById("val-intersect-area");
+            const badgeHeight = document.getElementById("slider-height-badge");
+            const badgeRadius = document.getElementById("slider-radius-badge");
+            const stateLabel = document.getElementById("txt-simulation-state");
+            const tipBox = document.getElementById("instructional-tip");
+
+            // Simulation Loop and State Machine Variables
+            let isPlaying = true;
+            let currentView = "3D"; // "3D" or "2D"
+            
+            // Custom state variables for expansion, holding and shrinking transitions
+            let playState = "EXPANDING"; // "EXPANDING", "HOLDING", "SHRINKING", "PAUSED_OUT_OF_PHASE"
+            let stateTimer = 0; // tracking holds
+
+            function syncSimulationState() {
+                // Update configurations
+                hyperRadius = parseFloat(radiusSlider.value);
+                
+                // Keep altitude slider bounds aligned to max radius
+                heightSlider.min = -hyperRadius * 1.5;
+                heightSlider.max = hyperRadius * 1.5;
+
+                // Sync slider values
+                heightSlider.value = wOffset.toFixed(2);
+                badgeHeight.textContent = `${wOffset > 0 ? '+' : ''}${wOffset.toFixed(2)} w-m`;
+                badgeRadius.textContent = `R = ${hyperRadius.toFixed(2)} m`;
+
+                // Calculate Intersecting Volume properties
+                const distToWCenter = Math.abs(wOffset);
+                const isIntersecting = distToWCenter < hyperRadius;
+                
+                if (isIntersecting) {
+                    // Radius of the 3D sphere slice is derived from: r = sqrt(R^2 - w^2)
+                    const sliceRadius = Math.sqrt(hyperRadius * hyperRadius - distToWCenter * distToWCenter);
+                    
+                    // Volume of a 3D sphere: V = 4/3 * PI * r^3
+                    const sliceVolume = (4/3) * Math.PI * Math.pow(sliceRadius, 3);
+
+                    // Show holographic sphere with its updated slice radius scale
+                    sphereMesh.visible = (currentView === "3D");
+                    sphereMesh.scale.set(sliceRadius, sliceRadius, sliceRadius);
+                    
+                    // Show corresponding flat rings
+                    ringMesh.visible = true;
+                    innerAreaMesh.visible = true;
+                    ringMesh.scale.set(sliceRadius, sliceRadius, 1);
+                    innerAreaMesh.scale.set(sliceRadius, sliceRadius, 1);
+
+                    // Update HUD readouts
+                    valWPos.textContent = `${wOffset > 0 ? '+' : ''}${wOffset.toFixed(2)} m`;
+                    valRadius.textContent = `${sliceRadius.toFixed(2)} m`;
+                    valVol.textContent = `${sliceVolume.toFixed(2)} m³`;
+
+                    // Subtle interactive glow shift when fully inside the room
+                    boxLineMat.color.setHex(0xa855f7); // Glowing purple room edges
+                } else {
+                    // Out of bounds - Slice is hidden
+                    sphereMesh.visible = false;
+                    ringMesh.visible = false;
+                    innerAreaMesh.visible = false;
+
+                    // Reset HUD readouts
+                    valWPos.textContent = `${wOffset > 0 ? '+' : ''}${wOffset.toFixed(2)} m`;
+                    valRadius.textContent = `0.00 m`;
+                    valVol.textContent = `0.00 m³`;
+
+                    // Default Neon Blue edges
+                    boxLineMat.color.setHex(0x00d2ff);
+                }
+            }
+
+            // Mode Changer logic
+            view3dBtn.addEventListener("click", () => {
+                currentView = "3D";
+                view3dBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-lg border border-indigo-500/50 flex items-center gap-1.5";
+                view2dBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                
+                roomFrame.visible = true;
+                floorGrid.visible = true;
+                resetCamera3D();
+                syncSimulationState();
+                
+                tipBox.innerHTML = `<strong class="text-slate-200">Geometric Intuition:</strong> The 4D Hypersphere does not move physically in our room. As it moves through the W-axis, we only witness a 3D slice of its volume expanding and shrinking symmetrically from the center!`;
+            });
+
+            view2dBtn.addEventListener("click", () => {
+                currentView = "2D";
+                view2dBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow-lg border border-emerald-500/50 flex items-center gap-1.5";
+                view3dBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                
+                // In top-down mode, hide the 3D room constructs and the solid sphere
+                sphereMesh.visible = false;
+                roomFrame.visible = false;
+                floorGrid.visible = false;
+                resetCamera2D();
+                syncSimulationState();
+                
+                tipBox.innerHTML = `<strong class="text-slate-200">Flatland Observer:</strong> You are locked in a 2D Flatland view. As the 3D sphere passes through, you see a flat neon circular plane materialize, expand, shrink, and vanish.`;
+            });
+
+            // Sliders Inputs
+            heightSlider.addEventListener("input", (e) => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                wOffset = parseFloat(e.target.value);
+                syncSimulationState();
+            });
+
+            radiusSlider.addEventListener("input", () => {
+                syncSimulationState();
+            });
+
+            // Play/Pause drop loop
+            function updatePlayStateIcon() {
+                if (isPlaying) {
+                    playIcon.className = "fa-solid fa-pause";
+                    playText.textContent = "Pause Loop";
+                    playPauseBtn.className = "flex-1 bg-amber-600 hover:bg-amber-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-600/10";
+                } else {
+                    playIcon.className = "fa-solid fa-play";
+                    playText.textContent = "Auto Loop";
+                    playPauseBtn.className = "flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/10";
+                }
+            }
+
+            playPauseBtn.addEventListener("click", () => {
+                isPlaying = !isPlaying;
+                updatePlayStateIcon();
+            });
+
+            resetBtn.addEventListener("click", () => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                wOffset = -hyperRadius * 1.5; // Starts out of phase (hidden negative w)
+                playState = "EXPANDING";
+                stateTimer = 0;
+                syncSimulationState();
+            });
+
+            // Handle browser resizing gracefully
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Setup the main animation loop with custom state machine tracking
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (isPlaying) {
+                    const speed = parseFloat(speedSlider.value);
+
+                    switch (playState) {
+                        case "EXPANDING":
+                            stateLabel.textContent = "EXPANDING SLICE";
+                            stateLabel.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                            
+                            // W-offset approaches 0 from the negative side
+                            wOffset += speed;
+                            if (wOffset >= 0) {
+                                wOffset = 0; // lock at center
+                                playState = "HOLDING";
+                                stateTimer = 0; // reset timer
+                            }
+                            break;
+
+                        case "HOLDING":
+                            stateLabel.textContent = "MAX VOLUME HOLD";
+                            stateLabel.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                            
+                            // Hold at exactly W=0 (Max Volume) for approximately 1 second
+                            // At 60fps, 1 second is roughly 60 animation updates
+                            stateTimer += 1;
+                            if (stateTimer >= 60) {
+                                playState = "SHRINKING";
+                            }
+                            break;
+
+                        case "SHRINKING":
+                            stateLabel.textContent = "COLLAPSING SLICE";
+                            stateLabel.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                            
+                            // W-offset continues positive to shrink the slice
+                            wOffset += speed;
+                            if (wOffset >= hyperRadius * 1.3) {
+                                playState = "PAUSED_OUT_OF_PHASE";
+                                stateTimer = 0;
+                            }
+                            break;
+
+                        case "PAUSED_OUT_OF_PHASE":
+                            stateLabel.textContent = "OUT OF SPACE";
+                            stateLabel.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20";
+                            
+                            // Pause slightly at the empty phase before repeating
+                            stateTimer += 1;
+                            if (stateTimer >= 30) {
+                                wOffset = -hyperRadius * 1.3; // loop back to initial out-of-phase point
+                                playState = "EXPANDING";
+                            }
+                            break;
+                    }
+
+                    syncSimulationState();
+                } else {
+                    stateLabel.textContent = "PAUSED INSTRUMENT";
+                    stateLabel.className = "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20";
+                }
+
+                // Smoothly update orbit controls
+                if (currentView === "3D") {
+                    controls.update();
+                    
+                    // Gently rotate the room frames to give extra dimensional perspective
+                    roomFrame.rotation.y += 0.002;
+                    roomBackdrop.rotation.y += 0.002;
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            // Sync initial state and kick off animation on loaded trigger
+            wOffset = -hyperRadius * 1.3;
+            syncSimulationState();
+            updatePlayStateIcon();
+            animate();
+        };
+    </script>
+</body>
+</html>

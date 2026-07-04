@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Sphere Slicing & Integration Sandbox</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #000000;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom glowing effects */
+        .neon-glow-magenta {
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+            border-color: rgba(236, 72, 153, 0.4);
+        }
+        .neon-text-magenta {
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- HUD Top Header -->
+    <header class="absolute top-0 left-0 w-full z-20 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="pointer-events-auto">
+                <div class="flex items-center gap-3">
+                    <div class="bg-pink-600/20 border border-pink-500/40 p-2.5 rounded-xl shadow-lg shadow-pink-500/10">
+                        <i class="fa-solid fa-layer-group text-pink-400 text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold tracking-tight text-white font-display">Calculus Slicing Engine</h1>
+                        <p class="text-xs text-pink-400 font-medium">Volumetric Integration & Riemann Sum Sphere Sandbox</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 pointer-events-auto">
+                <!-- Preset Options -->
+                <button id="btn-toggle-orbit" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-pink-600 hover:bg-pink-500 text-white shadow-lg border border-pink-500/50 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-spin"></i> Auto-Rotate Cam
+                </button>
+                <button id="btn-toggle-hud" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-300 hover:text-white border border-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye-slash"></i> Hide Overlays
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 z-0 w-full h-full"></div>
+
+    <!-- Right-Hand Control Console / Dashboard -->
+    <div id="control-panel" class="absolute bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-6 z-10 w-[92%] md:w-[380px] max-h-[85vh] overflow-y-auto bg-black/85 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-5 shadow-2xl flex flex-col gap-4 transition-all duration-300">
+        
+        <!-- Interactive Calculative Metrics -->
+        <div class="border-b border-slate-800/60 pb-3 flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-pink-400">Volumetric Telemetry</span>
+                <span id="badge-approximation" class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">RIEMANN SUM ACTIVE</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center mt-1">
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Disk Volume</div>
+                    <div id="val-approx-vol" class="text-xs font-mono font-semibold text-pink-400 neon-text-magenta mt-0.5">0.00 u³</div>
+                </div>
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">True Vol</div>
+                    <div id="val-true-vol" class="text-xs font-mono font-semibold text-cyan-400 neon-text-cyan mt-0.5">0.00 u³</div>
+                </div>
+                <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Diff Error</div>
+                    <div id="val-error-pct" class="text-xs font-mono font-semibold text-emerald-400 neon-text-green mt-0.5">0.00%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disc Inspector Readouts (Shown when a disc is selected) -->
+        <div id="inspector-card" class="hidden bg-slate-950/60 border border-emerald-500/30 rounded-xl p-3 flex flex-col gap-1.5 transition-all">
+            <div class="flex justify-between items-center border-b border-slate-800/40 pb-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> Slice Inspector
+                </span>
+                <button id="btn-close-inspector" class="text-slate-400 hover:text-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs font-mono mt-1">
+                <div class="text-slate-400">Slice Index: <span id="inspect-idx" class="text-emerald-400">0</span></div>
+                <div class="text-slate-400">Y Coordinate: <span id="inspect-y" class="text-emerald-400">0.00m</span></div>
+                <div class="text-slate-400">Local Radius: <span id="inspect-r" class="text-emerald-400">0.00m</span></div>
+                <div class="text-slate-400">Slice Volume: <span id="inspect-vol" class="text-emerald-400">0.00m³</span></div>
+            </div>
+        </div>
+
+        <!-- Interactive Sliders -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- Slice Count Slider (N) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">Slice Resolution (Count: N)</span>
+                    <span id="slider-slices-badge" class="font-mono text-pink-400 bg-pink-950/40 px-1.5 py-0.5 rounded text-[10px] border border-pink-900/30">N = 20</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-slices" 
+                    min="6" 
+                    max="60" 
+                    step="1" 
+                    value="24" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-pink-500 focus:outline-none"
+                >
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+                    <span>Low Res (Riemann)</span>
+                    <span>High Res (Continuous limit)</span>
+                </div>
+            </div>
+
+            <!-- Dispersal / Separation Slider (Y accordion scale) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">Slice Dispersal (accordion spacing)</span>
+                    <span id="slider-dispersal-badge" class="font-mono text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded text-[10px] border border-cyan-900/30">0.00x</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-dispersal" 
+                    min="0.0" 
+                    max="3.0" 
+                    step="0.02" 
+                    value="0.0" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-cyan-500 focus:outline-none"
+                >
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+                    <span>Solid Sphere (0.0x)</span>
+                    <span>Expanded Stack (3.0x)</span>
+                </div>
+            </div>
+
+            <!-- Sphere Size Slider -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">Sphere Base Radius (R)</span>
+                    <span id="slider-radius-badge" class="font-mono text-purple-400 bg-purple-950/40 px-1.5 py-0.5 rounded text-[10px] border border-purple-900/30">R = 2.00m</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-radius" 
+                    min="1.0" 
+                    max="3.0" 
+                    step="0.1" 
+                    value="2.0" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500 focus:outline-none"
+                >
+            </div>
+            
+            <!-- Animation playback controls -->
+            <div class="border-t border-slate-800/60 pt-3 flex flex-col gap-3">
+                <div class="flex gap-2.5">
+                    <button id="btn-play-pause" class="flex-1 bg-pink-600 hover:bg-pink-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-pink-600/10">
+                        <i id="play-icon" class="fa-solid fa-play"></i>
+                        <span id="play-text">Auto Dispersal Loop</span>
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all text-slate-300 py-2 px-3.5 rounded-xl text-xs font-semibold flex items-center justify-center border border-slate-700">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                        <span>Auto Loop Speed</span>
+                        <span id="speed-badge" class="font-mono text-slate-400">Normal</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        id="slider-speed" 
+                        min="0.005" 
+                        max="0.04" 
+                        step="0.005" 
+                        value="0.015" 
+                        class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+                    >
+                </div>
+            </div>
+
+            <!-- Context Info Text -->
+            <div id="instructional-tip" class="border-t border-slate-800/60 pt-3 bg-pink-950/10 p-3 rounded-xl border border-pink-900/10 text-[11px] text-slate-400 leading-relaxed">
+                <strong class="text-slate-200">How to teach Calculus Integration:</strong> 
+                Animate the stack. Increase slice count <em class="text-pink-400">N</em>. Watch how the approximate volume converges on the true value as slice thickness <em class="text-cyan-400">&Delta;y</em> approaches zero!
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls Library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Simulation Logic Script -->
+    <script>
+        window.onload = function () {
+            // Scene & Renderer initialization
+            const container = document.getElementById("canvas-container");
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(5.5, 4.5, 7.0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Controls setup
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.15; // prevent camera clipping below floor plane
+
+            // Lighting Setup (Cinematic Dual-Tone Studio lighting)
+            const ambientLight = new THREE.AmbientLight(0x0a0a14, 0.6);
+            scene.add(ambientLight);
+
+            const lightPink = new THREE.DirectionalLight(0xec4899, 1.8); // Magenta key light
+            lightPink.position.set(6, 6, 4);
+            scene.add(lightPink);
+
+            const lightCyan = new THREE.DirectionalLight(0x06b6d4, 1.2); // Cyan fill light
+            lightCyan.position.set(-6, 4, -4);
+            scene.add(lightCyan);
+
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            rimLight.position.set(0, -6, 0);
+            scene.add(rimLight);
+
+            // Decorative Grid floor
+            const gridFloor = new THREE.GridHelper(12, 24, 0x1e293b, 0x0a0d16);
+            gridFloor.position.y = -3.5;
+            gridFloor.material.opacity = 0.35;
+            gridFloor.material.transparent = true;
+            scene.add(gridFloor);
+
+            // Volumetric Discs arrays
+            let discsArray = [];
+            let highlightedDisc = null;
+            let currentSeparation = 0.0; // accordion separation offset scalar
+            let currentSlices = 24; // N
+            let currentRadius = 2.0; // R
+
+            // Laser/Slicer cutting guide lines (glowing cylinder)
+            const laserLineGeo = new THREE.CylinderGeometry(0.015, 0.015, 7.5, 8);
+            const laserLineMat = new THREE.MeshBasicMaterial({
+                color: 0x10b981,
+                transparent: true,
+                opacity: 0.0, // hidden by default until selection
+                visible: false
+            });
+            const laserLineMesh = new THREE.Mesh(laserLineGeo, laserLineMat);
+            scene.add(laserLineMesh);
+
+            // UI Elements
+            const sliderSlices = document.getElementById("slider-slices");
+            const sliderDispersal = document.getElementById("slider-dispersal");
+            const sliderRadius = document.getElementById("slider-radius");
+            const badgeSlices = document.getElementById("slider-slices-badge");
+            const badgeDispersal = document.getElementById("slider-dispersal-badge");
+            const badgeRadius = document.getElementById("slider-radius-badge");
+            const badgeApprox = document.getElementById("val-approx-vol");
+            const badgeTrue = document.getElementById("val-true-vol");
+            const badgeError = document.getElementById("val-error-pct");
+            
+            // Playback controls
+            const playPauseBtn = document.getElementById("btn-play-pause");
+            const playIcon = document.getElementById("play-icon");
+            const playText = document.getElementById("play-text");
+            const resetBtn = document.getElementById("btn-reset");
+            const speedSlider = document.getElementById("slider-speed");
+            const speedBadge = document.getElementById("speed-badge");
+            const orbitBtn = document.getElementById("btn-toggle-orbit");
+            const toggleHudBtn = document.getElementById("btn-toggle-hud");
+            const controlPanel = document.getElementById("control-panel");
+
+            // Disc inspector references
+            const inspectorCard = document.getElementById("inspector-card");
+            const inspectCloseBtn = document.getElementById("btn-close-inspector");
+            const inspectIdx = document.getElementById("inspect-idx");
+            const inspectY = document.getElementById("inspect-y");
+            const inspectR = document.getElementById("inspect-r");
+            const inspectVol = document.getElementById("inspect-vol");
+
+            let isPlaying = true;
+            let playDirection = 1; // 1 for expanding, -1 for collapsing
+            let isAutoOrbit = true;
+
+            // Mathematical Slices Generator
+            function buildSphereSlices() {
+                // Clear out existing slice meshes
+                discsArray.forEach(disc => {
+                    scene.remove(disc.mesh);
+                    disc.geometry.dispose();
+                    disc.material.dispose();
+                    if (disc.edges) {
+                        scene.remove(disc.edges);
+                        disc.edges.geometry.dispose();
+                        disc.edges.material.dispose();
+                    }
+                });
+                discsArray = [];
+                highlightedDisc = null;
+                hideInspector();
+
+                const R = currentRadius;
+                const N = currentSlices;
+                const thickness = (2 * R) / N; // dy
+
+                let accumulatedApproximatedVolume = 0.0;
+
+                for (let i = 0; i < N; i++) {
+                    // Center altitude Y of each cylinder slice:
+                    // Y spans from -R to +R
+                    const sliceY_base = -R + (i + 0.5) * thickness;
+
+                    // Pythagoras: R^2 = r^2 + y^2 => r = sqrt(R^2 - y^2)
+                    const sliceRadius = Math.sqrt(Math.max(0.01, R * R - sliceY_base * sliceY_base));
+
+                    // Volume of this individual cylinder disk: V = pi * r^2 * dy
+                    const discVol = Math.PI * sliceRadius * sliceRadius * thickness;
+                    accumulatedApproximatedVolume += discVol;
+
+                    // Generate cylinder geometry
+                    // we construct it slightly smaller than thickness to keep a clean visible slicing gap!
+                    const spacingGap = thickness * 0.94;
+                    const cylGeo = new THREE.CylinderGeometry(sliceRadius, sliceRadius, spacingGap, 36);
+                    
+                    // Create beautiful translucent glass material with hot pink shading
+                    const cylMat = new THREE.MeshStandardMaterial({
+                        color: 0xec4899,
+                        emissive: 0x471830,
+                        roughness: 0.1,
+                        metalness: 0.6,
+                        transparent: true,
+                        opacity: 0.72,
+                        side: THREE.DoubleSide
+                    });
+
+                    const discMesh = new THREE.Mesh(cylGeo, cylMat);
+                    discMesh.position.set(0, sliceY_base, 0);
+                    scene.add(discMesh);
+
+                    // Glowing neon cyan boundary loop lines for the cylinder top and bottom caps
+                    const capRingGeo = new THREE.RingGeometry(sliceRadius - 0.015, sliceRadius + 0.015, 48);
+                    const capRingMat = new THREE.MeshBasicMaterial({
+                        color: 0x06b6d4,
+                        transparent: true,
+                        opacity: 0.85,
+                        side: THREE.DoubleSide
+                    });
+
+                    // Top Ring
+                    const topRing = new THREE.Mesh(capRingGeo, capRingMat);
+                    topRing.rotation.x = -Math.PI / 2;
+                    topRing.position.y = spacingGap / 2 + 0.002;
+                    discMesh.add(topRing);
+
+                    // Bottom Ring
+                    const bottomRing = new THREE.Mesh(capRingGeo, capRingMat);
+                    bottomRing.rotation.x = -Math.PI / 2;
+                    bottomRing.position.y = -spacingGap / 2 - 0.002;
+                    discMesh.add(bottomRing);
+
+                    // Attach properties to reference in animator
+                    discMesh.userData = {
+                        index: i,
+                        baseY: sliceY_base,
+                        radius: sliceRadius,
+                        volume: discVol,
+                        isHighlighted: false
+                    };
+
+                    discsArray.push({
+                        mesh: discMesh,
+                        geometry: cylGeo,
+                        material: cylMat,
+                        baseY: sliceY_base
+                    });
+                }
+
+                // Volume comparison readouts
+                const trueSphereVolume = (4/3) * Math.PI * Math.pow(R, 3);
+                const absoluteVolumeDifference = Math.abs(trueSphereVolume - accumulatedApproximatedVolume);
+                const approximationErrorPct = (absoluteVolumeDifference / trueSphereVolume) * 100;
+
+                badgeApprox.textContent = `${accumulatedApproximatedVolume.toFixed(3)} u³`;
+                badgeTrue.textContent = `${trueSphereVolume.toFixed(3)} u³`;
+                badgeError.textContent = `${approximationErrorPct.toFixed(2)}%`;
+
+                // Color code the error badge to signify convergence quality!
+                if (approximationErrorPct < 1.0) {
+                    badgeError.className = "text-xs font-mono font-semibold text-emerald-400 neon-text-green mt-0.5";
+                } else if (approximationErrorPct < 3.5) {
+                    badgeError.className = "text-xs font-mono font-semibold text-yellow-400 mt-0.5";
+                } else {
+                    badgeError.className = "text-xs font-mono font-semibold text-pink-500 neon-text-magenta mt-0.5";
+                }
+            }
+
+            // Stagger position of accordion discs dynamically
+            function updateSliceSeparation() {
+                discsArray.forEach(disc => {
+                    // Position transforms scale linearly outward from center along Y-axis:
+                    // Y = Y_base * (1 + separationScale)
+                    disc.mesh.position.y = disc.baseY * (1 + currentSeparation);
+                });
+                
+                // Track highlight coordinate guide if visible
+                if (highlightedDisc) {
+                    laserLineMesh.position.y = highlightedDisc.position.y;
+                }
+            }
+
+            // Raycasting Selector for individual Slices
+            const raycaster = new THREE.Raycaster();
+            const mouseCoord = new THREE.Vector2();
+
+            function onCanvasClick(event) {
+                // Ignore clicks if UI inputs are focused
+                if (event.target !== renderer.domElement) return;
+
+                mouseCoord.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseCoord.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouseCoord, camera);
+                const intersects = raycaster.intersectObjects(discsArray.map(d => d.mesh));
+
+                if (intersects.length > 0) {
+                    const tappedMesh = intersects[0].object;
+                    
+                    // Reset previous highlighted disc
+                    if (highlightedDisc && highlightedDisc !== tappedMesh) {
+                        highlightedDisc.material.emissive.setHex(0x471830);
+                        highlightedDisc.material.color.setHex(0xec4899);
+                    }
+
+                    highlightedDisc = tappedMesh;
+                    
+                    // Highlight selected disc with bright green laser core
+                    highlightedDisc.material.emissive.setHex(0x064e3b);
+                    highlightedDisc.material.color.setHex(0x10b981);
+
+                    // Move laser line highlight tracker plane
+                    laserLineMesh.visible = true;
+                    laserLineMat.opacity = 0.5;
+                    laserLineMesh.position.set(0, highlightedDisc.position.y, 0);
+
+                    // Show stats inside HUD
+                    const data = highlightedDisc.userData;
+                    inspectIdx.textContent = `${data.index + 1} of ${currentSlices}`;
+                    inspectY.textContent = `${data.baseY.toFixed(2)} m`;
+                    inspectR.textContent = `${data.radius.toFixed(2)} m`;
+                    inspectVol.textContent = `${data.volume.toFixed(3)} m³`;
+                    inspectorCard.classList.remove("hidden");
+                } else {
+                    // Deselect if clicking on empty space
+                    clearHighlight();
+                }
+            }
+
+            function clearHighlight() {
+                if (highlightedDisc) {
+                    highlightedDisc.material.emissive.setHex(0x471830);
+                    highlightedDisc.material.color.setHex(0xec4899);
+                }
+                highlightedDisc = null;
+                laserLineMesh.visible = false;
+                laserLineMat.opacity = 0;
+                hideInspector();
+            }
+
+            function hideInspector() {
+                inspectorCard.classList.add("hidden");
+            }
+
+            window.addEventListener("click", onCanvasClick);
+            inspectCloseBtn.addEventListener("click", clearHighlight);
+
+            // Slider input handling
+            sliderSlices.addEventListener("input", (e) => {
+                currentSlices = parseInt(e.target.value);
+                badgeSlices.textContent = `N = ${currentSlices}`;
+                buildSphereSlices();
+                updateSliceSeparation();
+            });
+
+            sliderDispersal.addEventListener("input", (e) => {
+                isPlaying = false; // pause auto loop
+                updatePlayStateIcon();
+                currentSeparation = parseFloat(e.target.value);
+                badgeDispersal.textContent = `${currentSeparation.toFixed(2)}x`;
+                updateSliceSeparation();
+            });
+
+            sliderRadius.addEventListener("input", (e) => {
+                currentRadius = parseFloat(e.target.value);
+                badgeRadius.textContent = `R = ${currentRadius.toFixed(2)}m`;
+                buildSphereSlices();
+                updateSliceSeparation();
+            });
+
+            // Toggle HUD viewability
+            let hudVisible = true;
+            toggleHudBtn.addEventListener("click", () => {
+                hudVisible = !hudVisible;
+                if (hudVisible) {
+                    controlPanel.style.opacity = "1";
+                    controlPanel.style.pointerEvents = "auto";
+                    toggleHudBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-300 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                } else {
+                    controlPanel.style.opacity = "0";
+                    controlPanel.style.pointerEvents = "none";
+                    toggleHudBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-pink-600 hover:bg-pink-500 text-white shadow-lg border border-pink-500/50 flex items-center gap-1.5";
+                }
+            });
+
+            // Playback Actions
+            function updatePlayStateIcon() {
+                if (isPlaying) {
+                    playIcon.className = "fa-solid fa-pause";
+                    playText.textContent = "Pause Loop";
+                    playPauseBtn.className = "flex-1 bg-amber-600 hover:bg-amber-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-600/10";
+                } else {
+                    playIcon.className = "fa-solid fa-play";
+                    playText.textContent = "Auto Loop";
+                    playPauseBtn.className = "flex-1 bg-pink-600 hover:bg-pink-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-pink-600/10";
+                }
+            }
+
+            playPauseBtn.addEventListener("click", () => {
+                isPlaying = !isPlaying;
+                updatePlayStateIcon();
+            });
+
+            resetBtn.addEventListener("click", () => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                currentSeparation = 0.0;
+                sliderDispersal.value = 0;
+                badgeDispersal.textContent = "0.00x";
+                updateSliceSeparation();
+                clearHighlight();
+            });
+
+            orbitBtn.addEventListener("click", () => {
+                isAutoOrbit = !isAutoOrbit;
+                if (isAutoOrbit) {
+                    orbitBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-pink-600 hover:bg-pink-500 text-white shadow-lg border border-pink-500/50 flex items-center gap-1.5";
+                } else {
+                    orbitBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-300 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                }
+            });
+
+            // Adjust Speed settings visually
+            speedSlider.addEventListener("input", (e) => {
+                const spd = parseFloat(e.target.value);
+                if (spd <= 0.01) speedBadge.textContent = "Slow";
+                else if (spd >= 0.03) speedBadge.textContent = "Fast";
+                else speedBadge.textContent = "Normal";
+            });
+
+            // Window Resizing handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Animation Frame
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Auto Dispersal expansion loops
+                if (isPlaying) {
+                    const stepVelocity = parseFloat(speedSlider.value);
+                    currentSeparation += stepVelocity * playDirection;
+
+                    if (currentSeparation >= 3.0) {
+                        currentSeparation = 3.0;
+                        playDirection = -1; // collapse back
+                    } else if (currentSeparation <= 0.0) {
+                        currentSeparation = 0.0;
+                        playDirection = 1; // expand again
+                    }
+
+                    sliderDispersal.value = currentSeparation;
+                    badgeDispersal.textContent = `${currentSeparation.toFixed(2)}x`;
+                    updateSliceSeparation();
+                }
+
+                // Smooth Camera Orbit Rotation
+                if (isAutoOrbit) {
+                    controls.autoRotate = true;
+                    controls.autoRotateSpeed = 1.0;
+                } else {
+                    controls.autoRotate = false;
+                }
+
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            // Sync original setups and run loops
+            buildSphereSlices();
+            updatePlayStateIcon();
+            animate();
+        };
+    </script>
+</body>
+</html>

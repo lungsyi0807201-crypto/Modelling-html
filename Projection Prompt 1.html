@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Sphere Plane Projection Sandbox</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #000000;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom glowing effects */
+        .neon-glow-green {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            border-color: rgba(16, 185, 129, 0.8);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+        }
+        .neon-text-purple {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- HUD Top Header -->
+    <header class="absolute top-0 left-0 w-full z-20 p-5 bg-gradient-to-b from-black/90 to-transparent pointer-events-none">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="pointer-events-auto">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600/20 border border-indigo-500/40 p-2 rounded-xl">
+                        <i class="fa-solid fa-arrows-down-to-line text-indigo-400 text-lg animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg md:text-xl font-bold tracking-tight text-white font-display">Dimensional Projection Sandbox</h1>
+                        <p class="text-xs text-indigo-400 font-medium">3D Sphere &rarr; 2D Plane Cross-Section</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 pointer-events-auto">
+                <!-- Perspective Switches -->
+                <button id="btn-view-top" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow-lg border border-emerald-500/50 flex items-center gap-1.5">
+                    <i class="fa-solid fa-camera"></i> Top-Down View
+                </button>
+                <button id="btn-view-orbit" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-spin"></i> 3D Free Orbit
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- WebGL Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 z-0 w-full h-full"></div>
+
+    <!-- HUD Instrument Panel -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-6 z-10 w-[92%] sm:w-[350px] max-h-[85vh] overflow-y-auto bg-black/85 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
+        
+        <!-- Live Telemetry Readouts -->
+        <div class="border-b border-slate-800/60 pb-3 flex flex-col gap-2">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Scientific Readout</span>
+            <div class="grid grid-cols-3 gap-2 text-center mt-1">
+                <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Altitude (y)</div>
+                    <div id="val-altitude" class="text-xs font-mono font-semibold text-purple-400 neon-text-purple mt-0.5">+0.00 m</div>
+                </div>
+                <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold font-display">Slice Rad (r)</div>
+                    <div id="val-slice-radius" class="text-xs font-mono font-semibold text-emerald-400 neon-text-green mt-0.5">0.00 m</div>
+                </div>
+                <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-900">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Slice Area</div>
+                    <div id="val-slice-area" class="text-xs font-mono font-semibold text-emerald-400 neon-text-green mt-0.5">0.00 m²</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Parameter Sliders -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- Altitude Slider (Y axis) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">Sphere Altitude (Y-axis)</span>
+                    <span id="badge-altitude" class="font-mono text-indigo-400 bg-indigo-950/40 px-1.5 py-0.5 rounded text-[10px] border border-indigo-900/30">0.00 m</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-altitude" 
+                    min="-4.5" 
+                    max="4.5" 
+                    step="0.02" 
+                    value="4.5" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none"
+                >
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+                    <span>Above Plane (+Y)</span>
+                    <span>Centered (0)</span>
+                    <span>Below Plane (-Y)</span>
+                </div>
+            </div>
+
+            <!-- Sphere Radius (R) -->
+            <div class="flex flex-col gap-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-semibold text-slate-300">Sphere Radius (R)</span>
+                    <span id="badge-radius" class="font-mono text-purple-400 bg-purple-950/40 px-1.5 py-0.5 rounded text-[10px] border border-purple-900/30">R = 2.00m</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="slider-radius" 
+                    min="1.0" 
+                    max="3.0" 
+                    step="0.05" 
+                    value="2.0" 
+                    class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500 focus:outline-none"
+                >
+            </div>
+
+            <!-- Playback Loop Controls -->
+            <div class="border-t border-slate-800/60 pt-3 flex flex-col gap-3">
+                <div class="flex gap-2.5">
+                    <button id="btn-play-pause" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/10">
+                        <i id="play-icon" class="fa-solid fa-play"></i>
+                        <span id="play-text">Auto Transition Loop</span>
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all text-slate-300 py-2 px-3.5 rounded-xl text-xs font-semibold flex items-center justify-center border border-slate-700">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs text-slate-400 font-medium">Automatic Transit Speed</label>
+                    <input 
+                        type="range" 
+                        id="slider-speed" 
+                        min="0.01" 
+                        max="0.06" 
+                        step="0.005" 
+                        value="0.02" 
+                        class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+                    >
+                </div>
+            </div>
+
+            <!-- Explanatory Tip Box -->
+            <div class="border-t border-slate-800/60 pt-3 bg-indigo-950/10 p-3 rounded-xl border border-indigo-900/10 text-[11px] text-slate-400 leading-relaxed">
+                <strong class="text-slate-200">Flatland Intuition:</strong> 
+                When looking strictly <em class="text-emerald-400">Top-Down</em>, the 3D sphere remains invisible. A 2D inhabitant only experiences the glowing neon circular slice changing over time.
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls Library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Simulation Script Logic -->
+    <script>
+        window.onload = function () {
+            // Scene Setup
+            const container = document.getElementById("canvas-container");
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Controls setup
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; // lock camera from dipping too far below horizon
+
+            // Camera perspectives
+            function setCameraTopDown() {
+                camera.position.set(0, 10, 0.001); // slight offset prevents coordinate axis locks
+                controls.target.set(0, 0, 0);
+                controls.enabled = false; // lock orbit rotation in Top-Down Mode
+                controls.update();
+            }
+
+            function setCameraOrbit() {
+                camera.position.set(5.5, 4.0, 7.0);
+                controls.target.set(0, 0, 0);
+                controls.enabled = true;
+                controls.update();
+            }
+
+            setCameraTopDown(); // Default state
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x0a0a14, 0.6);
+            scene.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xc084fc, 1.8); // Purple main light
+            keyLight.position.set(5, 8, 4);
+            scene.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.8); // Faint cyan fill
+            fillLight.position.set(-5, 4, -4);
+            scene.add(fillLight);
+
+            // 1. Semi-transparent Grid Plane (Flatland Universe) at y=0
+            const gridHelper = new THREE.GridHelper(12, 24, 0x1e293b, 0x0f172a);
+            gridHelper.position.y = 0;
+            gridHelper.material.opacity = 0.5;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+
+            // Faint solid circular disk backdrop
+            const diskGeo = new THREE.RingGeometry(0, 6, 64);
+            const diskMat = new THREE.MeshBasicMaterial({
+                color: 0x020617,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const diskMesh = new THREE.Mesh(diskGeo, diskMat);
+            diskMesh.rotation.x = -Math.PI / 2;
+            diskMesh.position.y = -0.002;
+            scene.add(diskMesh);
+
+            // 2. Solid, Glowing Purple Sphere
+            let sphereRadius = 2.0;
+            let sphereY = 4.5; // current altitude
+
+            const sphereGeo = new THREE.SphereGeometry(1, 64, 64); // Scaled dynamically
+            const sphereMat = new THREE.MeshStandardMaterial({
+                color: 0xa855f7, // glowing base
+                emissive: 0x3b0764, // ambient shadow
+                roughness: 0.1,
+                metalness: 0.7,
+                transparent: true,
+                opacity: 0.88
+            });
+            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            scene.add(sphereMesh);
+
+            // Faint wireframe wrapper for futuristic mesh definition
+            const sphereWireMat = new THREE.MeshBasicMaterial({
+                color: 0xd8b4fe,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.08
+            });
+            const sphereWire = new THREE.Mesh(sphereGeo, sphereWireMat);
+            sphereWire.scale.set(1.002, 1.002, 1.002);
+            sphereMesh.add(sphereWire);
+
+            // 3. Neon-Green 2D Circular Cross-Section
+            // The outer glowing ring
+            const ringGeo = new THREE.RingGeometry(0.97, 1.0, 64);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x10b981, // neon emerald green
+                transparent: true,
+                opacity: 0.95,
+                side: THREE.DoubleSide
+            });
+            const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            ringMesh.rotation.x = -Math.PI / 2;
+            ringMesh.position.y = 0.005; // hover barely above plane to prevent z-fight
+            scene.add(ringMesh);
+
+            // The transparent filled interior circle representing the surface area
+            const fillGeo = new THREE.CircleGeometry(0.97, 64);
+            const fillMat = new THREE.MeshBasicMaterial({
+                color: 0x10b981,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const fillMesh = new THREE.Mesh(fillGeo, fillMat);
+            fillMesh.rotation.x = -Math.PI / 2;
+            fillMesh.position.y = 0.004;
+            scene.add(fillMesh);
+
+            // UI Element bindings
+            const viewTopBtn = document.getElementById("btn-view-top");
+            const viewOrbitBtn = document.getElementById("btn-view-orbit");
+            const altitudeSlider = document.getElementById("slider-altitude");
+            const radiusSlider = document.getElementById("slider-radius");
+            const playPauseBtn = document.getElementById("btn-play-pause");
+            const playIcon = document.getElementById("play-icon");
+            const playText = document.getElementById("play-text");
+            const resetBtn = document.getElementById("btn-reset");
+            const speedSlider = document.getElementById("slider-speed");
+
+            // Telemetries HUD bindings
+            const readAltitude = document.getElementById("val-altitude");
+            const readRadius = document.getElementById("val-slice-radius");
+            const readArea = document.getElementById("val-slice-area");
+            const badgeAltitude = document.getElementById("badge-altitude");
+            const badgeRadius = document.getElementById("badge-radius");
+
+            let isPlaying = true;
+            let currentViewMode = "TOP"; // "TOP" or "ORBIT"
+            let transitDirection = -1; // -1 drops, 1 ascends
+
+            function updateSimulationState() {
+                sphereRadius = parseFloat(radiusSlider.value);
+                sphereMesh.scale.set(sphereRadius, sphereRadius, sphereRadius);
+                sphereMesh.position.y = sphereY;
+
+                // Sync HUD sliders and textual metrics
+                altitudeSlider.value = sphereY.toFixed(2);
+                badgeAltitude.textContent = `${sphereY > 0 ? '+' : ''}${sphereY.toFixed(2)} m`;
+                badgeRadius.textContent = `R = ${sphereRadius.toFixed(2)} m`;
+
+                const distToPlane = Math.abs(sphereY);
+                const hasIntersection = distToPlane < sphereRadius;
+
+                if (hasIntersection) {
+                    // Pythagoras theorem: r = sqrt(R^2 - y^2)
+                    const sliceRadius = Math.sqrt(sphereRadius * sphereRadius - distToPlane * distToPlane);
+                    const sliceArea = Math.PI * sliceRadius * sliceRadius;
+
+                    ringMesh.visible = true;
+                    fillMesh.visible = true;
+
+                    // Scale the neon circles
+                    ringMesh.scale.set(sliceRadius, sliceRadius, 1);
+                    fillMesh.scale.set(sliceRadius, sliceRadius, 1);
+
+                    // Sync instrumentation panel text
+                    readAltitude.textContent = `${sphereY > 0 ? '+' : ''}${sphereY.toFixed(2)} m`;
+                    readRadius.textContent = `${sliceRadius.toFixed(2)} m`;
+                    readArea.textContent = `${sliceArea.toFixed(2)} m²`;
+
+                    // Faint grid tint update
+                    gridHelper.material.color.setHex(0x10b981);
+                } else {
+                    ringMesh.visible = false;
+                    fillMesh.visible = false;
+
+                    readAltitude.textContent = `${sphereY > 0 ? '+' : ''}${sphereY.toFixed(2)} m`;
+                    readRadius.textContent = `0.00 m`;
+                    readArea.textContent = `0.00 m²`;
+
+                    gridHelper.material.color.setHex(0x1e293b);
+                }
+            }
+
+            // View modes click handling
+            viewTopBtn.addEventListener("click", () => {
+                currentViewMode = "TOP";
+                viewTopBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-emerald-600 text-white shadow-lg border border-emerald-500/50 flex items-center gap-1.5";
+                viewOrbitBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                
+                // Hide solid sphere so user observes exact Flatland limits
+                sphereMesh.visible = false;
+                setCameraTopDown();
+                updateSimulationState();
+            });
+
+            viewOrbitBtn.addEventListener("click", () => {
+                currentViewMode = "ORBIT";
+                viewOrbitBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-lg border border-indigo-500/50 flex items-center gap-1.5";
+                viewTopBtn.className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-slate-900 text-slate-400 hover:text-white border border-slate-800 flex items-center gap-1.5";
+                
+                sphereMesh.visible = true;
+                setCameraOrbit();
+                updateSimulationState();
+            });
+
+            // Sliders manual scrubs
+            altitudeSlider.addEventListener("input", (e) => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                sphereY = parseFloat(e.target.value);
+                updateSimulationState();
+            });
+
+            radiusSlider.addEventListener("input", () => {
+                updateSimulationState();
+            });
+
+            // Auto transitions loop actions
+            function updatePlayStateIcon() {
+                if (isPlaying) {
+                    playIcon.className = "fa-solid fa-pause";
+                    playText.textContent = "Pause Transit";
+                    playPauseBtn.className = "flex-1 bg-amber-600 hover:bg-amber-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-600/10";
+                } else {
+                    playIcon.className = "fa-solid fa-play";
+                    playText.textContent = "Auto Drop Loop";
+                    playPauseBtn.className = "flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white py-2 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/10";
+                }
+            }
+
+            playPauseBtn.addEventListener("click", () => {
+                isPlaying = !isPlaying;
+                updatePlayStateIcon();
+            });
+
+            resetBtn.addEventListener("click", () => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                sphereY = 4.5; // Start back at highest position
+                transitDirection = -1;
+                updateSimulationState();
+            });
+
+            // Handle window sizing triggers
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Primary animation cycle
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (isPlaying) {
+                    const stepVelocity = parseFloat(speedSlider.value);
+                    sphereY += stepVelocity * transitDirection;
+
+                    // Smooth bounce loop at extreme boundaries
+                    if (sphereY <= -4.5) {
+                        sphereY = -4.5;
+                        transitDirection = 1;
+                    } else if (sphereY >= 4.5) {
+                        sphereY = 4.5;
+                        transitDirection = -1;
+                    }
+
+                    updateSimulationState();
+                }
+
+                if (currentViewMode === "ORBIT") {
+                    controls.update();
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            // Initialize views
+            sphereMesh.visible = false; // Hide inside Top-Down by default
+            updateSimulationState();
+            updatePlayStateIcon();
+            animate();
+        };
+    </script>
+</body>
+</html>
