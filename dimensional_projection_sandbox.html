@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Dimensional Projection Sandbox</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-purple-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-cube text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white font-display">Flatland Explorations</h1>
+                    <p class="text-xs text-indigo-400 font-medium">Multi-Dimensional Projection Sandbox</p>
+                </div>
+            </div>
+
+            <!-- Tab Switcher with 3 Positions -->
+            <div class="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800 gap-1 w-full lg:w-auto overflow-x-auto">
+                <button id="tab-1d-btn" class="flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-md whitespace-nowrap">
+                    1D Line &larr; 2D Circle
+                </button>
+                <button id="tab-2d-btn" class="flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap">
+                    2D Plane &larr; 3D Sphere
+                </button>
+                <button id="tab-3d-btn" class="flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap">
+                    3D Space &larr; 4D Hypersphere
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Instructional Card & Live Controls (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Context Guide -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <span id="dimension-badge" class="text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md">
+                    Analogy 1: Line-land
+                </span>
+                <h2 id="concept-title" class="text-xl font-bold mt-3 mb-2 text-white font-display">How a 1D Inhabitant Sees a 2D Circle</h2>
+                <p id="concept-desc" class="text-sm text-slate-400 leading-relaxed">
+                    A "Line-lander" exists purely along a 1D line axis. When a <strong>2D Circle</strong> passes through their universe, they do not see a wheel; they only experience the physical overlap (intersection) where the circle cuts through their 1D space.
+                </p>
+                
+                <!-- Dynamic Walkthrough State Badge -->
+                <div class="mt-4 p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-start gap-3">
+                    <div id="status-icon-box" class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5 animate-pulse">
+                        <i class="fa-solid fa-circle-nodes text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Current Phase</h4>
+                        <p id="interactive-status-text" class="text-sm font-medium text-slate-200 mt-0.5">Adjust the slider below to observe the dimensional transition.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controller Panel -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-5">
+                <h3 class="text-md font-bold text-white flex items-center gap-2 font-display">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i> Simulator Controls
+                </h3>
+
+                <!-- Manual Slider -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <label id="slider-axis-label" for="object-offset-slider" class="font-medium text-slate-300">Circle Position (Y-axis)</label>
+                        <span id="slider-val-badge" class="px-2 py-0.5 rounded bg-slate-800 font-mono text-xs text-indigo-400 border border-slate-700">0 px</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        id="object-offset-slider" 
+                        min="-220" 
+                        max="220" 
+                        value="-220" 
+                        class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                    >
+                    <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                        <span id="slider-label-min">Above Line</span>
+                        <span>Centered</span>
+                        <span id="slider-label-max">Below Line</span>
+                    </div>
+                </div>
+
+                <!-- Simulation Settings -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label id="radius-label" for="object-radius" class="text-xs text-slate-400 font-medium">Circle Radius</label>
+                        <input 
+                            type="range" 
+                            id="object-radius" 
+                            min="30" 
+                            max="90" 
+                            value="60" 
+                            class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500 focus:outline-none"
+                        >
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label for="animation-speed" class="text-xs text-slate-400 font-medium">Auto-play Speed</label>
+                        <input 
+                            type="range" 
+                            id="animation-speed" 
+                            min="1" 
+                            max="5" 
+                            value="2" 
+                            class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex gap-2.5 mt-2">
+                    <button id="btn-play-pause" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition-all text-white py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10">
+                        <i id="play-icon" class="fa-solid fa-play"></i>
+                        <span id="play-text">Auto Play</span>
+                    </button>
+                    <button id="btn-reset" class="bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all text-slate-300 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center border border-slate-700">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
+                </div>
+
+                <!-- Toggle Options -->
+                <div class="border-t border-slate-800 pt-4 flex flex-col gap-3">
+                    <label class="relative flex items-center justify-between cursor-pointer">
+                        <span id="guidelines-label" class="text-xs font-medium text-slate-400">Show Projection Guidelines</span>
+                        <input type="checkbox" id="toggle-guidelines" checked class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:right-[16px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600 peer-checked:after:bg-white peer-checked:after:border-indigo-600"></div>
+                    </label>
+                    <label id="vision-noise-label-container" class="relative flex items-center justify-between cursor-pointer">
+                        <span id="vision-noise-label" class="text-xs font-medium text-slate-400">Simulate Line-lander Vision Noise</span>
+                        <input type="checkbox" id="toggle-noise" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:right-[16px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600 peer-checked:after:bg-white peer-checked:after:border-purple-600"></div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Class Challenge -->
+            <div class="bg-gradient-to-r from-indigo-950/40 to-slate-900 border border-indigo-900/30 rounded-2xl p-5 shadow-xl">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 mb-1.5">
+                    <i class="fa-regular fa-lightbulb"></i> Class Challenge
+                </h4>
+                <p id="challenge-desc" class="text-xs text-slate-300 leading-relaxed">
+                    Ask students: <em>"If a 2D square passed through the line corner-first instead of a circle, how would the Line-lander's experience change?"</em> Let them discover that the slice would expand linearly, then dramatically shift at the vertices!
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Canvases (8 Cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            
+            <!-- Main Canvas Container -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 lg:p-6 shadow-2xl flex flex-col gap-4">
+                
+                <!-- Section Header -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                        <h3 id="canvas-header-title" class="text-sm lg:text-base font-semibold text-slate-200">Interactive Projection Canvas</h3>
+                    </div>
+                    <div class="text-xs font-mono text-slate-500 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
+                        Viewport: 800x450
+                    </div>
+                </div>
+
+                <!-- Shared Canvas Workspace -->
+                <div class="relative bg-slate-950 rounded-xl border border-slate-800 overflow-hidden group">
+                    <!-- Instruction Overlay -->
+                    <div id="canvas-overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 transition-all duration-500 pointer-events-none z-10">
+                        <div class="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl mb-4 animate-bounce">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-white mb-1">Interactive Sandbox</h4>
+                        <p id="overlay-instruction" class="text-xs text-slate-400 max-w-sm mb-4">Click and drag inside the canvas to manually move the 2D circle up and down, or click play.</p>
+                        <button id="btn-dismiss-overlay" class="pointer-events-auto bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all">
+                            Got it, let's explore!
+                        </button>
+                    </div>
+
+                    <!-- Canvas -->
+                    <canvas id="projection-canvas" class="w-full block h-[450px] cursor-ns-resize"></canvas>
+                </div>
+
+                <!-- Explanation Grid showing Left view vs Right view -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <!-- Left View Explanation -->
+                    <div class="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            <h4 id="left-explain-title" class="text-xs font-bold uppercase tracking-wider text-slate-300">Left Panel (Our 2D View)</h4>
+                        </div>
+                        <p id="left-explain-desc" class="text-xs text-slate-400 leading-relaxed">
+                            We look from the "outside" of Flatland. We see a yellow 2D circle passing through a purple line representing the Line-lander's entire physical universe.
+                        </p>
+                    </div>
+
+                    <!-- Right View Explanation -->
+                    <div class="p-4 rounded-xl bg-slate-950/50 border border-slate-800/80">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            <h4 id="right-explain-title" class="text-xs font-bold uppercase tracking-wider text-slate-300">Right Panel (Inhabitant's 1D View)</h4>
+                        </div>
+                        <p id="right-explain-desc" class="text-xs text-slate-400 leading-relaxed">
+                            This is the Line-lander's perspective. Because their world has no height or width, they only experience the circle as a single line segment stretching right and left.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Mathematical Intuition Extrapolation Cheat-Sheet -->
+            <div class="bg-gradient-to-br from-indigo-950/20 to-purple-950/10 border border-indigo-900/20 rounded-2xl p-6 shadow-xl">
+                <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2 font-display">
+                    <i class="fa-solid fa-arrows-to-eye text-indigo-400"></i>
+                    Teaching Intuition: The Extrapolation Rule
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold tracking-widest text-cyan-400">Step 1: 1D Line-Land</span>
+                        <div class="my-2 flex justify-center text-indigo-400 text-lg font-mono">1D Line</div>
+                        <p class="text-[11px] text-slate-400 leading-snug">Sees points and segments appearing and collapsing from a 2D object.</p>
+                    </div>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold tracking-widest text-purple-400">Step 2: 2D Flatland</span>
+                        <div class="my-2 flex justify-center text-indigo-400 text-lg font-mono">2D Plane</div>
+                        <p class="text-[11px] text-slate-400 leading-snug">Sees expanding and shrinking circles appearing out of nowhere from a 3D sphere.</p>
+                    </div>
+                    <div class="p-3 bg-indigo-950/40 rounded-xl border border-indigo-800/30">
+                        <span class="text-[10px] uppercase font-bold tracking-widest text-amber-400">Step 3: Our 3D World</span>
+                        <div class="my-2 flex justify-center text-amber-400 text-lg font-semibold font-mono">3D Space</div>
+                        <p class="text-[11px] text-slate-300 leading-snug">We see an expanding/shrinking solid 3D sphere from a 4D hypersphere!</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-6 mt-12 bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">Interactive Classroom Tools for Higher Dimensional Geometry.</p>
+            <div class="flex gap-4 text-xs text-slate-400">
+                <span class="hover:text-indigo-400 cursor-pointer transition-colors">By Dimensional Analogy</span>
+                <span class="text-slate-700">|</span>
+                <span class="hover:text-indigo-400 cursor-pointer transition-colors font-mono">Flatland Theory</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Simulation Logic Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const canvas = document.getElementById("projection-canvas");
+            const ctx = canvas.getContext("2d");
+
+            // UI Mode Elements (Tabs)
+            const tab1dBtn = document.getElementById("tab-1d-btn");
+            const tab2dBtn = document.getElementById("tab-2d-btn");
+            const tab3dBtn = document.getElementById("tab-3d-btn");
+            let currentMode = "1D_2D"; // "1D_2D", "2D_3D", or "3D_4D"
+
+            // UI Elements
+            const circleYSlider = document.getElementById("object-offset-slider");
+            const circleRadiusSlider = document.getElementById("object-radius");
+            const animationSpeedSlider = document.getElementById("animation-speed");
+            const playPauseBtn = document.getElementById("btn-play-pause");
+            const playIcon = document.getElementById("play-icon");
+            const playText = document.getElementById("play-text");
+            const resetBtn = document.getElementById("btn-reset");
+            const statusText = document.getElementById("interactive-status-text");
+            const statusIconBox = document.getElementById("status-icon-box");
+            const sliderValBadge = document.getElementById("slider-val-badge");
+            const canvasOverlay = document.getElementById("canvas-overlay");
+            const dismissOverlayBtn = document.getElementById("btn-dismiss-overlay");
+            
+            // Dynamic Label References for Mode Swapping
+            const dimensionBadge = document.getElementById("dimension-badge");
+            const conceptTitle = document.getElementById("concept-title");
+            const conceptDesc = document.getElementById("concept-desc");
+            const sliderAxisLabel = document.getElementById("slider-axis-label");
+            const sliderLabelMin = document.getElementById("slider-label-min");
+            const sliderLabelMax = document.getElementById("slider-label-max");
+            const radiusLabel = document.getElementById("radius-label");
+            const visionNoiseLabelContainer = document.getElementById("vision-noise-label-container");
+            const visionNoiseLabel = document.getElementById("vision-noise-label");
+            const guidelinesLabel = document.getElementById("guidelines-label");
+            const leftExplainTitle = document.getElementById("left-explain-title");
+            const leftExplainDesc = document.getElementById("left-explain-desc");
+            const rightExplainTitle = document.getElementById("right-explain-title");
+            const rightExplainDesc = document.getElementById("right-explain-desc");
+            const challengeDesc = document.getElementById("challenge-desc");
+            const overlayInstruction = document.getElementById("overlay-instruction");
+
+            // Toggle States
+            const toggleGuidelines = document.getElementById("toggle-guidelines");
+            const toggleNoise = document.getElementById("toggle-noise");
+
+            // Physics / Projection state
+            let circleX = 200; // Fixed horizontal position for the 2D sphere center on Left panel (1D mode)
+            let sliderOffset = -220; // Bound between -220 to 220
+            let objectRadius = parseInt(circleRadiusSlider.value);
+            let isPlaying = false;
+            let direction = 1; // 1 for down/positive, -1 for up/negative
+            let isDragging = false;
+            let lastMouseX = 0;
+            let lastMouseY = 0;
+
+            // Camera Rotation State for 3D Perspective renderings
+            let cameraYaw = -0.4;  // Radians
+            let cameraPitch = 0.5; // Radians
+            
+            // Auto-rotation angle for the 4D wireframe model
+            let hypersphereRot = 0;
+
+            // Canvas constant layouts
+            const flatlineY = 225; // Middle of the height
+
+            // Precomputed 4D Hypersphere Wireframe Vertices
+            let hypersphereWireframe = null;
+
+            // High-DPI canvas handling
+            function resizeCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * window.devicePixelRatio;
+                canvas.height = rect.height * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                draw();
+            });
+            
+            resizeCanvas();
+
+            // Dismiss overlay
+            dismissOverlayBtn.addEventListener("click", () => {
+                canvasOverlay.classList.add("opacity-0", "pointer-events-none");
+            });
+
+            // Handle Tab Switching
+            tab1dBtn.addEventListener("click", () => setMode("1D_2D"));
+            tab2dBtn.addEventListener("click", () => setMode("2D_3D"));
+            tab3dBtn.addEventListener("click", () => setMode("3D_4D"));
+
+            // 4D Wireframe Generator
+            function buildHypersphereWireframe() {
+                const vertices = [];
+                const rings = []; // Indices matching contiguous circular lines
+                
+                const numPsi = 5;    // Hyperspherical Latitudes (fourth spatial angle)
+                const numTheta = 6;  // Spatial Latitudes
+                const numPhi = 12;   // Spatial Longitudes
+
+                // Circle loops along Phi angle
+                for (let i = 1; i < numPsi; i++) {
+                    const psi = (i / numPsi) * Math.PI;
+                    for (let j = 1; j < numTheta; j++) {
+                        const theta = (j / numTheta) * Math.PI;
+                        const circleIndices = [];
+                        for (let k = 0; k < numPhi; k++) {
+                            const phi = (k / numPhi) * Math.PI * 2;
+                            // Parametric 4D sphere coordinate equations
+                            const x = Math.sin(psi) * Math.sin(theta) * Math.cos(phi);
+                            const y = Math.sin(psi) * Math.sin(theta) * Math.sin(phi);
+                            const z = Math.sin(psi) * Math.cos(theta);
+                            const w = Math.cos(psi);
+                            vertices.push({x, y, z, w});
+                            circleIndices.push(vertices.length - 1);
+                        }
+                        rings.push(circleIndices);
+                    }
+                }
+
+                // Circle loops along Theta angle
+                for (let i = 1; i < numPsi; i++) {
+                    const psi = (i / numPsi) * Math.PI;
+                    for (let k = 0; k < numPhi; k++) {
+                        const phi = (k / numPhi) * Math.PI * 2;
+                        const circleIndices = [];
+                        for (let j = 0; j <= numTheta; j++) {
+                            const theta = (j / numTheta) * Math.PI;
+                            const x = Math.sin(psi) * Math.sin(theta) * Math.cos(phi);
+                            const y = Math.sin(psi) * Math.sin(theta) * Math.sin(phi);
+                            const z = Math.sin(psi) * Math.cos(theta);
+                            const w = Math.cos(psi);
+                            vertices.push({x, y, z, w});
+                            circleIndices.push(vertices.length - 1);
+                        }
+                        rings.push(circleIndices);
+                    }
+                }
+
+                hypersphereWireframe = { vertices, rings };
+            }
+
+            buildHypersphereWireframe();
+
+            function setMode(mode) {
+                currentMode = mode;
+                isPlaying = false;
+                direction = 1;
+                updatePlayStateIcon();
+                
+                // Reset active styling across tabs
+                tab1dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap";
+                tab2dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap";
+                tab3dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white whitespace-nowrap";
+
+                if (mode === "1D_2D") {
+                    tab1dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-md whitespace-nowrap";
+                    
+                    dimensionBadge.textContent = "Analogy 1: Line-land";
+                    dimensionBadge.className = "text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md";
+                    conceptTitle.textContent = "How a 1D Inhabitant Sees a 2D Circle";
+                    conceptDesc.textContent = "A \"Line-lander\" exists purely along a 1D line axis. They cannot look up or down. When a 2D Circle passes through their universe, they do not see a wheel; they only experience the physical overlap where the circle cuts through their 1D space.";
+                    
+                    sliderAxisLabel.textContent = "Circle Position (Y-axis)";
+                    sliderLabelMin.textContent = "Above Line";
+                    sliderLabelMax.textContent = "Below Line";
+                    radiusLabel.textContent = "Circle Radius";
+                    visionNoiseLabel.textContent = "Simulate Line-lander Vision Noise";
+                    guidelinesLabel.textContent = "Show Projection Guidelines";
+                    
+                    leftExplainTitle.textContent = "Left Panel (Our 2D View)";
+                    leftExplainDesc.textContent = "We look from the \"outside\" of Flatland. We see a yellow 2D circle passing through a purple line representing the Line-lander's entire physical universe.";
+                    rightExplainTitle.textContent = "Right Panel (Inhabitant's 1D View)";
+                    rightExplainDesc.textContent = "This is the Line-lander's perspective. Because their world has no height or width, they only experience the circle as a single line segment stretching right and left.";
+                    
+                    challengeDesc.innerHTML = `Ask students: <em>"If a 2D square passed through the line corner-first instead of a circle, how would the Line-lander's experience change?"</em> Let them discover that the slice would expand linearly, then dramatically shift at the vertices!`;
+                    overlayInstruction.textContent = "Click and drag inside the canvas to manually move the 2D circle up and down, or click play.";
+
+                    circleYSlider.min = -220;
+                    circleYSlider.max = 220;
+                    circleYSlider.value = -220;
+                    
+                    circleRadiusSlider.min = 30;
+                    circleRadiusSlider.max = 90;
+                    circleRadiusSlider.value = 60;
+                } else if (mode === "2D_3D") {
+                    tab2dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-md whitespace-nowrap";
+                    
+                    dimensionBadge.textContent = "Analogy 2: Flatland";
+                    dimensionBadge.className = "text-xs font-semibold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-md";
+                    conceptTitle.textContent = "How a 2D Inhabitant Sees a 3D Sphere";
+                    conceptDesc.textContent = "A \"Flatlander\" exists purely on a 2D flat plane. When a 3D Sphere drops through their universe, they cannot look up to see it coming. They only experience the 2D circular cross-sections slicing through their flat sheet universe.";
+                    
+                    sliderAxisLabel.textContent = "Sphere Position (Z-axis)";
+                    sliderLabelMin.textContent = "Above Plane";
+                    sliderLabelMax.textContent = "Below Plane";
+                    radiusLabel.textContent = "Sphere Radius";
+                    visionNoiseLabel.textContent = "Show Inhabitant's Visual Grid";
+                    guidelinesLabel.textContent = "Show Projection Guidelines";
+                    
+                    leftExplainTitle.textContent = "Left Panel (Our 3D Perspective)";
+                    leftExplainDesc.textContent = "We look at a 3D room. A flat table (the 2D universe) has a 3D sphere passing straight down through it. Drag to rotate the 3D camera angles!";
+                    rightExplainTitle.textContent = "Right Panel (Flatlander's 2D View)";
+                    rightExplainDesc.textContent = "This is the Flatlander's strictly top-down view. They see a 2D circular boundary expanding from nothing, peaking at maximum size, and then shrinking into a point.";
+                    
+                    challengeDesc.innerHTML = `Ask students: <em>"If a 4D Hypersphere passed through our 3D room, how would we experience it?"</em> Let them extrapolate that they would see a 3D solid sphere expand out of nothing and then shrink away.`;
+                    overlayInstruction.textContent = "Drag vertically to move the sphere, or drag horizontally to orbit the 3D camera angle.";
+
+                    circleYSlider.min = -180;
+                    circleYSlider.max = 180;
+                    circleYSlider.value = -180;
+
+                    circleRadiusSlider.min = 40;
+                    circleRadiusSlider.max = 90;
+                    circleRadiusSlider.value = 70;
+                } else {
+                    tab3dBtn.className = "flex-1 lg:flex-initial px-3.5 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow-md whitespace-nowrap";
+
+                    dimensionBadge.textContent = "Extrapolation: Our 3D World";
+                    dimensionBadge.className = "text-xs font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md";
+                    conceptTitle.textContent = "How We See a 4D Hypersphere Slice";
+                    conceptDesc.textContent = "As 3D inhabitants, we cannot point to or visualize a fourth spatial perpendicular axis (W). When a 4D Hypersphere passes directly through our physical space along the W-axis, we only observe its 3D spherical intersection envelope.";
+
+                    sliderAxisLabel.textContent = "Hypersphere W-axis Position";
+                    sliderLabelMin.textContent = "Out of Phase (-W)";
+                    sliderLabelMax.textContent = "Out of Phase (+W)";
+                    radiusLabel.textContent = "Hyper-Radius";
+                    visionNoiseLabel.textContent = "Show 4D Coordinate Planes";
+                    guidelinesLabel.textContent = "Faint Boundary Ghosting";
+
+                    leftExplainTitle.textContent = "Left Panel (Our 3D Room Projection)";
+                    leftExplainDesc.textContent = "Our native 3D universe. As the hypersphere passes through along W, its 3D slice manifests as a glowing physical sphere that grows and shrinks inside our space!";
+                    rightExplainTitle.textContent = "Right Panel (4D Rotator Wireframe)";
+                    rightExplainDesc.textContent = "A 4D-to-3D stereographic perspective projection of a wireframe 4D Hypersphere rotating in the XW plane. Notice the lines turning inside out!";
+
+                    challengeDesc.innerHTML = `Ask students: <em>"Does the hypersphere move in 3D space during the transition?"</em> Help them realize that the object remains statically centered in our spatial coordinates; it is moving strictly through the 4th coordinate dimension.`;
+                    overlayInstruction.textContent = "Drag vertically on the left panel to transition the hypersphere, or drag on the right panel to orbit the camera.";
+
+                    circleYSlider.min = -150;
+                    circleYSlider.max = 150;
+                    circleYSlider.value = -150;
+
+                    circleRadiusSlider.min = 50;
+                    circleRadiusSlider.max = 100;
+                    circleRadiusSlider.value = 80;
+                }
+
+                objectRadius = parseInt(circleRadiusSlider.value);
+                updateDescriptionAndUI();
+                draw();
+            }
+
+            // Update interactive descriptive label based on current offset
+            function updateDescriptionAndUI() {
+                sliderOffset = parseInt(circleYSlider.value);
+                sliderValBadge.textContent = `${sliderOffset > 0 ? '+' : ''}${sliderOffset} w-px`;
+
+                const distanceToPlane = Math.abs(sliderOffset);
+                const isIntersecting = distanceToPlane < objectRadius;
+                
+                if (currentMode === "1D_2D") {
+                    if (isIntersecting) {
+                        const sliceLength = 2 * Math.sqrt(objectRadius * objectRadius - distanceToPlane * distanceToPlane);
+                        const percentage = Math.round((sliceLength / (2 * objectRadius)) * 100);
+                        statusText.textContent = `Circle is intersecting Flatland! Inhabitant experiences a line segment of ${Math.round(sliceLength)}px (${percentage}% of max).`;
+                        statusIconBox.className = "p-2 rounded-lg bg-emerald-500/10 text-emerald-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-expand text-sm"></i>`;
+                    } else if (sliderOffset < 0) {
+                        statusText.textContent = "The 2D Circle is floating above Flatland. The 1D inhabitant sees absolutely nothing.";
+                        statusIconBox.className = "p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-eye-slash text-sm"></i>`;
+                    } else {
+                        statusText.textContent = "The 2D Circle has passed completely through. It remains invisible to the 1D observer.";
+                        statusIconBox.className = "p-2 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-circle-arrow-down text-sm"></i>`;
+                    }
+                } else if (currentMode === "2D_3D") {
+                    if (isIntersecting) {
+                        const sliceRadius = Math.sqrt(objectRadius * objectRadius - distanceToPlane * distanceToPlane);
+                        const percentage = Math.round((sliceRadius / objectRadius) * 100);
+                        statusText.textContent = `Sphere intersects the table! Flatlanders observe a solid 2D circle with a radius of ${Math.round(sliceRadius)}px (${percentage}% of max).`;
+                        statusIconBox.className = "p-2 rounded-lg bg-emerald-500/10 text-emerald-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-circle-dot text-sm"></i>`;
+                    } else if (sliderOffset < 0) {
+                        statusText.textContent = "The 3D Sphere floats high above the flat tabletop. Flatlanders are completely oblivious.";
+                        statusIconBox.className = "p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-eye-slash text-sm"></i>`;
+                    } else {
+                        statusText.textContent = "The 3D Sphere has fallen completely beneath the table. It has completely popped out of their universe.";
+                        statusIconBox.className = "p-2 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-circle-chevron-down text-sm"></i>`;
+                    }
+                } else {
+                    // 3D Space & 4D Hypersphere
+                    if (isIntersecting) {
+                        const sliceRadius3D = Math.sqrt(objectRadius * objectRadius - distanceToPlane * distanceToPlane);
+                        const percentage = Math.round((sliceRadius3D / objectRadius) * 100);
+                        statusText.textContent = `Hypersphere cuts through our room! We observe a solid 3D sphere of radius ${Math.round(sliceRadius3D)}px (${percentage}% of max).`;
+                        statusIconBox.className = "p-2 rounded-lg bg-emerald-500/10 text-emerald-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-circle-nodes text-sm animate-spin"></i>`;
+                    } else if (sliderOffset < 0) {
+                        statusText.textContent = "The Hypersphere has not entered our space along the 4D (W) axis. Room is empty.";
+                        statusIconBox.className = "p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-eye-slash text-sm"></i>`;
+                    } else {
+                        statusText.textContent = "The Hypersphere has passed completely out of our 3D space to the positive W phase.";
+                        statusIconBox.className = "p-2 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5";
+                        statusIconBox.innerHTML = `<i class="fa-solid fa-right-from-bracket text-sm"></i>`;
+                    }
+                }
+            }
+
+            // 3D Matrix Projection Maths for Perspective Viewports
+            function project3D(x, y, z, centerX, centerY) {
+                // Yaw rotation (around Z-axis)
+                let x1 = x * Math.cos(cameraYaw) - y * Math.sin(cameraYaw);
+                let y1 = x * Math.sin(cameraYaw) + y * Math.cos(cameraYaw);
+                
+                // Pitch rotation (around X-axis)
+                let z2 = z * Math.cos(cameraPitch) - y1 * Math.sin(cameraPitch);
+                let y2 = z * Math.sin(cameraPitch) + y1 * Math.cos(cameraPitch);
+
+                const zoom = 1.25;
+                return {
+                    x: centerX + x1 * zoom,
+                    y: centerY - z2 * zoom,
+                    depth: y2
+                };
+            }
+
+            // Draw Loop dispatcher
+            function draw() {
+                const w = canvas.width / window.devicePixelRatio;
+                const h = canvas.height / window.devicePixelRatio;
+                const midX = w / 2;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw Panel Divider
+                ctx.strokeStyle = "#1e293b";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
+                ctx.beginPath();
+                ctx.moveTo(midX, 0);
+                ctx.lineTo(midX, h);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset
+
+                // Draw headers inside Canvas
+                ctx.font = "bold 11px 'Space Grotesk', sans-serif";
+                ctx.fillStyle = "#94a3b8";
+                ctx.textAlign = "left";
+                
+                if (currentMode === "1D_2D") {
+                    ctx.fillText("PANEL A: OUTSIDE LOOKING IN (2D VIEW)", 20, 25);
+                    ctx.fillText("PANEL B: THE LINE-LANDER'S VISION (1D VIEW)", midX + 20, 25);
+                    draw1D2DScene(w, h, midX);
+                } else if (currentMode === "2D_3D") {
+                    ctx.fillText("PANEL A: OUTSIDE 3D PERSPECTIVE", 20, 25);
+                    ctx.fillText("PANEL B: THE FLATLANDER'S VISION (2D VIEW)", midX + 20, 25);
+                    draw2D3DScene(w, h, midX);
+                } else {
+                    ctx.fillText("PANEL A: NATIVE 3D WORLD PROJECTION", 20, 25);
+                    ctx.fillText("PANEL B: 4D ROTATOR WIREFRAME (STEREOGRAPHIC)", midX + 20, 25);
+                    draw3D4DScene(w, h, midX);
+                }
+            }
+
+            // --- 1D/2D Projection Scene Render (Original Mode) ---
+            function draw1D2DScene(w, h, midX) {
+                const distanceToLine = Math.abs(sliderOffset);
+                const hasIntersection = distanceToLine < objectRadius;
+                let halfSliceWidth = 0;
+                let xStart = 0;
+                let xEnd = 0;
+
+                const circleY = flatlineY + sliderOffset;
+
+                if (hasIntersection) {
+                    halfSliceWidth = Math.sqrt(objectRadius * objectRadius - distanceToLine * distanceToLine);
+                    xStart = circleX - halfSliceWidth;
+                    xEnd = circleX + halfSliceWidth;
+                }
+
+                // --- Panel A (2D View) ---
+                // Draw Flatline (Line Universe)
+                ctx.strokeStyle = "#8b5cf6";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(10, flatlineY);
+                ctx.lineTo(midX - 10, flatlineY);
+                ctx.stroke();
+
+                ctx.font = "bold 10px monospace";
+                ctx.fillStyle = "#8b5cf6";
+                ctx.fillText("1D LINE UNIVERSE", 15, flatlineY - 8);
+
+                // Guidelines
+                if (toggleGuidelines.checked && hasIntersection) {
+                    ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, flatlineY);
+                    ctx.lineTo(midX + 50, flatlineY);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(xEnd, flatlineY);
+                    ctx.lineTo(w - 50, flatlineY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Draw moving circle with radial gradient
+                let gradient = ctx.createRadialGradient(circleX, circleY, 5, circleX, circleY, objectRadius);
+                gradient.addColorStop(0, "#fef08a");
+                gradient.addColorStop(0.5, "#eab308");
+                gradient.addColorStop(1, "#a16207");
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(circleX, circleY, objectRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = "#facc15";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw Intersection Segment highlight inside Panel A
+                if (hasIntersection) {
+                    ctx.strokeStyle = "#10b981";
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, flatlineY);
+                    ctx.lineTo(xEnd, flatlineY);
+                    ctx.stroke();
+
+                    // Highlight points
+                    ctx.fillStyle = "#34d399";
+                    ctx.beginPath();
+                    ctx.arc(xStart, flatlineY, 4, 0, Math.PI * 2);
+                    ctx.arc(xEnd, flatlineY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- Panel B (1D Inhabitant View) ---
+                const viewAxisX_Start = midX + 50;
+                const viewAxisX_End = w - 50;
+                const viewAxisY = flatlineY;
+
+                // Draw axis
+                ctx.strokeStyle = "#334155";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(viewAxisX_Start, viewAxisY);
+                ctx.lineTo(viewAxisX_End, viewAxisY);
+                ctx.stroke();
+
+                if (toggleNoise.checked) {
+                    ctx.fillStyle = "rgba(139, 92, 246, 0.15)";
+                    for (let step = viewAxisX_Start; step <= viewAxisX_End; step += 12) {
+                        ctx.beginPath();
+                        ctx.arc(step, viewAxisY, (Math.sin(step / 5) + 1.2) * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                if (hasIntersection) {
+                    const widthFraction = halfSliceWidth / objectRadius;
+                    const maxRenderWidth = (viewAxisX_End - viewAxisX_Start) / 2;
+                    const segmentHalfWidth = widthFraction * maxRenderWidth;
+
+                    const lineLanderSegmentStart = midX + (w - midX) / 2 - segmentHalfWidth;
+                    const lineLanderSegmentEnd = midX + (w - midX) / 2 + segmentHalfWidth;
+
+                    // Glow segment
+                    ctx.shadowColor = "#facc15";
+                    ctx.shadowBlur = 12;
+                    ctx.strokeStyle = "#facc15";
+                    ctx.lineWidth = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(lineLanderSegmentStart, viewAxisY);
+                    ctx.lineTo(lineLanderSegmentEnd, viewAxisY);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // Reset
+
+                    // End vertices
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(lineLanderSegmentStart, viewAxisY, 5, 0, Math.PI * 2);
+                    ctx.arc(lineLanderSegmentEnd, viewAxisY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Text metrics
+                    ctx.font = "12px monospace";
+                    ctx.fillStyle = "#facc15";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`Observed Size: ${Math.round(halfSliceWidth * 2)} units`, midX + (w - midX) / 2, viewAxisY + 32);
+                } else {
+                    ctx.font = "italic 13px 'Plus Jakarta Sans', sans-serif";
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Empty Space (Nothing Observed)", midX + (w - midX) / 2, viewAxisY - 15);
+                }
+            }
+
+            // --- 2D/3D Projection Scene Render (New Mode) ---
+            function draw2D3DScene(w, h, midX) {
+                const centerX3D = midX / 2;
+                const centerY3D = h / 2 + 10;
+                
+                const distanceToPlane = Math.abs(sliderOffset);
+                const hasIntersection = distanceToPlane < objectRadius;
+                
+                let sliceRadius3D = 0;
+                if (hasIntersection) {
+                    sliceRadius3D = Math.sqrt(objectRadius * objectRadius - sliderOffset * sliderOffset);
+                }
+
+                // Helper to draw circle flat on tabletop
+                function drawPlaneCircle(radius, strokeStyle, fillStyle, lineWidth = 2) {
+                    ctx.beginPath();
+                    const segments = 64;
+                    for (let i = 0; i <= segments; i++) {
+                        const theta = (i / segments) * Math.PI * 2;
+                        const px = radius * Math.cos(theta);
+                        const py = radius * Math.sin(theta);
+                        const screenPt = project3D(px, py, 0, centerX3D, centerY3D);
+                        if (i === 0) ctx.moveTo(screenPt.x, screenPt.y);
+                        else ctx.lineTo(screenPt.x, screenPt.y);
+                    }
+                    if (fillStyle) {
+                        ctx.fillStyle = fillStyle;
+                        ctx.fill();
+                    }
+                    if (strokeStyle) {
+                        ctx.strokeStyle = strokeStyle;
+                        ctx.lineWidth = lineWidth;
+                        ctx.stroke();
+                    }
+                }
+
+                // Grid background
+                ctx.strokeStyle = "rgba(139, 92, 246, 0.12)";
+                ctx.lineWidth = 1;
+                const gridSize = 120;
+                const gridSpacing = 20;
+                for (let xCoord = -gridSize; xCoord <= gridSize; xCoord += gridSpacing) {
+                    ctx.beginPath();
+                    const ptA = project3D(xCoord, -gridSize, 0, centerX3D, centerY3D);
+                    const ptB = project3D(xCoord, gridSize, 0, centerX3D, centerY3D);
+                    ctx.moveTo(ptA.x, ptA.y);
+                    ctx.lineTo(ptB.x, ptB.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    const ptC = project3D(-gridSize, xCoord, 0, centerX3D, centerY3D);
+                    const ptD = project3D(gridSize, xCoord, 0, centerX3D, centerY3D);
+                    ctx.moveTo(ptC.x, ptC.y);
+                    ctx.lineTo(ptD.x, ptD.y);
+                    ctx.stroke();
+                }
+
+                const sphereCenterZ = -sliderOffset; 
+                const center3DPixel = project3D(0, 0, sphereCenterZ, centerX3D, centerY3D);
+
+                function drawSphere(zOffset, r) {
+                    const grad = ctx.createRadialGradient(
+                        center3DPixel.x - r * 0.2, 
+                        center3DPixel.y - r * 0.2, 
+                        r * 0.1, 
+                        center3DPixel.x, 
+                        center3DPixel.y, 
+                        r
+                    );
+                    grad.addColorStop(0, "#cbd5e1");
+                    grad.addColorStop(0.3, "#a855f7");
+                    grad.addColorStop(0.8, "#6b21a8");
+                    grad.addColorStop(1, "#3b0764");
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(center3DPixel.x, center3DPixel.y, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Latitude outline
+                    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.ellipse(center3DPixel.x, center3DPixel.y, r, r * Math.sin(cameraPitch), 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                const sphereIsBelow = sphereCenterZ < 0;
+
+                if (sphereIsBelow) {
+                    drawSphere(sphereCenterZ, objectRadius);
+                }
+
+                // Table limits
+                drawPlaneCircle(120, "#8b5cf6", "rgba(15, 23, 42, 0.4)", 3);
+
+                if (hasIntersection) {
+                    drawPlaneCircle(sliceRadius3D, "#10b981", "rgba(16, 185, 129, 0.2)", 3);
+                }
+
+                if (!sphereIsBelow) {
+                    drawSphere(sphereCenterZ, objectRadius);
+                }
+
+                // Guidelines
+                if (toggleGuidelines.checked && hasIntersection) {
+                    ctx.strokeStyle = "rgba(16, 185, 129, 0.25)";
+                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 1.5;
+
+                    const edgeLeft = project3D(-sliceRadius3D, 0, 0, centerX3D, centerY3D);
+                    const edgeRight = project3D(sliceRadius3D, 0, 0, centerX3D, centerY3D);
+
+                    const targetX_Center = midX + (w - midX) / 2;
+                    const targetY_Center = h / 2;
+
+                    ctx.beginPath();
+                    ctx.moveTo(edgeLeft.x, edgeLeft.y);
+                    ctx.lineTo(targetX_Center - sliceRadius3D, targetY_Center);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(edgeRight.x, edgeRight.y);
+                    ctx.lineTo(targetX_Center + sliceRadius3D, targetY_Center);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // --- PANEL B: Flatlander View ---
+                const flatCenterY = h / 2;
+                const flatCenterX = midX + (w - midX) / 2;
+
+                if (toggleNoise.checked) {
+                    ctx.strokeStyle = "rgba(30, 41, 59, 0.5)";
+                    ctx.lineWidth = 1;
+                    for (let r = 30; r <= 150; r += 30) {
+                        ctx.beginPath();
+                        ctx.arc(flatCenterX, flatCenterY, r, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(flatCenterX, flatCenterY, 120, 0, Math.PI * 2);
+                ctx.stroke();
+
+                const residentAngle = -0.5;
+                const resRadius = 100;
+                const resX = flatCenterX + resRadius * Math.cos(residentAngle);
+                const resY = flatCenterY + resRadius * Math.sin(residentAngle);
+
+                // Resident Flatlander triangle
+                ctx.fillStyle = "#a755f7";
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(resX, resY - 10);
+                ctx.lineTo(resX - 8, resY + 8);
+                ctx.lineTo(resX + 8, resY + 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Eyes
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(resX - 3, resY + 2, 2, 0, Math.PI * 2);
+                ctx.arc(resX + 3, resY + 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#000000";
+                ctx.beginPath();
+                ctx.arc(resX - 3.5, resY + 1.5, 0.8, 0, Math.PI * 2);
+                ctx.arc(resX + 2.5, resY + 1.5, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Gaze boundaries
+                ctx.strokeStyle = "rgba(167, 85, 247, 0.2)";
+                ctx.beginPath();
+                ctx.moveTo(resX, resY);
+                ctx.lineTo(flatCenterX - sliceRadius3D, flatCenterY);
+                ctx.moveTo(resX, resY);
+                ctx.lineTo(flatCenterX + sliceRadius3D, flatCenterY);
+                ctx.stroke();
+
+                if (hasIntersection) {
+                    ctx.shadowColor = "#10b981";
+                    ctx.shadowBlur = 15;
+
+                    let sliceGrad = ctx.createRadialGradient(flatCenterX, flatCenterY, 5, flatCenterX, flatCenterY, sliceRadius3D);
+                    sliceGrad.addColorStop(0, "#34d399");
+                    sliceGrad.addColorStop(0.8, "#10b981");
+                    sliceGrad.addColorStop(1, "#065f46");
+
+                    ctx.fillStyle = sliceGrad;
+                    ctx.beginPath();
+                    ctx.arc(flatCenterX, flatCenterY, sliceRadius3D, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = "#34d399";
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0; // Reset
+
+                    ctx.font = "bold 11px monospace";
+                    ctx.fillStyle = "#34d399";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`Intersect Radius: ${Math.round(sliceRadius3D)} units`, flatCenterX, flatCenterY + sliceRadius3D + 25);
+                } else {
+                    ctx.font = "italic 13px 'Plus Jakarta Sans', sans-serif";
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    ctx.fillText("Empty Space (Void)", flatCenterX, flatCenterY - 10);
+                }
+            }
+
+            // --- 3D/4D Projection Scene Render (New 4D Mode!) ---
+            function draw3D4DScene(w, h, midX) {
+                const centerXLeft = midX / 2;
+                const centerYLeft = h / 2 + 10;
+
+                const distanceToWPlane = Math.abs(sliderOffset);
+                const isIntersecting = distanceToWPlane < objectRadius;
+
+                let sliceRadius3D = 0;
+                if (isIntersecting) {
+                    // Radius of the intersecting sphere is derived from the Pythagorean distance on 4D hypersphere:
+                    // r^2 + w^2 = R^2
+                    sliceRadius3D = Math.sqrt(objectRadius * objectRadius - distanceToWPlane * distanceToWPlane);
+                }
+
+                // ==================== PANEL A: 3D SPACE PROJECTION ====================
+                // Draw a perspective 3D grid cage to represent "our native 3D universe room"
+                ctx.strokeStyle = "rgba(71, 85, 105, 0.25)";
+                ctx.lineWidth = 1;
+
+                // Ground plane grid lines
+                const floorSize = 130;
+                const spacing = 26;
+                for (let x = -floorSize; x <= floorSize; x += spacing) {
+                    ctx.beginPath();
+                    let p1 = project3D(x, -floorSize, -80, centerXLeft, centerYLeft);
+                    let p2 = project3D(x, floorSize, -80, centerXLeft, centerYLeft);
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    let p3 = project3D(-floorSize, x, -80, centerXLeft, centerYLeft);
+                    let p4 = project3D(floorSize, x, -80, centerXLeft, centerYLeft);
+                    ctx.moveTo(p3.x, p3.y);
+                    ctx.lineTo(p4.x, p4.y);
+                    ctx.stroke();
+                }
+
+                // Draw Coordinate Axes inside our 3D room if toggled
+                if (toggleNoise.checked) {
+                    ctx.lineWidth = 2;
+                    // X axis (Red)
+                    ctx.strokeStyle = "rgba(239, 68, 68, 0.4)";
+                    ctx.beginPath();
+                    let axisOrigin = project3D(0, 0, 0, centerXLeft, centerYLeft);
+                    let xAxisEnd = project3D(100, 0, 0, centerXLeft, centerYLeft);
+                    ctx.moveTo(axisOrigin.x, axisOrigin.y);
+                    ctx.lineTo(xAxisEnd.x, xAxisEnd.y);
+                    ctx.stroke();
+
+                    // Y axis (Green)
+                    ctx.strokeStyle = "rgba(34, 197, 94, 0.4)";
+                    ctx.beginPath();
+                    let yAxisEnd = project3D(0, 100, 0, centerXLeft, centerYLeft);
+                    ctx.moveTo(axisOrigin.x, axisOrigin.y);
+                    ctx.lineTo(yAxisEnd.x, yAxisEnd.y);
+                    ctx.stroke();
+
+                    // Z axis (Blue)
+                    ctx.strokeStyle = "rgba(59, 130, 246, 0.4)";
+                    ctx.beginPath();
+                    let zAxisEnd = project3D(0, 0, 100, centerXLeft, centerYLeft);
+                    ctx.moveTo(axisOrigin.x, axisOrigin.y);
+                    ctx.lineTo(zAxisEnd.x, zAxisEnd.y);
+                    ctx.stroke();
+                }
+
+                // Draw ghosting boundary representing the limits of the Hypersphere
+                if (toggleGuidelines.checked) {
+                    ctx.strokeStyle = "rgba(16, 185, 129, 0.12)";
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 6]);
+                    
+                    // Draw outline circle of max hypersphere radius in 3D
+                    ctx.beginPath();
+                    let originPt = project3D(0, 0, 0, centerXLeft, centerYLeft);
+                    ctx.arc(originPt.x, originPt.y, objectRadius * 1.25, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    ctx.font = "italic 9px monospace";
+                    ctx.fillStyle = "rgba(16, 185, 129, 0.5)";
+                    ctx.fillText("4D HYPER-SHELL LIMIT", originPt.x - 55, originPt.y - objectRadius * 1.25 - 6);
+                }
+
+                // Draw the actual 3D intersecting sphere slice inside Panel A
+                if (isIntersecting) {
+                    ctx.shadowColor = "#10b981";
+                    ctx.shadowBlur = 10 + (sliceRadius3D / objectRadius) * 15;
+
+                    let originPt = project3D(0, 0, 0, centerXLeft, centerYLeft);
+                    const drawR = sliceRadius3D * 1.25; // Adjusted visual scale matching camera perspective
+
+                    // Realistic volumetric spherical gradient
+                    let sphericalGrad = ctx.createRadialGradient(
+                        originPt.x - drawR * 0.2, 
+                        originPt.y - drawR * 0.2, 
+                        drawR * 0.05, 
+                        originPt.x, 
+                        originPt.y, 
+                        drawR
+                    );
+                    sphericalGrad.addColorStop(0, "#34d399"); // specular center core
+                    sphericalGrad.addColorStop(0.4, "#059669"); // middle emerald green
+                    sphericalGrad.addColorStop(0.85, "#065f46"); // edge shade
+                    sphericalGrad.addColorStop(1, "#022c22"); // ambient shadow limits
+
+                    ctx.fillStyle = sphericalGrad;
+                    ctx.beginPath();
+                    ctx.arc(originPt.x, originPt.y, drawR, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Highlight rim
+                    ctx.strokeStyle = "#34d399";
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // Reset
+
+                    // Display volumetric physical parameters
+                    ctx.font = "bold 11px monospace";
+                    ctx.fillStyle = "#34d399";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`3D Slice Radius: ${Math.round(sliceRadius3D)} px`, originPt.x, originPt.y + drawR + 22);
+                    
+                    const sliceVolume = (4/3) * Math.PI * Math.pow(sliceRadius3D / 10, 3);
+                    ctx.font = "10px monospace";
+                    ctx.fillStyle = "#a7f3d0";
+                    ctx.fillText(`Observed Vol: ${Math.round(sliceVolume)}π cm³`, originPt.x, originPt.y + drawR + 36);
+                } else {
+                    ctx.font = "italic 13px 'Plus Jakarta Sans', sans-serif";
+                    ctx.fillStyle = "#475569";
+                    ctx.textAlign = "center";
+                    let originPt = project3D(0, 0, 0, centerXLeft, centerYLeft);
+                    ctx.fillText("No 3D Slice Visible", originPt.x, originPt.y - 10);
+                    ctx.fillText("(W-Displacement exceeds Radius)", originPt.x, originPt.y + 12);
+                }
+
+                // ==================== PANEL B: 4D WIREFRAME ROTATOR ====================
+                // We project a 4-dimensional sphere (3-sphere) into 3D space, then onto our 2D screen.
+                const centerXRight = midX + (w - midX) / 2;
+                const centerYRight = h / 2;
+
+                if (hypersphereWireframe) {
+                    ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
+                    ctx.lineWidth = 1;
+
+                    // Apply continuous 4D rotation to vertices
+                    const angleXW = hypersphereRot; // Rotate in the X-W plane
+                    const angleYW = hypersphereRot * 0.5; // slow tilt in the Y-W plane
+
+                    // Temporary array to store Projected 3D coordinates on screen
+                    const projectedCoords = [];
+
+                    for (let vertex of hypersphereWireframe.vertices) {
+                        // 1. Apply 4D Rotations
+                        // Rotate X-W plane:
+                        let x = vertex.x * Math.cos(angleXW) - vertex.w * Math.sin(angleXW);
+                        let w4 = vertex.x * Math.sin(angleXW) + vertex.w * Math.cos(angleXW);
+                        
+                        // Rotate Y-W plane:
+                        let y = vertex.y * Math.cos(angleYW) - w4 * Math.sin(angleYW);
+                        let wPost = vertex.y * Math.sin(angleYW) + w4 * Math.cos(angleYW);
+                        
+                        let z = vertex.z;
+
+                        // 2. Stereographic perspective projection from 4D to 3D Space
+                        // Let camera distance on W-axis = 2.0
+                        const dW = 1.9;
+                        const scaleFactor = dW / (dW - wPost); // Stereographic projection factor
+                        
+                        const rScale = objectRadius * 1.35;
+                        const x3D = x * scaleFactor * rScale;
+                        const y3D = y * scaleFactor * rScale;
+                        const z3D = z * scaleFactor * rScale;
+
+                        // 3. Project 3D Space coordinate onto the 2D Screen
+                        const screenPt = project3D(x3D, y3D, z3D, centerXRight, centerYRight);
+                        projectedCoords.push(screenPt);
+                    }
+
+                    // Render lines (circular meridians)
+                    for (let ring of hypersphereWireframe.rings) {
+                        ctx.beginPath();
+                        for (let index = 0; index < ring.length; index++) {
+                            const screenPt = projectedCoords[ring[index]];
+                            
+                            // Adjust opacity based on 4D depth (using stereographic scaling factor)
+                            const intensity = Math.min(255, Math.max(80, Math.floor(128 * (screenPt.x / centerXRight))));
+                            ctx.strokeStyle = `rgba(168, 85, 247, ${0.15 + (index / ring.length) * 0.4})`;
+
+                            if (index === 0) {
+                                ctx.moveTo(screenPt.x, screenPt.y);
+                            } else {
+                                ctx.lineTo(screenPt.x, screenPt.y);
+                            }
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+
+                    // Draw center core axis labels for the W dimension
+                    if (toggleNoise.checked) {
+                        ctx.font = "bold 10px monospace";
+                        ctx.fillStyle = "#c084fc";
+                        ctx.fillText("+W Space", centerXRight - 25, centerYRight - objectRadius * 1.4);
+                        ctx.fillText("-W Space", centerXRight - 25, centerYRight + objectRadius * 1.5);
+                    }
+                }
+            }
+
+            // Interactive Event Handlers
+            function updateSimulationValue(sliderValue) {
+                circleYSlider.value = sliderValue;
+                updateDescriptionAndUI();
+                draw();
+            }
+
+            // Slider drag callback
+            circleYSlider.addEventListener("input", (e) => {
+                isPlaying = false;
+                updatePlayStateIcon();
+                updateSimulationValue(parseInt(e.target.value));
+            });
+
+            circleRadiusSlider.addEventListener("input", (e) => {
+                objectRadius = parseInt(e.target.value);
+                updateDescriptionAndUI();
+                draw();
+            });
+
+            // Play/Pause Action
+            function updatePlayStateIcon() {
+                if (isPlaying) {
+                    playIcon.className = "fa-solid fa-pause";
+                    playText.textContent = "Pause Anim";
+                    playPauseBtn.classList.remove("bg-indigo-600", "hover:bg-indigo-500");
+                    playPauseBtn.classList.add("bg-amber-600", "hover:bg-amber-500");
+                } else {
+                    playIcon.className = "fa-solid fa-play";
+                    playText.textContent = "Auto Play";
+                    playPauseBtn.classList.remove("bg-amber-600", "hover:bg-amber-500");
+                    playPauseBtn.classList.add("bg-indigo-600", "hover:bg-indigo-500");
+                }
+            }
+
+            playPauseBtn.addEventListener("click", () => {
+                let maxVal = 220;
+                let minVal = -220;
+                if (currentMode === "2D_3D") {
+                    maxVal = 180; minVal = -180;
+                } else if (currentMode === "3D_4D") {
+                    maxVal = 150; minVal = -150;
+                }
+
+                const currentVal = parseInt(circleYSlider.value);
+                if (currentVal >= (maxVal - 1) && direction === 1) {
+                    circleYSlider.value = minVal;
+                } else if (currentVal <= (minVal + 1) && direction === -1) {
+                    circleYSlider.value = maxVal;
+                }
+
+                isPlaying = !isPlaying;
+                updatePlayStateIcon();
+                canvasOverlay.classList.add("opacity-0", "pointer-events-none");
+            });
+
+            resetBtn.addEventListener("click", () => {
+                isPlaying = false;
+                direction = 1;
+                updatePlayStateIcon();
+                let minVal = -220;
+                if (currentMode === "2D_3D") minVal = -180;
+                else if (currentMode === "3D_4D") minVal = -150;
+                updateSimulationValue(minVal);
+            });
+
+            toggleGuidelines.addEventListener("change", draw);
+            toggleNoise.addEventListener("change", draw);
+
+            // Simulation Animation Frame Loop
+            function tick() {
+                // Continuous 4D rotation update
+                hypersphereRot += 0.012;
+                if (hypersphereRot > Math.PI * 2) hypersphereRot -= Math.PI * 2;
+
+                if (isPlaying) {
+                    let currentVal = parseInt(circleYSlider.value);
+                    const speed = parseInt(animationSpeedSlider.value);
+                    
+                    let maxVal = 220;
+                    let minVal = -220;
+                    if (currentMode === "2D_3D") {
+                        maxVal = 180; minVal = -180;
+                    } else if (currentMode === "3D_4D") {
+                        maxVal = 150; minVal = -150;
+                    }
+
+                    currentVal += speed * direction;
+
+                    // Reverse / Loop transitions smoothly
+                    if (currentVal >= maxVal) {
+                        currentVal = maxVal;
+                        direction = -1;
+                    } else if (currentVal <= minVal) {
+                        currentVal = minVal;
+                        direction = 1;
+                    }
+
+                    updateSimulationValue(currentVal);
+                } else {
+                    // Even if paused, redraw in 3D_4D mode to maintain rotating wireframe visual
+                    if (currentMode === "3D_4D") {
+                        draw();
+                    }
+                }
+                requestAnimationFrame(tick);
+            }
+
+            // Canvas drag/orbit interaction
+            function handleCanvasInteract(clientX, clientY, isFirstClick = false) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = clientX - rect.left;
+                const mouseY = clientY - rect.top;
+
+                const midX = rect.width / 2;
+
+                if (currentMode === "1D_2D") {
+                    // 1D Mode: Dragging adjusts Y offset
+                    const boundedY = Math.max(0, Math.min(rect.height, mouseY));
+                    const mappedSliderValue = ((boundedY / rect.height) * 440) - 220;
+                    isPlaying = false;
+                    updatePlayStateIcon();
+                    updateSimulationValue(Math.round(mappedSliderValue));
+                } else if (currentMode === "2D_3D") {
+                    // 2D_3D Mode: Drag on Left half orbits camera. Drag on Right adjusts height.
+                    if (mouseX < midX) {
+                        if (!isFirstClick) {
+                            const deltaX = mouseX - lastMouseX;
+                            const deltaY = mouseY - lastMouseY;
+                            cameraYaw += deltaX * 0.007;
+                            cameraPitch = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraPitch + deltaY * 0.007));
+                        }
+                        isPlaying = false;
+                        updatePlayStateIcon();
+                        draw();
+                    } else {
+                        const boundedY = Math.max(0, Math.min(rect.height, mouseY));
+                        const mappedSliderValue = ((boundedY / rect.height) * 360) - 180;
+                        isPlaying = false;
+                        updatePlayStateIcon();
+                        updateSimulationValue(Math.round(mappedSliderValue));
+                    }
+                } else {
+                    // 3D_4D Mode: Drag on Left adjusts W transition. Drag on Right orbits camera.
+                    if (mouseX < midX) {
+                        const boundedY = Math.max(0, Math.min(rect.height, mouseY));
+                        const mappedSliderValue = ((boundedY / rect.height) * 300) - 150;
+                        isPlaying = false;
+                        updatePlayStateIcon();
+                        updateSimulationValue(Math.round(mappedSliderValue));
+                    } else {
+                        if (!isFirstClick) {
+                            const deltaX = mouseX - lastMouseX;
+                            const deltaY = mouseY - lastMouseY;
+                            cameraYaw += deltaX * 0.007;
+                            cameraPitch = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, cameraPitch + deltaY * 0.007));
+                        }
+                        isPlaying = false;
+                        updatePlayStateIcon();
+                        draw();
+                    }
+                }
+
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                canvasOverlay.classList.add("opacity-0", "pointer-events-none");
+            }
+
+            canvas.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                handleCanvasInteract(e.clientX, e.clientY, true);
+            });
+
+            window.addEventListener("mousemove", (e) => {
+                if (isDragging) {
+                    handleCanvasInteract(e.clientX, e.clientY, false);
+                }
+            });
+
+            window.addEventListener("mouseup", () => {
+                isDragging = false;
+            });
+
+            // Touch events for mobile screens
+            canvas.addEventListener("touchstart", (e) => {
+                isDragging = true;
+                if (e.touches.length > 0) {
+                    handleCanvasInteract(e.touches[0].clientX, e.touches[0].clientY, true);
+                }
+            }, { passive: true });
+
+            window.addEventListener("touchmove", (e) => {
+                if (isDragging && e.touches.length > 0) {
+                    handleCanvasInteract(e.touches[0].clientX, e.touches[0].clientY, false);
+                }
+            }, { passive: true });
+
+            window.addEventListener("touchend", () => {
+                isDragging = false;
+            });
+
+            // Initialize systems
+            setMode("1D_2D");
+            requestAnimationFrame(tick);
+        });
+    </script>
+</body>
+</html>
