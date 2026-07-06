@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operation: Hadal Zone - Algebra Escape Room</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts for retro-futuristic submarine look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for beautiful math equations -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .mono {
+      font-family: 'Share Tech Mono', monospace;
+    }
+    /* Glow effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+    .glow-red {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+    .text-glow-cyan {
+      text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+    }
+    .text-glow-red {
+      text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    }
+    /* Scanline effect for retro terminal */
+    .scanline::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 10;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative scanline">
+
+  <!-- SOUND CONTROLS -->
+  <div class="fixed top-4 right-4 z-50 flex items-center space-x-2">
+    <button id="sound-toggle" class="bg-slate-900 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-950 p-2.5 rounded-lg transition-all duration-300 flex items-center space-x-1 text-sm glow-cyan">
+      <svg id="sound-on-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.69-3.69a1 1 0 011.107-.234zM11 10a3 3 0 01-3 3v2a5 5 0 005-5H11zm3 0a6 6 0 01-6 6v2a8 8 0 008-8h-2z" clip-rule="evenodd"/>
+      </svg>
+      <svg id="sound-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.69-3.69a1 1 0 011.107-.234zM19.071 4.929a1 1 0 00-1.414 0L15 7.586l-2.657-2.657a1 1 0 10-1.414 1.414L13.586 9l-2.657 2.657a1 1 0 001.414 1.414L15 10.414l2.657 2.657a1 1 0 001.414-1.414L16.414 9l2.657-2.657a1 1 0 000-1.414z" clip-rule="evenodd" />
+      </svg>
+      <span class="mono">AUDIO ON</span>
+    </button>
+  </div>
+
+  <!-- HEADER -->
+  <header class="border-b border-cyan-900/50 bg-slate-900/60 backdrop-blur px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 z-20">
+    <div class="flex items-center space-x-3">
+      <div class="w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-wider text-cyan-400 text-glow-cyan mono">MISSION: HADAL ZONE</h1>
+        <p class="text-xs text-slate-400 tracking-widest uppercase">Deep-Sea Expedition Escape Grid</p>
+      </div>
+    </div>
+    
+    <!-- SUB INSTRUMENT PANEL -->
+    <div class="flex items-center space-x-6 mono text-sm">
+      <div class="text-center md:text-right">
+        <span class="text-slate-400 block text-xs">VESSEL STATUS</span>
+        <span class="text-red-500 font-bold tracking-widest text-glow-red animate-pulse">LOCKDOWN</span>
+      </div>
+      <div class="border-l border-slate-800 h-8"></div>
+      <div class="text-center md:text-right">
+        <span class="text-slate-400 block text-xs">OXYGEN RESERVE</span>
+        <span id="timer" class="text-cyan-400 font-bold tracking-widest text-glow-cyan text-lg">20:00</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-grow container mx-auto px-4 py-8 flex flex-col lg:flex-row items-center justify-center gap-8 z-20 max-w-7xl">
+    
+    <!-- LEFT SIDE: MAP & READOUTS -->
+    <section class="w-full lg:w-5/12 flex flex-col gap-6">
+      <!-- SUB DIAGRAM MAP -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 glow-cyan">
+        <h3 class="mono text-cyan-400 text-sm tracking-widest mb-4 flex items-center justify-between">
+          <span>NAUTILUS-X STRUCTURAL SCHEMATIC</span>
+          <span class="bg-cyan-950 text-cyan-400 text-[10px] px-2 py-0.5 rounded border border-cyan-800/50">SYS DEPTH: 10,900M</span>
+        </h3>
+        
+        <!-- SUBMARINE MAP VISUAL -->
+        <div class="relative w-full h-44 bg-slate-950 rounded-xl border border-slate-900 overflow-hidden p-4 flex items-center justify-center">
+          <!-- Stylized Submarine Shape (SVG) -->
+          <svg class="w-full h-full max-w-sm text-slate-800 opacity-80" viewBox="0 0 500 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Hull Back/Tail -->
+            <path d="M 40 75 Q 10 50 15 35 Q 20 20 40 75 Z" fill="currentColor" />
+            <path d="M 40 75 Q 10 100 15 115 Q 20 130 40 75 Z" fill="currentColor" />
+            <!-- Propeller Axis -->
+            <rect x="5" y="71" width="15" height="8" fill="#475569" />
+            <!-- Propeller Blades -->
+            <path d="M 5 55 L 8 75 L 5 95 Q 1 75 5 55 Z" fill="#64748b" />
+            <!-- Main Oval Hull -->
+            <path d="M 30 75 C 60 15, 380 15, 430 75 C 380 135, 60 135, 30 75 Z" stroke="#334155" stroke-width="4" fill="#0f172a" />
+            <!-- Sail / Conning Tower -->
+            <path d="M 220 30 L 250 30 L 270 5 L 290 5 L 290 30" stroke="#334155" stroke-width="3" fill="#1e293b" />
+            <!-- Sub Dividers & Targets -->
+            <!-- Airlock (Room 1) -->
+            <circle id="map-node-1" cx="90" cy="75" r="14" class="fill-slate-900 stroke-slate-700 transition-all duration-500" stroke-width="2" />
+            <text x="90" y="79" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">1</text>
+            
+            <!-- Bridge (Room 2) -->
+            <circle id="map-node-2" cx="180" cy="75" r="14" class="fill-slate-900 stroke-slate-700 transition-all duration-500" stroke-width="2" />
+            <text x="180" y="79" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">2</text>
+            
+            <!-- Engine Room (Room 3) -->
+            <circle id="map-node-3" cx="270" cy="75" r="14" class="fill-slate-900 stroke-slate-700 transition-all duration-500" stroke-width="2" />
+            <text x="270" y="79" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">3</text>
+            
+            <!-- Comms Safe (Room 4) -->
+            <circle id="map-node-4" cx="360" cy="75" r="14" class="fill-slate-900 stroke-slate-700 transition-all duration-500" stroke-width="2" />
+            <text x="360" y="79" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">4</text>
+          </svg>
+          
+          <!-- SONAR PING OVERLAY -->
+          <div class="absolute inset-0 pointer-events-none border border-cyan-500/10 rounded-xl bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.05)_0%,transparent_70%)]"></div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 mt-4 text-center text-[11px] mono text-slate-400">
+          <div id="label-node-1" class="font-bold">1. AIRLOCK</div>
+          <div id="label-node-2" class="opacity-40">2. BRIDGE</div>
+          <div id="label-node-3" class="opacity-40">3. ENGINE</div>
+          <div id="label-node-4" class="opacity-40">4. SOS SAFE</div>
+        </div>
+      </div>
+
+      <!-- TRANSMISSION FEED / INSTRUCTIONS -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex-grow flex flex-col justify-between">
+        <div>
+          <h4 class="mono text-cyan-400 text-sm tracking-widest mb-2 flex items-center">
+            <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>
+            SYS ADVISORY DECK
+          </h4>
+          <p id="system-feed" class="text-sm text-slate-300 leading-relaxed font-light">
+            An underwater EMP has locked the sub's vital valves. Compute correct numerical variables (<span class="mono text-cyan-300 font-semibold">x, y, z, a</span>) to unlock rooms sequentially and trigger distress beacons.
+          </p>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs mono text-slate-500">
+          <span>SEC LEVEL: CRITICAL</span>
+          <span>SYSTEM-VER: 2.5-HADAL</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT SIDE: ACTIVE ROOM / INTRO SCREEN -->
+    <section class="w-full lg:w-7/12">
+      
+      <!-- INTRO / BEGIN MISSION CARD -->
+      <div id="intro-card" class="bg-slate-900/80 border border-cyan-500/40 rounded-2xl p-8 glow-cyan flex flex-col items-center text-center space-y-6">
+        <div class="w-16 h-16 rounded-full bg-cyan-950 border border-cyan-500 flex items-center justify-center animate-pulse">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold tracking-wide text-cyan-400 text-glow-cyan uppercase mono mb-3">Initiating Submarine Lock-Bypass</h2>
+          <p class="text-slate-300 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            The deep-sea submarine <span class="text-cyan-400 font-semibold">Nautilus-X</span> is paralyzed at the bottom of the Mariana Trench. Life support systems are failing. Solve 4 consecutive algebraic challenges to reboot systems and send an SOS beacon.
+          </p>
+        </div>
+
+        <div class="w-full border-t border-slate-800/80 py-4 max-w-md">
+          <h4 class="text-xs uppercase tracking-widest text-slate-400 mb-2 mono">Expedition Rules</h4>
+          <ul class="text-xs text-slate-400 space-y-1.5 text-left inline-block">
+            <li class="flex items-center"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full mr-2"></span> Solve the linear equations to unlock sequential sectors.</li>
+            <li class="flex items-center"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full mr-2"></span> Answers can be negative (representing sub-zero depth/temp).</li>
+            <li class="flex items-center"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full mr-2"></span> Difficulty elevates at each module interface.</li>
+          </ul>
+        </div>
+
+        <button onclick="startGame()" class="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold uppercase tracking-wider rounded-xl transition duration-300 transform hover:scale-[1.03] active:scale-95 glow-cyan w-full max-w-md mono">
+          Begin Deep-Sea Recovery
+        </button>
+      </div>
+
+      <!-- ACTIVE GAMEPLAY CARD (HIDDEN BY DEFAULT) -->
+      <div id="game-card" class="hidden bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col justify-between min-h-[460px] relative">
+        
+        <!-- ROOM PROGRESS / TITLE -->
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/60">
+          <div class="flex items-center space-x-2.5">
+            <span id="room-indicator" class="mono bg-cyan-950 text-cyan-400 text-xs px-3 py-1 rounded border border-cyan-800/50">SECTOR 1/4</span>
+            <h2 id="room-title" class="text-lg md:text-xl font-bold tracking-wide text-slate-200">The Submersible Hatch (Airlock)</h2>
+          </div>
+          <span id="room-variable" class="mono text-cyan-400 text-xs text-glow-cyan font-bold tracking-widest">FIND VARIABLES: [X]</span>
+        </div>
+
+        <!-- SCENARIO STORY DESCRIPTIONS -->
+        <div class="mb-6">
+          <p id="room-description" class="text-slate-300 text-sm md:text-base leading-relaxed mb-6 font-light">
+            Alarms are blaring. The heavy steel hatch leading to the main control room is completely locked down. To open it, you need to adjust the hydraulic pressure valve. The digital readout on the valve is glitched out, showing an unbalanced pressure formula.
+          </p>
+          
+          <!-- MATHEMATICAL FORMULA CONTAINER -->
+          <div class="bg-slate-950/90 border border-slate-900 rounded-xl p-6 flex flex-col items-center justify-center my-6 relative overflow-hidden">
+            <span class="absolute top-2 left-3 text-[10px] mono text-cyan-500/40">EQUATION MATRIX</span>
+            <div id="katex-equation" class="text-2xl md:text-3xl text-cyan-300 my-2 overflow-x-auto max-w-full text-center">
+              <!-- Equation will render here via JavaScript -->
+            </div>
+          </div>
+        </div>
+
+        <!-- INPUT CONTROL DECK -->
+        <div>
+          <form id="bypass-form" onsubmit="submitCode(event)" class="space-y-4">
+            <div class="flex flex-col md:flex-row gap-3">
+              <div class="relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span class="mono text-slate-500 text-sm">CODE:</span>
+                </div>
+                <input 
+                  type="number" 
+                  id="equation-input" 
+                  required 
+                  placeholder="Enter numerical solution..." 
+                  class="w-full pl-14 pr-4 py-3 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none transition duration-300 font-mono text-base tracking-wider"
+                  autocomplete="off"
+                >
+              </div>
+              <button 
+                type="submit" 
+                class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold uppercase tracking-wider rounded-xl transition duration-300 shrink-0 mono"
+              >
+                Bypass Terminal
+              </button>
+            </div>
+            
+            <!-- FEEDBACK PANEL -->
+            <div id="feedback" class="text-sm font-semibold transition-all duration-300 min-h-[20px] flex items-center space-x-2">
+              <!-- Dynamically populated success/fail banner -->
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- GAME SUCCESS SCREEN (HIDDEN BY DEFAULT) -->
+      <div id="success-card" class="hidden bg-slate-900/80 border border-green-500/40 rounded-2xl p-8 text-center space-y-6 glow-green relative overflow-hidden">
+        <!-- Confetti-like ambient container -->
+        <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.08)_0%,transparent_70%)]"></div>
+
+        <div class="w-16 h-16 mx-auto rounded-full bg-green-950 border border-green-500 flex items-center justify-center animate-bounce">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        
+        <div>
+          <h2 class="text-3xl font-extrabold tracking-wide text-green-400 uppercase mono mb-3">Mission Accomplished!</h2>
+          <p class="text-slate-200 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            The emergency SOS quantum beacon container clicked open, broadcasting coordinate marker codes to the surface ships. Systems stabilized. Power restored. The rescue team is on their way!
+          </p>
+        </div>
+
+        <div class="bg-slate-950 rounded-xl p-6 max-w-md mx-auto border border-slate-900 mono">
+          <h3 class="text-xs text-slate-400 uppercase tracking-widest mb-3">Rescue Ship Navigation Report</h3>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-left">
+              <span class="text-slate-500 block text-xs">TIME REMAINING:</span>
+              <span id="final-time" class="text-green-400 font-bold text-lg">0:00</span>
+            </div>
+            <div class="text-left">
+              <span class="text-slate-500 block text-xs">MODULES CLEARED:</span>
+              <span class="text-green-400 font-bold text-lg">4 / 4 SECURE</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="resetGame()" class="px-8 py-3.5 bg-green-500 hover:bg-green-400 text-slate-950 font-bold uppercase tracking-wider rounded-xl transition duration-300 transform hover:scale-[1.03] active:scale-95 w-full max-w-md mono">
+          Dive Again (Reset)
+        </button>
+      </div>
+
+      <!-- GAME OVER / TIMEOUT SCREEN (HIDDEN BY DEFAULT) -->
+      <div id="game-over-card" class="hidden bg-slate-900/80 border border-red-500/40 rounded-2xl p-8 text-center space-y-6 glow-red">
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-950 border border-red-500 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        
+        <div>
+          <h2 class="text-3xl font-bold tracking-wide text-red-500 uppercase mono mb-3">OXYGEN DEPLETED!</h2>
+          <p class="text-slate-300 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+            The power matrix failed to bypass in time, and the emergency life support shutdown initiated. Don't worry, cadet! Recalibrate your equations and try again!
+          </p>
+        </div>
+
+        <button onclick="resetGame()" class="px-8 py-3.5 bg-red-600 hover:bg-red-500 text-slate-950 font-bold uppercase tracking-wider rounded-xl transition duration-300 transform hover:scale-[1.03] active:scale-95 w-full max-w-md mono">
+          Reboot Submersible Core
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BOTTOM FOOTER -->
+  <footer class="border-t border-slate-900/60 bg-slate-950 px-6 py-4 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 mono gap-2 z-20">
+    <p>© 2026 NAUTILUS DESIGN LABS • ALGEBRA COGNITIVE TRAINING</p>
+    <p>FOR MIDDLE SCHOOL CLIMATE RESEARCH GROUPS</p>
+  </footer>
+
+  <!-- GAME LOGIC SCRIPT -->
+  <script>
+    // Game configurations
+    let currentLevel = 1;
+    let timeLimit = 20 * 60; // 20 minutes in seconds
+    let timerInterval = null;
+    let audioEnabled = true;
+
+    // Room configurations
+    const rooms = {
+      1: {
+        title: "The Submersible Hatch (Airlock)",
+        variable: "FIND VARIABLE [X]",
+        formulaLaTeX: "x + 14 = 5",
+        description: "Alarms are blaring. The heavy steel hatch leading to the main control room is completely locked down. To open it, you need to adjust the hydraulic pressure valve. The digital readout on the valve is glitched out, showing an unbalanced pressure formula. Balance it to escape the airlock!",
+        advisory: "AIRLOCK LOCKDOWN: Pressure balancing equation active. Find value of variable 'x'.",
+        answer: -9
+      },
+      2: {
+        title: "The Command Center (Navigation)",
+        variable: "FIND VARIABLE [Y]",
+        formulaLaTeX: "3(y - 4) = -18",
+        description: "You’re inside the bridge, but the main steering column is frozen. The Nautilus-X is drifting dangerously close to an underwater hydrothermal vent. The temperature is rising! Calculate the exact temperature deflection angle variable (y) to engage thrusters and steer away.",
+        advisory: "THERMAL VENT APPROACHING: Adjust steering deflection 'y' immediately! Guard variables in parentheses.",
+        answer: -2
+      },
+      3: {
+        title: "The Engine Room (Reactor Core)",
+        variable: "FIND VARIABLE [Z]",
+        formulaLaTeX: "\\frac{z}{4} + 7 = 2",
+        description: "The thrusters are online, but the main reactor is overheating due to blocked coolant conduits. You rush into the humid, hot Engine Room. Coolant nitrogen flow rates are stuck in a fractional loop. Solve for (z) to clear the coolant pipe valves.",
+        advisory: "OVERHEAT EMERGENCY: Main core temperatures critical. Calculate coolant flow rate variable 'z' immediately.",
+        answer: -20
+      },
+      4: {
+        title: "The Communication Safe (SOS Distress Beacon)",
+        variable: "FIND VARIABLE [A]",
+        formulaLaTeX: "\\frac{1}{2}(6a + 8) = 2a - 5",
+        description: "The ship is stabilized, but you are stuck at the trench floor! The emergency SOS quantum beacon container is locked behind a thick titanium safe. The digital keypad requires the final broadcast depth parameter (a) of your distress signal. Execute this multi-step calculation to transmit!",
+        advisory: "DISTRESS BEACON LOCKED: Compute complex tactical variable 'a' to unlock safety mechanism.",
+        answer: -9
+      }
+    };
+
+    // Sound Synthesizer via Web Audio API (No outside assets needed)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+          gainNode.gain.setValueAtTime(0.1, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (type === 'fail') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now); // A3
+          osc.frequency.exponentialRampToValueAtTime(110, now + 0.35);
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'complete') {
+          osc.type = 'sine';
+          // Uplifting sci-fi arpeggio
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const stepOsc = audioCtx.createOscillator();
+            const stepGain = audioCtx.createGain();
+            stepOsc.connect(stepGain);
+            stepGain.connect(audioCtx.destination);
+            stepOsc.type = 'sine';
+            stepOsc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+            stepGain.gain.setValueAtTime(0.15, now + (idx * 0.1));
+            stepGain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.1) + 0.3);
+            stepOsc.start(now + (idx * 0.1));
+            stepOsc.stop(now + (idx * 0.1) + 0.3);
+          });
+        }
+      } catch (e) {
+        console.warn("Audio playback not fully loaded/authorized.");
+      }
+    }
+
+    // Toggle Audio Setting
+    document.getElementById('sound-toggle').addEventListener('click', () => {
+      audioEnabled = !audioEnabled;
+      const soundOnIcon = document.getElementById('sound-on-icon');
+      const soundOffIcon = document.getElementById('sound-off-icon');
+      const toggleText = document.querySelector('#sound-toggle span');
+      
+      if (audioEnabled) {
+        soundOnIcon.classList.remove('hidden');
+        soundOffIcon.classList.add('hidden');
+        toggleText.textContent = "AUDIO ON";
+        playSound('click');
+      } else {
+        soundOnIcon.classList.add('hidden');
+        soundOffIcon.classList.remove('hidden');
+        toggleText.textContent = "AUDIO MUTED";
+      }
+    });
+
+    // Start Mission Handler
+    function startGame() {
+      playSound('click');
+      document.getElementById('intro-card').classList.add('hidden');
+      document.getElementById('game-card').classList.remove('hidden');
+      
+      currentLevel = 1;
+      timeLimit = 20 * 60; // 20 mins
+      updateTimerDisplay();
+      
+      // Start Countdown
+      timerInterval = setInterval(() => {
+        timeLimit--;
+        updateTimerDisplay();
+        if (timeLimit <= 0) {
+          endGame(false);
+        }
+      }, 1000);
+
+      loadLevel(currentLevel);
+    }
+
+    // Update Countdown Timer UI
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLimit / 60);
+      const seconds = timeLimit % 60;
+      const formatted = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      document.getElementById('timer').textContent = formatted;
+      
+      // Flash red when timer is low (under 3 minutes)
+      if (timeLimit < 180) {
+        document.getElementById('timer').classList.add('text-red-500', 'text-glow-red');
+        document.getElementById('timer').classList.remove('text-cyan-400', 'text-glow-cyan');
+      } else {
+        document.getElementById('timer').classList.add('text-cyan-400', 'text-glow-cyan');
+        document.getElementById('timer').classList.remove('text-red-500', 'text-glow-red');
+      }
+    }
+
+    // Load Level Configuration
+    function loadLevel(lvl) {
+      const room = rooms[lvl];
+      
+      // Reset input field & focus
+      const inputField = document.getElementById('equation-input');
+      inputField.value = "";
+      inputField.focus();
+
+      // Update text details
+      document.getElementById('room-indicator').textContent = `SECTOR ${lvl}/4`;
+      document.getElementById('room-title').textContent = room.title;
+      document.getElementById('room-variable').textContent = room.variable;
+      document.getElementById('room-description').textContent = room.description;
+      document.getElementById('system-feed').textContent = room.advisory;
+      
+      // Reset validation feedback banner
+      const feedback = document.getElementById('feedback');
+      feedback.className = "text-sm font-semibold transition-all duration-300 min-h-[20px] flex items-center space-x-2 text-slate-400";
+      feedback.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span>Awaiting decryption variable entry...</span>
+      `;
+
+      // Render KaTeX Math formula beautifully
+      const formulaContainer = document.getElementById('katex-equation');
+      katex.render(room.formulaLaTeX, formulaContainer, {
+        throwOnError: false,
+        displayMode: true
+      });
+
+      // Update Sub Map node tracking classes
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById(`map-node-${i}`);
+        const label = document.getElementById(`label-node-${i}`);
+        if (i < lvl) {
+          // Cleared rooms
+          node.setAttribute('fill', '#22c55e'); // Green
+          node.setAttribute('stroke', '#15803d');
+          label.className = "text-green-500 font-bold opacity-100";
+        } else if (i === lvl) {
+          // Current Active room
+          node.setAttribute('fill', '#06b6d4'); // Cyan Glow active
+          node.setAttribute('stroke', '#0891b2');
+          node.classList.add('animate-pulse');
+          label.className = "text-cyan-400 font-bold tracking-widest text-glow-cyan opacity-100";
+        } else {
+          // Future locked rooms
+          node.setAttribute('fill', '#0f172a'); // Navy Slate
+          node.setAttribute('stroke', '#334155');
+          node.classList.remove('animate-pulse');
+          label.className = "opacity-40";
+        }
+      }
+    }
+
+    // Submit / Evaluate code logic
+    function submitCode(event) {
+      event.preventDefault();
+      
+      const userInput = parseInt(document.getElementById('equation-input').value.trim(), 10);
+      const levelConfig = rooms[currentLevel];
+      const feedback = document.getElementById('feedback');
+
+      if (userInput === levelConfig.answer) {
+        playSound('success');
+        
+        // Display validation feedback visual
+        feedback.className = "text-sm font-semibold transition-all duration-300 text-green-400 flex items-center space-x-2";
+        feedback.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <span class="mono tracking-widest uppercase">CORRECT CODE! UNLOCKING DECKWAY...</span>
+        `;
+
+        // Advance Room Transition delay (adds immersive feeling)
+        setTimeout(() => {
+          if (currentLevel < 4) {
+            currentLevel++;
+            loadLevel(currentLevel);
+          } else {
+            endGame(true);
+          }
+        }, 1500);
+
+      } else {
+        playSound('fail');
+        
+        // Custom interactive error logs (Explaining potential student pitfalls)
+        let customCorrectionAdvice = "Recalibrate coefficients or check negative math.";
+        if (currentLevel === 1 && userInput === 9) {
+          customCorrectionAdvice = "Close! Watch out: when 14 is moved to the right side, it becomes negative subtraction.";
+        } else if (currentLevel === 2 && userInput === 10) {
+          customCorrectionAdvice = "Warning! Keep track of the negative signs inside and outside parentheses.";
+        } else if (currentLevel === 3 && userInput === 20) {
+          customCorrectionAdvice = "Watch your sign logic! Subtraction should lead to negative value before multiplication.";
+        } else if (currentLevel === 4 && userInput === 9) {
+          customCorrectionAdvice = "Incredible effort! Be mindful of negative numbers on both sides of the equation.";
+        }
+
+        feedback.className = "text-sm font-semibold transition-all duration-300 text-red-500 flex items-center space-x-2";
+        feedback.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <span>Error: ${customCorrectionAdvice}</span>
+        `;
+        
+        // Highlight field error
+        const inputField = document.getElementById('equation-input');
+        inputField.classList.add('border-red-500', 'bg-red-950/20');
+        setTimeout(() => {
+          inputField.classList.remove('border-red-500', 'bg-red-950/20');
+        }, 1000);
+      }
+    }
+
+    // End Game Execution handler (Success or Gameover)
+    function endGame(isSuccess) {
+      clearInterval(timerInterval);
+      document.getElementById('game-card').classList.add('hidden');
+      
+      if (isSuccess) {
+        playSound('complete');
+        const minutes = Math.floor(timeLimit / 60);
+        const seconds = timeLimit % 60;
+        document.getElementById('final-time').textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        document.getElementById('success-card').classList.remove('hidden');
+      } else {
+        playSound('fail');
+        document.getElementById('game-over-card').classList.remove('hidden');
+      }
+    }
+
+    // Reset and Restart
+    function resetGame() {
+      playSound('click');
+      document.getElementById('success-card').classList.add('hidden');
+      document.getElementById('game-over-card').classList.add('hidden');
+      document.getElementById('intro-card').classList.remove('hidden');
+      
+      // Reset Visual Nodes in map
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById(`map-node-${i}`);
+        const label = document.getElementById(`label-node-${i}`);
+        node.setAttribute('fill', '#0f172a');
+        node.setAttribute('stroke', '#334155');
+        node.classList.remove('animate-pulse');
+        label.className = "opacity-40";
+      }
+      
+      document.getElementById('timer').textContent = "20:00";
+    }
+  </script>
+</body>
+</html>

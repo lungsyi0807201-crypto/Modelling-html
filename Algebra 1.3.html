@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Adventures: The Magic of Math Rules</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a clean, friendly font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for playful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        fun: ['Fredoka', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-portal {
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.6);
+        }
+        .glow-positive {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .glow-negative {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+        /* Smooth, bouncy custom transitions */
+        .character-transition {
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Playful top navigation bar -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg animate-bounce-slow">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-fun text-2xl md:text-3xl text-indigo-400 tracking-wide font-bold">Algebra Adventures</h1>
+                    <p class="text-xs text-slate-400">Visualizing abstract rules with fun, relatable scenarios!</p>
+                </div>
+            </div>
+            
+            <!-- Tab Buttons -->
+            <nav class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 gap-1 w-full md:w-auto">
+                <button id="btn-portal" onclick="switchTab('portal')" class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all bg-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-shuffle"></i> Border Portal
+                </button>
+                <button id="btn-tent" onclick="switchTab('tent')" class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-campground"></i> Reverse-Filter Tent
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+        
+        <!-- Adventure 1: The Border Portal -->
+        <section id="tab-portal" class="block space-y-8 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                
+                <!-- Sandbox Side -->
+                <div class="lg:col-span-8 bg-slate-800/80 backdrop-blur border border-slate-700 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden shadow-2xl min-h-[500px]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/10 to-slate-900/40 pointer-events-none"></div>
+                    
+                    <!-- Top bar of Sandbox -->
+                    <div class="flex justify-between items-center z-10">
+                        <span class="bg-indigo-950 text-indigo-300 text-xs font-bold tracking-wider uppercase px-3 py-1.5 rounded-full border border-indigo-800">
+                            Scenario Interactive Playground
+                        </span>
+                        <button onclick="resetPortal()" class="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1 bg-slate-700/50 hover:bg-slate-700 px-3 py-1.5 rounded-xl">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+
+                    <!-- Interactive Portal Track -->
+                    <div class="my-12 relative flex items-center justify-between px-8 md:px-16 z-10">
+                        <!-- Left Side Zone (Faction Positive) -->
+                        <div class="flex flex-col items-center gap-3 w-1/3">
+                            <span class="text-xs font-bold text-amber-500 uppercase tracking-widest bg-amber-950/40 border border-amber-900/60 px-2.5 py-1 rounded-lg">
+                                Faction Plus
+                            </span>
+                            <div class="h-24 w-full border-2 border-dashed border-amber-500/30 rounded-2xl flex items-center justify-center bg-amber-950/5">
+                                <span class="text-slate-500 text-xs text-center px-2">Left Side Territory</span>
+                            </div>
+                        </div>
+
+                        <!-- Mid Gateway Portal -->
+                        <div class="relative flex flex-col items-center justify-center z-20">
+                            <div class="w-24 h-40 bg-indigo-950 border-4 border-indigo-500 rounded-full flex flex-col items-center justify-center glow-portal animate-pulse-slow cursor-help group relative" title="The Magical Equals Sign Border Control!">
+                                <span class="text-3xl font-fun font-bold text-indigo-400 tracking-tighter">=</span>
+                                <span class="text-[9px] uppercase tracking-wider text-indigo-300 mt-1 font-semibold">Border</span>
+                                
+                                <!-- Tooltip -->
+                                <div class="absolute -top-12 scale-0 group-hover:scale-100 transition-all bg-indigo-950 border border-indigo-800 text-indigo-200 text-xs py-1.5 px-3 rounded-lg text-center w-40 pointer-events-none">
+                                    Step through to change your disguise!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side Zone (Faction Negative) -->
+                        <div class="flex flex-col items-center gap-3 w-1/3">
+                            <span class="text-xs font-bold text-blue-400 uppercase tracking-widest bg-blue-950/40 border border-blue-900/60 px-2.5 py-1 rounded-lg">
+                                Faction Minus
+                            </span>
+                            <div class="h-24 w-full border-2 border-dashed border-blue-500/30 rounded-2xl flex items-center justify-center bg-blue-950/5">
+                                <span class="text-slate-500 text-xs text-center px-2">Right Side Territory</span>
+                            </div>
+                        </div>
+
+                        <!-- THE MOVING CHARACTER -->
+                        <div id="portal-character" class="absolute character-transition cursor-grab active:cursor-grabbing z-30 flex flex-col items-center gap-2" style="left: 12%;">
+                            <!-- Avatar container (starts positive) -->
+                            <div id="char-avatar" class="w-20 h-20 bg-amber-500 text-slate-950 rounded-2xl flex flex-col items-center justify-center font-bold text-2xl border-4 border-amber-300 shadow-xl glow-positive relative">
+                                <span id="char-sign" class="text-2xl font-fun font-black">+5</span>
+                                <span id="char-icon" class="text-lg"><i class="fa-solid fa-sun text-slate-900 animate-spin-slow"></i></span>
+                                <!-- Small badge -->
+                                <span id="char-badge" class="absolute -top-2 -right-2 bg-amber-300 text-amber-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md">HAPPY</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Controls Panel -->
+                    <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-700/60 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="text-center md:text-left">
+                            <h4 class="font-fun font-semibold text-slate-200 text-base flex items-center justify-center md:justify-start gap-1.5">
+                                <i class="fa-solid fa-gamepad text-indigo-400"></i> Border Control Panel
+                            </h4>
+                            <p class="text-xs text-slate-400 mt-0.5">Push the character across the customs border and watch the magic costume swap!</p>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="moveCharacter('left')" class="flex-1 md:flex-initial bg-amber-600 hover:bg-amber-500 text-white font-fun font-semibold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-arrow-left"></i> Left Side
+                            </button>
+                            <button onclick="moveCharacter('right')" class="flex-1 md:flex-initial bg-blue-600 hover:bg-blue-500 text-white font-fun font-semibold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
+                                Right Side <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Story / Lesson Side -->
+                <div class="lg:col-span-4 bg-slate-800 border border-slate-700 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-amber-500/10 text-amber-400 text-xl p-3 rounded-2xl border border-amber-500/20">
+                                <i class="fa-solid fa-shuffle"></i>
+                            </span>
+                            <div>
+                                <h3 class="font-fun text-xl font-bold text-slate-200">The "Border Portal" Rule</h3>
+                                <p class="text-xs text-amber-400 font-semibold">Concept: Transposition</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
+                            <p class="font-semibold text-slate-100">
+                                Why does a number change signs when it crosses the Equals Sign (<span class="text-indigo-400">=</span>)?
+                            </p>
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/40 space-y-3">
+                                <p class="text-xs text-indigo-300 uppercase tracking-widest font-extrabold">The Story</p>
+                                <p>
+                                    Imagine the <span class="text-indigo-400 font-bold">=</span> sign is an <strong>Airport Customs Border</strong> between two rival factions: 
+                                    <span class="text-amber-400 font-bold">Faction Plus</span> and <span class="text-blue-400 font-bold">Faction Minus</span>.
+                                </p>
+                                <p>
+                                    Under a peace treaty, characters can move back and forth, but <strong>no one is allowed to cross without a change of clothes!</strong>
+                                </p>
+                                <p>
+                                    When our happy <span class="text-amber-400 font-bold">+5 Gold Sun</span> steps through the portal to the Right Side, customs officials force them to slip into a <span class="text-blue-400 font-bold">-5 Dark Cloud</span> outfit to keep the balance!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-700/60">
+                        <div class="flex items-center gap-2.5 bg-indigo-950/40 border border-indigo-900/55 p-3.5 rounded-2xl">
+                            <i class="fa-solid fa-lightbulb text-indigo-400 text-lg"></i>
+                            <p class="text-xs text-indigo-300">
+                                <strong>Try it!</strong> Click the Left/Right side buttons to transport our character and observe the instant costume swap!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Adventure 2: The Reverse-Filter Tent -->
+        <section id="tab-tent" class="hidden space-y-8 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                
+                <!-- Sandbox Side -->
+                <div class="lg:col-span-8 bg-slate-800/80 backdrop-blur border border-slate-700 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden shadow-2xl min-h-[500px]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/10 to-slate-900/40 pointer-events-none"></div>
+                    
+                    <!-- Top bar of Sandbox -->
+                    <div class="flex justify-between items-center z-10">
+                        <span class="bg-indigo-950 text-indigo-300 text-xs font-bold tracking-wider uppercase px-3 py-1.5 rounded-full border border-indigo-800">
+                            Scenario Interactive Playground
+                        </span>
+                        <button onclick="resetTent()" class="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1 bg-slate-700/50 hover:bg-slate-700 px-3 py-1.5 rounded-xl">
+                            <i class="fa-solid fa-rotate-left"></i> Reset Tent
+                        </button>
+                    </div>
+
+                    <!-- Interactive Expression Canvas -->
+                    <div class="my-10 relative flex flex-col items-center justify-center z-10 min-h-[220px]">
+                        
+                        <!-- The mathematical representation above -->
+                        <div class="mb-4 bg-slate-900/80 border border-slate-700/60 px-6 py-2.5 rounded-2xl text-xl font-fun font-bold text-center flex items-center gap-3">
+                            <span class="text-rose-500 font-extrabold text-2xl animate-pulse-slow">-</span>
+                            <span class="text-slate-500 text-2xl font-normal">(</span>
+                            <span id="math-t1" class="text-amber-400 transition-colors duration-500">+3</span>
+                            <span class="mx-1"></span>
+                            <span id="math-t2" class="text-blue-400 transition-colors duration-500">-2</span>
+                            <span class="text-slate-500 text-2xl font-normal">)</span>
+                        </div>
+
+                        <!-- Graphic Arena: Filter + Tent + Friends -->
+                        <div class="flex items-center gap-6 mt-4 relative w-full justify-center">
+                            
+                            <!-- The Grumpy Storm / Reverse Filter (representing the Minus sign outside) -->
+                            <div class="flex flex-col items-center gap-2 z-20">
+                                <div id="grumpy-cloud" class="w-16 h-16 bg-gradient-to-b from-rose-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg text-white text-3xl transition-transform duration-500">
+                                    <i class="fa-solid fa-cloud-showers-water animate-bounce-slow"></i>
+                                </div>
+                                <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Reverse Filter</span>
+                            </div>
+
+                            <!-- The Bracket Container (Tent) -->
+                            <div id="bracket-tent-box" class="relative bg-slate-950/40 border-2 border-dashed border-indigo-500/25 p-8 rounded-3xl min-w-[280px] flex items-center justify-center gap-6">
+                                
+                                <!-- Physical Tent Overlay (The Parentheses Shelter) -->
+                                <div id="tent-physical" class="absolute inset-0 bg-slate-700/90 border-2 border-indigo-500/40 rounded-3xl flex flex-col items-center justify-center z-30 transition-all duration-700 overflow-hidden shadow-2xl">
+                                    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                                    <i class="fa-solid fa-campground text-5xl text-indigo-400 animate-pulse"></i>
+                                    <span class="text-xs text-indigo-300 font-fun font-bold mt-2 uppercase tracking-widest">Cozy Tent Shelter</span>
+                                    <p class="text-[10px] text-slate-400 px-4 text-center mt-1">Shelters characters inside from the reverse filter outside</p>
+                                </div>
+
+                                <!-- Character inside 1: Sun (+3) -->
+                                <div id="tent-char-1" class="flex flex-col items-center gap-1.5 transition-transform duration-500 z-10">
+                                    <div id="tent-char-1-avatar" class="w-16 h-16 bg-amber-500 border-4 border-amber-300 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500">
+                                        <i id="tent-char-1-icon" class="fa-solid fa-sun text-slate-900 text-xl animate-spin-slow"></i>
+                                    </div>
+                                    <span id="tent-char-1-label" class="font-fun font-bold text-amber-400 text-base">+3 Sun</span>
+                                </div>
+
+                                <!-- Character inside 2: Rainy Cloud (-2) -->
+                                <div id="tent-char-2" class="flex flex-col items-center gap-1.5 transition-transform duration-500 z-10">
+                                    <div id="tent-char-2-avatar" class="w-16 h-16 bg-blue-600 border-4 border-blue-400 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500">
+                                        <i id="tent-char-2-icon" class="fa-solid fa-cloud-rain text-white text-xl"></i>
+                                    </div>
+                                    <span id="tent-char-2-label" class="font-fun font-bold text-blue-400 text-base">-2 Storm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Controls Panel -->
+                    <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-700/60 z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="text-center md:text-left">
+                            <h4 class="font-fun font-semibold text-slate-200 text-base flex items-center justify-center md:justify-start gap-1.5">
+                                <i class="fa-solid fa-campground text-rose-400"></i> Tent Demolition Controls
+                            </h4>
+                            <p class="text-xs text-slate-400 mt-0.5">Demolish the tent (parentheses) to let the reverse storm inside!</p>
+                        </div>
+                        <div class="w-full md:w-auto">
+                            <button id="btn-demolish" onclick="demolishTent()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-fun font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-lg shadow-rose-950/40 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-person-shelter"></i> Collapse the Tent!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Story / Lesson Side -->
+                <div class="lg:col-span-4 bg-slate-800 border border-slate-700 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-rose-500/10 text-rose-400 text-xl p-3 rounded-2xl border border-rose-500/20">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </span>
+                            <div>
+                                <h3 class="font-fun text-xl font-bold text-slate-200">The "Reverse Filter"</h3>
+                                <p class="text-xs text-rose-400 font-semibold">Concept: Negative Parentheses</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
+                            <p class="font-semibold text-slate-100">
+                                Why does opening parentheses change every single sign inside?
+                            </p>
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/40 space-y-3">
+                                <p class="text-xs text-indigo-300 uppercase tracking-widest font-extrabold">The Story</p>
+                                <p>
+                                    Imagine the parentheses <span class="text-indigo-400 font-bold">( )</span> is a cozy <strong>Camping Tent</strong>.
+                                </p>
+                                <p>
+                                    Outside the tent, a grumpy <span class="text-rose-400 font-bold">Reverse Filter Storm</span> (the minus sign) is hovering, wanting to invert everyone's mood.
+                                </p>
+                                <p>
+                                    As long as the tent stays up, the characters are safe. But when you **take the tent down**, the storm hits *every single occupant* and flips their outfit:
+                                </p>
+                                <ul class="list-disc list-inside space-y-1 text-xs text-slate-400">
+                                    <li>Sunny characters (<span class="text-amber-400 font-bold">+</span>) are soaked into rainy storms (<span class="text-blue-400 font-bold">-</span>).</li>
+                                    <li>Rainy characters (<span class="text-blue-400 font-bold">-</span>) find the rain funny and cheered up to sun (<span class="text-amber-400 font-bold">+</span>).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-700/60">
+                        <div class="flex items-center gap-2.5 bg-indigo-950/40 border border-indigo-900/55 p-3.5 rounded-2xl">
+                            <i class="fa-solid fa-lightbulb text-indigo-400 text-lg"></i>
+                            <p class="text-xs text-indigo-300">
+                                <strong>Try it!</strong> Tap "Collapse Tent" to release the storm. Watch both characters invert.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800 text-center py-6 text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4">
+            <p>Designed for secondary school classrooms. Visualizing math using storytelling rather than vocabulary.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Global State variables
+        let portalPosition = 'left'; // left or right
+        let tentCollapsed = false;
+
+        // On window load
+        window.onload = function() {
+            // Initialize setup states if needed
+            resetPortal();
+            resetTent();
+        };
+
+        function switchTab(tabId) {
+            const portalTab = document.getElementById('tab-portal');
+            const tentTab = document.getElementById('tab-tent');
+            const btnPortal = document.getElementById('btn-portal');
+            const btnTent = document.getElementById('btn-tent');
+
+            if (tabId === 'portal') {
+                portalTab.classList.remove('hidden');
+                tentTab.classList.add('hidden');
+                
+                // Active Button style
+                btnPortal.className = "flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all bg-indigo-600 text-white shadow-md";
+                btnTent.className = "flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all text-slate-400 hover:text-white";
+            } else {
+                portalTab.classList.add('hidden');
+                tentTab.classList.remove('hidden');
+
+                // Active Button style
+                btnTent.className = "flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all bg-indigo-600 text-white shadow-md";
+                btnPortal.className = "flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-fun font-semibold text-sm transition-all text-slate-400 hover:text-white";
+            }
+        }
+
+        function moveCharacter(side) {
+            const char = document.getElementById('portal-character');
+            const avatar = document.getElementById('char-avatar');
+            const sign = document.getElementById('char-sign');
+            const icon = document.getElementById('char-icon');
+            const badge = document.getElementById('char-badge');
+
+            if (side === 'left') {
+                portalPosition = 'left';
+                char.style.left = '12%';
+                
+                // Swap back to positive styles
+                avatar.className = "w-20 h-20 bg-amber-500 text-slate-950 rounded-2xl flex flex-col items-center justify-center font-bold text-2xl border-4 border-amber-300 shadow-xl glow-positive relative";
+                sign.innerText = "+5";
+                icon.innerHTML = `<i class="fa-solid fa-sun text-slate-900 animate-spin-slow"></i>`;
+                badge.innerText = "HAPPY";
+                badge.className = "absolute -top-2 -right-2 bg-amber-300 text-amber-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md";
+            } else {
+                portalPosition = 'right';
+                // Move character across portal boundary
+                char.style.left = '74%';
+                
+                // Swap to negative style to mimic custom control change
+                avatar.className = "w-20 h-20 bg-blue-600 text-white rounded-2xl flex flex-col items-center justify-center font-bold text-2xl border-4 border-blue-400 shadow-xl glow-negative relative";
+                sign.innerText = "-5";
+                icon.innerHTML = `<i class="fa-solid fa-cloud-showers-water text-white"></i>`;
+                badge.innerText = "GLOOMY";
+                badge.className = "absolute -top-2 -right-2 bg-blue-400 text-blue-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md";
+            }
+        }
+
+        function resetPortal() {
+            moveCharacter('left');
+        }
+
+        function demolishTent() {
+            if (tentCollapsed) return;
+            tentCollapsed = true;
+
+            const tentOverlay = document.getElementById('tent-physical');
+            const cloud = document.getElementById('grumpy-cloud');
+            
+            const char1Avatar = document.getElementById('tent-char-1-avatar');
+            const char1Icon = document.getElementById('tent-char-1-icon');
+            const char1Label = document.getElementById('tent-char-1-label');
+            const mathT1 = document.getElementById('math-t1');
+
+            const char2Avatar = document.getElementById('tent-char-2-avatar');
+            const char2Icon = document.getElementById('tent-char-2-icon');
+            const char2Label = document.getElementById('tent-char-2-label');
+            const mathT2 = document.getElementById('math-t2');
+
+            const demolishBtn = document.getElementById('btn-demolish');
+
+            // 1. Zoom/Animate the stormy reverse cloud slightly
+            cloud.classList.add('scale-125', 'rotate-12');
+            
+            // 2. Dissolve/Fade out the Tent Canvas
+            tentOverlay.style.opacity = '0';
+            tentOverlay.style.transform = 'scale(0.85) rotate(-5deg)';
+            setTimeout(() => {
+                tentOverlay.classList.add('hidden');
+            }, 700);
+
+            // 3. Trigger inversion of the characters inside
+            setTimeout(() => {
+                // Character 1 was +3 Sun -> Now -3 Storm
+                char1Avatar.className = "w-16 h-16 bg-blue-600 border-4 border-blue-400 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500 scale-110";
+                char1Icon.className = "fa-solid fa-cloud-rain text-white text-xl animate-bounce";
+                char1Label.className = "font-fun font-bold text-blue-400 text-base transition-colors duration-500";
+                char1Label.innerText = "-3 Storm";
+                mathT1.innerText = "-3";
+                mathT1.className = "text-blue-400 transition-colors duration-500 font-extrabold scale-110 inline-block";
+
+                // Character 2 was -2 Storm -> Now +2 Sun
+                char2Avatar.className = "w-16 h-16 bg-amber-500 border-4 border-amber-300 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500 scale-110";
+                char2Icon.className = "fa-solid fa-sun text-slate-900 text-xl animate-spin-slow";
+                char2Label.className = "font-fun font-bold text-amber-400 text-base transition-colors duration-500";
+                char2Label.innerText = "+2 Sun";
+                mathT2.innerText = "+2";
+                mathT2.className = "text-amber-400 transition-colors duration-500 font-extrabold scale-110 inline-block";
+
+                cloud.classList.remove('scale-125', 'rotate-12');
+            }, 300);
+
+            // Adjust button status
+            demolishBtn.innerText = "Tent Collapsed! Storm Applied.";
+            demolishBtn.className = "w-full bg-slate-700 text-slate-400 font-fun font-bold px-6 py-3 rounded-xl text-sm transition-all cursor-not-allowed";
+        }
+
+        function resetTent() {
+            tentCollapsed = false;
+
+            const tentOverlay = document.getElementById('tent-physical');
+            const char1Avatar = document.getElementById('tent-char-1-avatar');
+            const char1Icon = document.getElementById('tent-char-1-icon');
+            const char1Label = document.getElementById('tent-char-1-label');
+            const mathT1 = document.getElementById('math-t1');
+
+            const char2Avatar = document.getElementById('tent-char-2-avatar');
+            const char2Icon = document.getElementById('tent-char-2-icon');
+            const char2Label = document.getElementById('tent-char-2-label');
+            const mathT2 = document.getElementById('math-t2');
+
+            const demolishBtn = document.getElementById('btn-demolish');
+
+            // Reset Tent style
+            tentOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                tentOverlay.style.opacity = '1';
+                tentOverlay.style.transform = 'scale(1) rotate(0deg)';
+            }, 50);
+
+            // Reset character 1
+            char1Avatar.className = "w-16 h-16 bg-amber-500 border-4 border-amber-300 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500";
+            char1Icon.className = "fa-solid fa-sun text-slate-900 text-xl animate-spin-slow";
+            char1Label.className = "font-fun font-bold text-amber-400 text-base";
+            char1Label.innerText = "+3 Sun";
+            mathT1.innerText = "+3";
+            mathT1.className = "text-amber-400 transition-colors duration-500";
+
+            // Reset character 2
+            char2Avatar.className = "w-16 h-16 bg-blue-600 border-4 border-blue-400 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500";
+            char2Icon.className = "fa-solid fa-cloud-rain text-white text-xl";
+            char2Label.className = "font-fun font-bold text-blue-400 text-base";
+            char2Label.innerText = "-2 Storm";
+            mathT2.innerText = "-2";
+            mathT2.className = "text-blue-400 transition-colors duration-500";
+
+            // Reset button
+            demolishBtn.innerHTML = `<i class="fa-solid fa-person-shelter"></i> Collapse the Tent!`;
+            demolishBtn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-fun font-bold px-6 py-3 rounded-xl text-sm transition-all shadow-lg shadow-rose-950/40 flex items-center justify-center gap-2";
+        }
+    </script>
+</body>
+</html>

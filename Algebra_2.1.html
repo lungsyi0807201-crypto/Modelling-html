@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HK Taxi Linear Equation Explorer | Form 4 Mathematics</title>
+  
+  <!-- Tailwind CSS for modern responsive styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js for smooth mathematical plots -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- KaTeX for beautiful LaTeX rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+  <!-- Google Fonts: Inter and Orbitron (for the classic taximeter look) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .taximeter-font {
+      font-family: 'Orbitron', monospace;
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    /* Custom Slider Styles */
+    input[type="range"]::-webkit-slider-thumb {
+      background: #ef4444; /* Taxi Red */
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <!-- SVG Red Taxi Icon -->
+        <svg class="w-10 h-10 flex-shrink-0 fill-current text-yellow-300" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1s.67-1 1-1 1.5.67 1.5 1-.67 1-1.5 1zm11 0c-.83 0-1.5-.67-1.5-1s.67-1 1-1 1.5.67 1.5 1-.67 1-1.5 1zM5 11l1.5-4.5h11L19 11H5z"/>
+        </svg>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight sm:text-3xl">HK Taxi Fare Explorer</h1>
+          <p class="text-xs sm:text-sm text-red-100 font-medium">Interactive Linear Equations $y = mx + c$ — Form 4 Mathematics</p>
+        </div>
+      </div>
+      <div class="bg-red-800/50 px-4 py-2 rounded-full border border-red-500/30 text-xs sm:text-sm">
+        📍 Core Math Curriculum Topic
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- Left Column: Controls & Concepts (7 Columns on large screens) -->
+    <section class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- Preset Fast Selectors -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Preset HK Scenarios</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <button id="presetRed" class="py-2 px-3 bg-red-50 text-red-700 border border-red-200 font-medium rounded-xl text-xs hover:bg-red-100 transition active:scale-95 flex flex-col items-center gap-1">
+            <span class="text-sm">🔴 Red Taxi</span>
+            <span>(Urban HK)</span>
+          </button>
+          <button id="presetGreen" class="py-2 px-3 bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium rounded-xl text-xs hover:bg-emerald-100 transition active:scale-95 flex flex-col items-center gap-1">
+            <span class="text-sm">🟢 Green Taxi</span>
+            <span>(New Territories)</span>
+          </button>
+          <button id="presetBlue" class="py-2 px-3 bg-blue-50 text-blue-700 border border-blue-200 font-medium rounded-xl text-xs hover:bg-blue-100 transition active:scale-95 flex flex-col items-center gap-1">
+            <span class="text-sm">🔵 Blue Taxi</span>
+            <span>(Lantau Island)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls Card (The Live Sliders) -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col gap-6">
+        <h2 class="text-lg font-bold text-slate-800 border-b pb-3 flex items-center gap-2">
+          ⚙️ Live Equation Parameters
+        </h2>
+
+        <!-- Slider 1: y-intercept (Flag-fall) -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <label for="yInterceptSlider" class="font-semibold text-slate-700 text-sm flex items-center gap-1">
+              y-Intercept ($c$) : <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-xs font-bold">Flag-fall / Base Charge</span>
+            </label>
+            <span class="font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg text-sm">HK$ <span id="yInterceptVal">29</span></span>
+          </div>
+          <input type="range" id="yInterceptSlider" min="10" max="60" step="0.5" value="29" 
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600">
+          <p class="text-xs text-slate-500 italic">The starting fare when distance is exactly $x = 0$ km.</p>
+        </div>
+
+        <!-- Slider 2: Slope (Cost per km) -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <label for="slopeSlider" class="font-semibold text-slate-700 text-sm flex items-center gap-1">
+              Slope ($m$) : <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-xs font-bold">Cost per Kilometer</span>
+            </label>
+            <span class="font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg text-sm">HK$ <span id="slopeVal">2.1</span> / km</span>
+          </div>
+          <input type="range" id="slopeSlider" min="0.5" max="8.0" step="0.1" value="2.1" 
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600">
+          <p class="text-xs text-slate-500 italic">How much your fare increases ($y$) for every additional kilometer ($x$).</p>
+        </div>
+
+        <!-- Slider 3: Distance (Independent Variable x) -->
+        <div class="flex flex-col gap-2 pt-2 border-t border-slate-100">
+          <div class="flex justify-between items-center">
+            <label for="distanceSlider" class="font-semibold text-slate-700 text-sm flex items-center gap-1">
+              Distance ($x$) : <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs font-bold">Independent Variable</span>
+            </label>
+            <span class="font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-lg text-sm"><span id="distanceVal">15</span> km</span>
+          </div>
+          <input type="range" id="distanceSlider" min="0" max="40" step="0.5" value="15" 
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          <p class="text-xs text-slate-500 italic">Slide to simulate traveling any custom distance around Hong Kong.</p>
+        </div>
+
+      </div>
+
+      <!-- Educational Insights -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 rounded-2xl p-6 shadow-md">
+        <h3 class="text-md font-bold mb-4 text-amber-400 flex items-center gap-2">
+          📖 Study Guide: Core Concepts
+        </h3>
+        <div class="space-y-4 text-sm leading-relaxed">
+          <div>
+            <span class="font-bold text-white block">1. The Independent Variable ($x$)</span>
+            <span class="text-slate-300">The distance traveled. It is "independent" because you choose the destination. It drives the change in $y$.</span>
+          </div>
+          <div class="border-t border-slate-700/60 pt-3">
+            <span class="font-bold text-white block">2. The Dependent Variable ($y$)</span>
+            <span class="text-slate-300">The total fare. It depends on how far you go. This is represented by the formula outputs.</span>
+          </div>
+          <div class="border-t border-slate-700/60 pt-3">
+            <span class="font-bold text-white block">3. Linear Equation Form:</span>
+            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-center my-2 font-mono text-base text-yellow-300">
+              $$y = mx + c$$
+            </div>
+            <p class="text-slate-300 text-xs text-center">$$\text{Total Fare} = (\text{Cost per km} \times \text{Distance}) + \text{Flag-fall}$$</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Column: Meter, Chart, and Quiz (7 Columns on large screens) -->
+    <section class="lg:col-span-7 flex flex-col gap-6">
+      
+      <!-- Interactive Taximeter Display -->
+      <div class="bg-zinc-950 rounded-2xl p-6 shadow-lg border border-zinc-800 text-white relative overflow-hidden">
+        <!-- Decorative Red/Green taxi roof light band -->
+        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 to-amber-500"></div>
+        
+        <div class="flex justify-between items-start mt-2">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-zinc-400">Hong Kong Taxi Fare</p>
+            <h2 class="text-xl font-bold tracking-tight text-white flex items-center gap-2 mt-1">
+              TAXIMETER <span class="text-xs text-red-500 animate-pulse font-mono">● LIVE RUNNING</span>
+            </h2>
+          </div>
+          <span class="bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 text-[10px] font-bold px-2 py-0.5 rounded">Urban Area</span>
+        </div>
+
+        <div class="my-6 flex justify-between items-end bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div class="flex flex-col">
+            <span class="text-[10px] uppercase font-bold text-zinc-500">Total Formula Value ($y$)</span>
+            <span class="text-4xl sm:text-5xl font-bold text-red-500 taximeter-font" id="taximeterFare">HK$ 60.50</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] uppercase font-bold text-zinc-500 block">Distance Analyzed ($x$)</span>
+            <span class="text-xl font-bold text-emerald-400 font-mono" id="taximeterDistance">15.0 km</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Equation Breakdown text -->
+        <div class="bg-zinc-900/50 rounded-xl p-3 border border-zinc-800 text-xs text-zinc-400 flex flex-col sm:flex-row sm:justify-between gap-1">
+          <div>
+            <span class="font-bold text-white">Live Calculation:</span> 
+            <span id="formulaText" class="font-mono text-yellow-300 ml-1">$$y = (2.1 \times 15) + 29$$</span>
+          </div>
+          <div class="sm:text-right text-emerald-400">
+            $$y = \text{HK\$} 60.5$$
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Graph Display -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1">
+            📈 Real-Time Linear Plot
+          </h3>
+          <span class="text-xs text-slate-500 font-mono">y-axis: Fare ($) vs x-axis: Distance (km)</span>
+        </div>
+        <div class="relative w-full h-72">
+          <canvas id="equationChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Self-Challenge Interactive Quiz Module -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+          🎓 Form 4 DSE Challenge
+        </h3>
+        <p class="text-slate-600 text-xs sm:text-sm mb-4 leading-relaxed">
+          Suppose you take a standard Red Taxi from <strong>Tsim Sha Tsui</strong> to the <strong>Hong Kong Science Park</strong> in Shatin. The total traveling distance is exactly <strong>$15\text{ km}$</strong>. 
+          Given the current Red Taxi rate ($y = 2.1x + 29$):
+        </p>
+
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-slate-500 font-semibold uppercase">What is the total fare ($y$)?</span>
+            <span class="text-xs italic text-slate-400">Double check using the sliders or scratchpad!</span>
+          </div>
+          <div class="flex gap-2">
+            <div class="relative rounded-lg shadow-sm w-36">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-slate-400 text-xs">HK$</span>
+              </div>
+              <input type="number" id="quizAnswerInput" class="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono font-bold text-slate-800" placeholder="0.00">
+            </div>
+            <button id="quizCheckBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-4 py-2 rounded-lg transition active:scale-95 flex items-center gap-1">
+              Check
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Notification Banner for Quiz Feedback -->
+        <div id="quizFeedback" class="hidden mt-4 p-4 rounded-xl text-sm font-semibold transition-all"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4">
+      <p class="mb-2">Created for Hong Kong Secondary School Form 4 Mathematics students (Linear Equations $y = mx+c$).</p>
+      <p>&copy; 2026 HK Math Classroom Interactive Tools. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Script logic -->
+  <script>
+    // Elements
+    const yInterceptSlider = document.getElementById('yInterceptSlider');
+    const slopeSlider = document.getElementById('slopeSlider');
+    const distanceSlider = document.getElementById('distanceSlider');
+
+    const yInterceptVal = document.getElementById('yInterceptVal');
+    const slopeVal = document.getElementById('slopeVal');
+    const distanceVal = document.getElementById('distanceVal');
+
+    const taximeterFare = document.getElementById('taximeterFare');
+    const taximeterDistance = document.getElementById('taximeterDistance');
+    const formulaText = document.getElementById('formulaText');
+
+    const presetRed = document.getElementById('presetRed');
+    const presetGreen = document.getElementById('presetGreen');
+    const presetBlue = document.getElementById('presetBlue');
+
+    const quizAnswerInput = document.getElementById('quizAnswerInput');
+    const quizCheckBtn = document.getElementById('quizCheckBtn');
+    const quizFeedback = document.getElementById('quizFeedback');
+
+    let equationChart;
+
+    // Presets definitions
+    const presets = {
+      red: { m: 2.1, c: 29.0 },
+      green: { m: 1.7, c: 23.5 },
+      blue: { m: 1.5, c: 20.5 }
+    };
+
+    // Calculate fare based on equation y = mx + c
+    function calculateFare(m, x, c) {
+      return parseFloat((m * x + c).toFixed(2));
+    }
+
+    // Initialize Chart.js
+    function initChart() {
+      const ctx = document.getElementById('equationChart').getContext('2d');
+      
+      const m = parseFloat(slopeSlider.value);
+      const c = parseFloat(yInterceptSlider.value);
+      const currentX = parseFloat(distanceSlider.value);
+      const currentY = calculateFare(m, currentX, c);
+
+      // Generate base linear equation data points
+      const lineData = [];
+      for (let xVal = 0; xVal <= 40; xVal += 2) {
+        lineData.push({ x: xVal, y: calculateFare(m, xVal, c) });
+      }
+
+      equationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: 'Linear Equation: y = mx + c',
+              data: lineData,
+              borderColor: '#ef4444', // Red
+              borderWidth: 3,
+              fill: false,
+              tension: 0,
+              pointRadius: 0,
+              pointHitRadius: 5
+            },
+            {
+              label: 'Your Position (x, y)',
+              data: [{ x: currentX, y: currentY }],
+              borderColor: '#10b981', // Emerald
+              backgroundColor: '#10b981',
+              pointRadius: 8,
+              pointHoverRadius: 10,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Distance: ${context.parsed.x} km, Fare: HK$ ${context.parsed.y.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              min: 0,
+              max: 40,
+              title: {
+                display: true,
+                text: 'Distance (x in km)',
+                font: { size: 12, weight: 'bold' },
+                color: '#475569'
+              },
+              grid: {
+                color: '#f1f5f9'
+              }
+            },
+            y: {
+              min: 0,
+              max: 180,
+              title: {
+                display: true,
+                text: 'Fare (y in HKD)',
+                font: { size: 12, weight: 'bold' },
+                color: '#475569'
+              },
+              grid: {
+                color: '#f1f5f9'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update real-time views and recalculate chart points
+    function updateInterface() {
+      const m = parseFloat(slopeSlider.value);
+      const c = parseFloat(yInterceptSlider.value);
+      const x = parseFloat(distanceSlider.value);
+
+      const y = calculateFare(m, x, c);
+
+      // Update text indicators
+      yInterceptVal.innerText = c.toFixed(1);
+      slopeVal.innerText = m.toFixed(1);
+      distanceVal.innerText = x;
+
+      taximeterFare.innerText = `HK$ ${y.toFixed(2)}`;
+      taximeterDistance.innerText = `${x.toFixed(1)} km`;
+
+      // Render math string natively via KaTeX
+      formulaText.innerHTML = `y = (${m.toFixed(1)} \\times ${x}) + ${c.toFixed(1)}`;
+      renderMathInElement(formulaText, {
+        throwOnError: false
+      });
+
+      // Update Chart points
+      if (equationChart) {
+        const lineData = [];
+        for (let xVal = 0; xVal <= 40; xVal += 2) {
+          lineData.push({ x: xVal, y: calculateFare(m, xVal, c) });
+        }
+        equationChart.data.datasets[0].data = lineData;
+        equationChart.data.datasets[1].data = [{ x: x, y: y }];
+        equationChart.update('none'); // Update without full animation for peak smoothness
+      }
+    }
+
+    // Preset loading helper
+    function loadPreset(key) {
+      if (presets[key]) {
+        slopeSlider.value = presets[key].m;
+        yInterceptSlider.value = presets[key].c;
+        updateInterface();
+      }
+    }
+
+    // Set up listeners for interactivity
+    yInterceptSlider.addEventListener('input', updateInterface);
+    slopeSlider.addEventListener('input', updateInterface);
+    distanceSlider.addEventListener('input', updateInterface);
+
+    presetRed.addEventListener('click', () => loadPreset('red'));
+    presetGreen.addEventListener('click', () => loadPreset('green'));
+    presetBlue.addEventListener('click', () => loadPreset('blue'));
+
+    // DSE Quiz Event logic
+    quizCheckBtn.addEventListener('click', () => {
+      const studentAnswer = parseFloat(quizAnswerInput.value);
+      const correctAnswer = calculateFare(2.1, 15, 29); // 2.1 * 15 + 29 = 60.5
+      
+      quizFeedback.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+
+      if (isNaN(studentAnswer)) {
+        quizFeedback.classList.add('bg-red-100', 'text-red-800');
+        quizFeedback.innerHTML = `⚠️ Please enter a number to submit your answer.`;
+        return;
+      }
+
+      if (Math.abs(studentAnswer - correctAnswer) < 0.1) {
+        quizFeedback.classList.add('bg-green-100', 'text-green-800');
+        quizFeedback.innerHTML = `🎉 Correct! Outstanding work! For $x = 15\\text{ km}$, the fare is exactly $2.1(15) + 29 = 60.5$. Adjust the distance slider above to 15 km to confirm your result on the plot.`;
+      } else {
+        quizFeedback.classList.add('bg-red-100', 'text-red-800');
+        quizFeedback.innerHTML = `❌ Almost there! Remember the linear equation formula: $y = 2.1x + 29$. If we plug in $x = 15$, we get $2.1 \\times 15 + 29$. Try calculating that once more!`;
+      }
+      renderMathInElement(quizFeedback);
+    });
+
+    // Run when DOM structure is ready
+    window.onload = function() {
+      initChart();
+      updateInterface();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Hero RPG</title>
+    <style>
+        :root {
+            --primary-color: #4a154b;
+            --hero-color: #3498db;
+            --monster-color: #e74c3c;
+            --bg-color: #1a1a2e;
+            --panel-bg: #162447;
+            --text-color: #e4e6eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Instruction Panel */
+        #instruction-panel {
+            background-color: var(--primary-color);
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-bottom: 3px solid #631f64;
+            z-index: 10;
+        }
+
+        /* Battle Stage */
+        #stage {
+            flex: 1;
+            display: flex;
+            position: relative;
+            background: linear-gradient(to bottom, #1f1c2c, #928dab);
+            overflow: hidden;
+        }
+
+        .battle-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Status Bars */
+        .status-container {
+            width: 80%;
+            max-width: 250px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .name-tag {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hp-bar-outer {
+            width: 100%;
+            height: 20px;
+            background-color: #555;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #222;
+            position: relative;
+        }
+
+        .hp-bar-inner {
+            height: 100%;
+            width: 100%;
+            transition: width 0.4s ease-out;
+        }
+
+        #hero-hp { background-color: var(--hero-color); }
+        #monster-hp { background-color: var(--monster-color); }
+
+        .hp-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            line-height: 16px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        /* Sprites */
+        .sprite {
+            font-size: 6rem;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Combat FX Animations */
+        @keyframes heroAttack {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(50px) scale(1.1); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        @keyframes monsterAttack {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(-50px) scale(1.1); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        @keyframes magicBeam {
+            0% { width: 0; opacity: 0; left: 25%; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { width: 50%; opacity: 0; left: 25%; }
+        }
+
+        @keyframes strikeClaw {
+            0% { width: 0; opacity: 0; right: 25%; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { width: 50%; opacity: 0; right: 25%; }
+        }
+
+        .animate-hero-atk { animation: heroAttack 0.4s ease-in-out; }
+        .animate-monster-atk { animation: monsterAttack 0.4s ease-in-out; }
+        .animate-damage { animation: shake 0.4s ease-in-out; filter: brightness(1.5) sepia(1) hue-rotate(-50deg); }
+
+        /* Projectile FX Visuals */
+        .spell-fx {
+            position: absolute;
+            top: 55%;
+            height: 30px;
+            border-radius: 15px;
+            pointer-events: none;
+            z-index: 3;
+            width: 0;
+        }
+
+        #hero-spell {
+            background: linear-gradient(90deg, transparent, #00f0ff, #fff);
+            box-shadow: 0 0 20px #00f0ff;
+        }
+
+        #monster-spell {
+            background: linear-gradient(-90deg, transparent, #ff0055, #fff);
+            box-shadow: 0 0 20px #ff0055;
+        }
+
+        /* Floating Damage Text */
+        .damage-popup {
+            position: absolute;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #ff3333;
+            text-shadow: 2px 2px 4px #000;
+            animation: floatUp 0.8s ease-out forwards;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1); }
+        }
+
+        /* Control Area */
+        #control-panel {
+            background-color: var(--panel-bg);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-top: 4px solid #1f4068;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        #equation-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            color: #00fff0;
+            text-shadow: 0 0 10px rgba(0,255,240,0.3);
+            background: rgba(0,0,0,0.3);
+            padding: 10px 40px;
+            border-radius: 30px;
+            border: 1px solid #1f4068;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        #answer-input {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #1f4068;
+            background-color: #162447;
+            color: #fff;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #answer-input:focus {
+            border-color: var(--hero-color);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        #attack-btn {
+            padding: 12px 35px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, filter 0.2s;
+            text-transform: uppercase;
+        }
+
+        #attack-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        #attack-btn:active {
+            transform: scale(0.95);
+        }
+
+        #feedback-msg {
+            margin-top: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            height: 24px;
+        }
+        
+        .msg-correct { color: #2ecc71; }
+        .msg-incorrect { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <div id="instruction-panel">
+        Gameplay: Hero, a monster has appeared! Calculate the value of 𝑥 in the magic circle and enter it. A correct answer unleashes a powerful magic attack; a wrong answer triggers a monster counterattack. Reduce the monster’s HP to zero!
+    </div>
+
+    <div id="stage">
+        <div class="battle-side" id="hero-side">
+            <div class="status-container">
+                <div class="name-tag" id="hero-name">Algebra Hero (LV 1)</div>
+                <div class="hp-bar-outer">
+                    <div id="hero-hp" class="hp-bar-inner"></div>
+                    <div class="hp-text" id="hero-hp-text">100 / 100</div>
+                </div>
+            </div>
+            <div class="sprite" id="hero-sprite">🧙‍♂️</div>
+        </div>
+
+        <div id="hero-spell" class="spell-fx"></div>
+        <div id="monster-spell" class="spell-fx"></div>
+
+        <div class="battle-side" id="monster-side">
+            <div class="status-container">
+                <div class="name-tag" id="monster-name">Goblin Slime</div>
+                <div class="hp-bar-outer">
+                    <div id="monster-hp" class="hp-bar-inner"></div>
+                    <div class="hp-text" id="monster-hp-text">50 / 50</div>
+                </div>
+            </div>
+            <div class="sprite" id="monster-sprite">👹</div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div id="equation-display">x + 5 = 12</div>
+        <div class="input-group">
+            <input type="number" id="answer-input" placeholder="Value of x..." autocomplete="off">
+            <button id="attack-btn">Attack</button>
+        </div>
+        <div id="feedback-msg"></div>
+    </div>
+
+    <script>
+        // Game State Management Engine
+        const state = {
+            hero: { maxHp: 100, hp: 100, level: 1 },
+            monster: { maxHp: 50, hp: 50, name: "Goblin Slime", typeIdx: 0 },
+            currentSolution: 0,
+            isAnimating: false
+        };
+
+        // Configuration Entities
+        const monstersPool = [
+            { name: "Goblin Slime", sprite: "👹", baseHp: 50 },
+            { name: "Orc Sorcerer", sprite: "🧙‍♀️", baseHp: 75 },
+            { name: "Shadow Golem", sprite: "🗿", baseHp: 110 },
+            { name: "Algebra Dragon", sprite: "🐉", baseHp: 160 }
+        ];
+
+        // Cache elements
+        const e = {
+            heroHp: document.getElementById('hero-hp'),
+            heroHpText: document.getElementById('hero-hp-text'),
+            heroName: document.getElementById('hero-name'),
+            heroSprite: document.getElementById('hero-sprite'),
+            monsterHp: document.getElementById('monster-hp'),
+            monsterHpText: document.getElementById('monster-hp-text'),
+            monsterName: document.getElementById('monster-name'),
+            monsterSprite: document.getElementById('monster-sprite'),
+            equation: document.getElementById('equation-display'),
+            input: document.getElementById('answer-input'),
+            btn: document.getElementById('attack-btn'),
+            feedback: document.getElementById('feedback-msg'),
+            heroSpell: document.getElementById('hero-spell'),
+            monsterSpell: document.getElementById('monster-spell'),
+            stage: document.getElementById('stage')
+        };
+
+        // Utility: Random Integer Generator
+        function rand(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Equation Factory Logic Engine
+        function generateEquation(level) {
+            let eqText = "";
+            let answer = 0;
+
+            // Adjust values dynamically depending on progression depth
+            if (level === 1) {
+                // Tier 1: Standard Simple Linear (x + a = b || x - a = b)
+                let a = rand(2, 15);
+                answer = rand(2, 15);
+                if (Math.random() > 0.5) {
+                    eqText = `x + ${a} = ${answer + a}`;
+                } else {
+                    eqText = `x - ${a} = ${answer - a}`;
+                }
+            } else if (level === 2) {
+                // Tier 2: Coefficient Scales & Negatives (ax + b = c)
+                let a = rand(2, 5);
+                answer = rand(-6, 10);
+                if (answer === 0) answer = 3; // bypass trivial zero answers
+                let b = rand(-10, 15);
+                
+                let c = a * answer + b;
+                let sign = b >= 0 ? "+" : "-";
+                eqText = `${a}x ${sign} ${Math.abs(b)} = ${c}`;
+            } else {
+                // Tier 3+: Dynamic Complex Math Structs Matrix containing Parentheses 
+                let a = rand(2, 4);
+                answer = rand(-8, 12);
+                if (answer === 0) answer = 5;
+                let b = rand(-8, 8);
+                if (b === 0) b = 2;
+
+                let c = a * (answer + b);
+                let sign = b >= 0 ? "+" : "-";
+                eqText = `${a}(x ${sign} ${Math.abs(b)}) = ${c}`;
+            }
+
+            state.currentSolution = answer;
+            e.equation.textContent = eqText;
+        }
+
+        // Render Refresh Loop
+        function updateUI() {
+            // Percent calculations
+            const heroPct = Math.max(0, (state.hero.hp / state.hero.maxHp) * 100);
+            const monsterPct = Math.max(0, (state.monster.hp / state.monster.maxHp) * 100);
+
+            e.heroHp.style.width = `${heroPct}%`;
+            e.heroHpText.textContent = `${state.hero.hp} / ${state.hero.maxHp}`;
+            e.heroName.textContent = `Algebra Hero (LV ${state.hero.level})`;
+
+            e.monsterHp.style.width = `${monsterPct}%`;
+            e.monsterHpText.textContent = `${state.monster.hp} / ${state.monster.maxHp}`;
+            e.monsterName.textContent = state.monster.name;
+            e.monsterSprite.textContent = monstersPool[Math.min(state.monster.typeIdx, monstersPool.length - 1)].sprite;
+        }
+
+        // Display Floating Text Layer Popups
+        function createDamagePopup(targetEl, val) {
+            const rect = targetEl.getBoundingClientRect();
+            const stageRect = e.stage.getBoundingClientRect();
+            
+            const pop = document.createElement('div');
+            pop.className = 'damage-popup';
+            pop.textContent = val;
+            pop.style.left = `${rect.left - stageRect.left + rect.width/2 - 20}px`;
+            pop.style.top = `${rect.top - stageRect.top + 20}px`;
+            
+            e.stage.appendChild(pop);
+            setTimeout(() => pop.remove(), 800);
+        }
+
+        // Next Phase Iteration Spawning System
+        function spawnMonster() {
+            state.monster.typeIdx++;
+            const meta = monstersPool[Math.min(state.monster.typeIdx, monstersPool.length - 1)];
+            
+            // Scaled dynamic stats calculations
+            state.monster.name = `${meta.name} Mk-${state.monster.typeIdx + 1}`;
+            state.monster.maxHp = meta.baseHp + (state.monster.typeIdx * 20);
+            state.monster.hp = state.monster.maxHp;
+            
+            state.hero.level++;
+            state.hero.maxHp += 25;
+            state.hero.hp = state.hero.maxHp; // Heal to full on level advancement
+
+            showFeedback(`Defeated! Level Up! A wild ${state.monster.name} emerges!`, "msg-correct");
+            generateEquation(state.hero.level);
+            updateUI();
+        }
+
+        function showFeedback(text, className) {
+            e.feedback.textContent = text;
+            e.feedback.className = className;
+        }
+
+        // Main Turn Resolution Controller Engine
+        function handleAttack() {
+            if (state.isAnimating || state.hero.hp <= 0 || state.monster.hp <= 0) return;
+
+            const inputVal = e.input.value.trim();
+            if (inputVal === "") return;
+
+            const playerAns = parseInt(inputVal, 10);
+            state.isAnimating = true;
+            e.input.disabled = true;
+            e.btn.disabled = true;
+
+            if (playerAns === state.currentSolution) {
+                // SUCCESS COMBAT PHASE
+                showFeedback("Correct Answer! Ultimate Magic Attack unleashed!", "msg-correct");
+                
+                // Trigger FX Sequences
+                e.heroSprite.classList.add('animate-hero-atk');
+                e.heroSpell.style.animation = 'magicBeam 0.5s ease-out forwards';
+                
+                setTimeout(() => {
+                    e.monsterSprite.classList.add('animate-damage');
+                    const dmg = 20 + rand(5, 15) + (state.hero.level * 2);
+                    state.monster.hp = Math.max(0, state.monster.hp - dmg);
+                    createDamagePopup(e.monsterSprite, `-${dmg}`);
+                    updateUI();
+                }, 250);
+
+                setTimeout(() => {
+                    // Cleanup phase
+                    e.heroSprite.classList.remove('animate-hero-atk');
+                    e.monsterSprite.classList.remove('animate-damage');
+                    e.heroSpell.style.animation = '';
+                    
+                    if (state.monster.hp <= 0) {
+                        spawnMonster();
+                    } else {
+                        generateEquation(state.hero.level);
+                    }
+                    
+                    postTurnReset();
+                }, 800);
+
+            } else {
+                // FAILURE COMBAT PHASE
+                showFeedback(`Incorrect! The correct answer was ${state.currentSolution}. Monster counterattacks!`, "msg-incorrect");
+                
+                // Trigger FX Sequences
+                e.monsterSprite.classList.add('animate-monster-atk');
+                e.monsterSpell.style.animation = 'strikeClaw 0.5s ease-out forwards';
+                
+                setTimeout(() => {
+                    e.heroSprite.classList.add('animate-damage');
+                    const dmg = 15 + rand(5, 10) + (state.monster.typeIdx * 3);
+                    state.hero.hp = Math.max(0, state.hero.hp - dmg);
+                    createDamagePopup(e.heroSprite, `-${dmg}`);
+                    updateUI();
+                }, 250);
+
+                setTimeout(() => {
+                    e.monsterSprite.classList.remove('animate-monster-atk');
+                    e.heroSprite.classList.remove('animate-damage');
+                    e.monsterSpell.style.animation = '';
+
+                    if (state.hero.hp <= 0) {
+                        showFeedback("Defeat! The Hero fell in battle. Refresh page to revive.", "msg-incorrect");
+                        e.equation.textContent = "GAME OVER";
+                    } else {
+                        postTurnReset();
+                    }
+                }, 800);
+            }
+        }
+
+        function postTurnReset() {
+            state.isAnimating = false;
+            if (state.hero.hp > 0) {
+                e.input.disabled = false;
+                e.btn.disabled = false;
+                e.input.value = "";
+                e.input.focus();
+            }
+        }
+
+        // Global Dynamic Input Event Mapping hooks
+        e.btn.addEventListener('click', handleAttack);
+        e.input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') handleAttack();
+        });
+
+        // Initialize Runtime Loop context 
+        generateEquation(state.hero.level);
+        updateUI();
+    </script>
+</body>
+</html>

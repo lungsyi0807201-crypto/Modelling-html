@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE Math: Straight Line Graph Visualizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Math Fraction CSS for fast, flicker-free rendering while dragging sliders */
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 4px;
+            font-size: 0.9em;
+        }
+        .numerator {
+            border-bottom: 2.2px solid currentColor;
+            padding-bottom: 1px;
+            font-weight: 600;
+        }
+        .denominator {
+            padding-top: 1px;
+            font-weight: 600;
+        }
+        /* Custom transition for active quadrant overlay shading */
+        .quadrant-overlay {
+            transition: fill-opacity 0.3s ease, fill 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-700 to-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <span class="bg-indigo-500 text-xs text-white uppercase font-bold px-2 py-1 rounded-full">HKDSE Paper 2 Boost</span>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight mt-1">Straight Lines & Coefficients</h1>
+                <p class="text-indigo-200 text-sm mt-0.5">Master the general form: <span class="font-mono bg-indigo-800 px-1.5 py-0.5 rounded">$Ax + By + C = 0$</span></p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchTab('explorer')" id="tabBtnExplorer" class="px-4 py-2 rounded-lg font-semibold text-sm transition bg-white text-indigo-900 shadow">
+                    Interactive Explorer
+                </button>
+                <button onclick="switchTab('revision')" id="tabBtnRevision" class="px-4 py-2 rounded-lg font-semibold text-sm transition bg-indigo-800 hover:bg-indigo-700 text-indigo-100">
+                    DSE Mock Questions
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- ================= EXPLORER TAB CONTENT ================= -->
+        <div id="explorerTab" class="lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Side: Interactive Graphic Panel -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- SVG Graph Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Dynamic Visual Plane</span>
+                        <div class="text-xs bg-indigo-50 text-indigo-700 font-medium px-2 py-0.5 rounded" id="liveFormula">
+                            2x - 3y + 6 = 0
+                        </div>
+                    </div>
+
+                    <!-- SVG Graph -->
+                    <div class="relative w-full aspect-square bg-slate-50 border border-slate-100 rounded-xl overflow-hidden shadow-inner">
+                        <svg id="coordinatePlane" viewBox="0 0 400 400" class="w-full h-full select-none">
+                            <!-- Quadrant Background Overlays for highlighting active areas -->
+                            <!-- Q1 (Top Right) -->
+                            <rect id="quad1" x="200" y="0" width="200" height="200" fill="#3b82f6" fill-opacity="0" class="quadrant-overlay" />
+                            <!-- Q2 (Top Left) -->
+                            <rect id="quad2" x="0" y="0" width="200" height="200" fill="#3b82f6" fill-opacity="0" class="quadrant-overlay" />
+                            <!-- Q3 (Bottom Left) -->
+                            <rect id="quad3" x="0" y="200" width="200" height="200" fill="#3b82f6" fill-opacity="0" class="quadrant-overlay" />
+                            <!-- Q4 (Bottom Right) -->
+                            <rect id="quad4" x="200" y="200" width="200" height="200" fill="#3b82f6" fill-opacity="0" class="quadrant-overlay" />
+
+                            <!-- Grid Lines -->
+                            <!-- Horizontal Grids -->
+                            <g stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,2">
+                                <line x1="0" y1="40" x2="400" y2="40" />
+                                <line x1="0" y1="80" x2="400" y2="80" />
+                                <line x1="0" y1="120" x2="400" y2="120" />
+                                <line x1="0" y1="160" x2="400" y2="160" />
+                                <line x1="0" y1="240" x2="400" y2="240" />
+                                <line x1="0" y1="280" x2="400" y2="280" />
+                                <line x1="0" y1="320" x2="400" y2="320" />
+                                <line x1="0" y1="360" x2="400" y2="360" />
+                                <!-- Vertical Grids -->
+                                <line x1="40" y1="0" x2="40" y2="400" />
+                                <line x1="80" y1="0" x2="80" y2="400" />
+                                <line x1="120" y1="0" x2="120" y2="400" />
+                                <line x1="160" y1="0" x2="160" y2="400" />
+                                <line x1="240" y1="0" x2="240" y2="400" />
+                                <line x1="280" y1="0" x2="280" y2="400" />
+                                <line x1="320" y1="0" x2="320" y2="400" />
+                                <line x1="360" y1="0" x2="360" y2="400" />
+                            </g>
+
+                            <!-- Axes -->
+                            <line x1="0" y1="200" x2="400" y2="200" stroke="#475569" stroke-width="2" />
+                            <line x1="200" y1="0" x2="200" y2="400" stroke="#475569" stroke-width="2" />
+                            
+                            <!-- Origin and Quadrant Markers -->
+                            <text x="385" y="195" font-size="12" fill="#475569" font-weight="bold">x</text>
+                            <text x="205" y="15" font-size="12" fill="#475569" font-weight="bold">y</text>
+                            <text x="188" y="215" font-size="11" fill="#64748b">O</text>
+
+                            <text x="300" y="100" font-size="20" fill="#94a3b8" fill-opacity="0.6" font-weight="bold" text-anchor="middle">Quadrant I</text>
+                            <text x="100" y="100" font-size="20" fill="#94a3b8" fill-opacity="0.6" font-weight="bold" text-anchor="middle">Quadrant II</text>
+                            <text x="100" y="300" font-size="20" fill="#94a3b8" fill-opacity="0.6" font-weight="bold" text-anchor="middle">Quadrant III</text>
+                            <text x="300" y="300" font-size="20" fill="#94a3b8" fill-opacity="0.6" font-weight="bold" text-anchor="middle">Quadrant IV</text>
+
+                            <!-- The Straight Line L -->
+                            <line id="straightLine" x1="0" y1="200" x2="400" y2="200" stroke="#4f46e5" stroke-width="4.5" stroke-linecap="round" />
+                            
+                            <!-- Highlight Intercept Nodes -->
+                            <circle id="yInterceptNode" cx="200" cy="200" r="6" fill="#ef4444" class="transition-all duration-75" />
+                            <circle id="xInterceptNode" cx="200" cy="200" r="6" fill="#10b981" class="transition-all duration-75" />
+                        </svg>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="flex justify-center gap-6 mt-3 text-xs font-semibold">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span> Line $L$</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#ef4444] inline-block"></span> $y$-intercept</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#10b981] inline-block"></span> $x$-intercept</span>
+                    </div>
+                </div>
+
+                <!-- Sliders Control Panel -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Adjust General Form Parameters
+                    </h3>
+
+                    <div class="space-y-4">
+                        <!-- Coefficient A -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                                    <span class="w-6 h-6 rounded-md bg-rose-50 text-rose-600 font-bold flex items-center justify-center text-xs">A</span>
+                                    Coefficient of $x$
+                                </label>
+                                <span class="font-mono text-sm font-bold text-rose-600 w-8 text-right" id="valueA">2</span>
+                            </div>
+                            <input id="sliderA" type="range" min="-10" max="10" step="1" value="2" 
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600">
+                        </div>
+
+                        <!-- Coefficient B -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                                    <span class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center text-xs">B</span>
+                                    Coefficient of $y$
+                                </label>
+                                <span class="font-mono text-sm font-bold text-indigo-600 w-8 text-right" id="valueB">-3</span>
+                            </div>
+                            <input id="sliderB" type="range" min="-10" max="10" step="1" value="-3" 
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            </div>
+                        </div>
+
+                        <!-- Coefficient C -->
+                        <div class="mt-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                                    <span class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center text-xs">C</span>
+                                    Constant Term
+                                </label>
+                                <span class="font-mono text-sm font-bold text-emerald-600 w-8 text-right" id="valueC">6</span>
+                            </div>
+                            <input id="sliderC" type="range" min="-10" max="10" step="1" value="6" 
+                                class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
+                        </div>
+                    </div>
+                </div>
+            
+            <!-- Right Side: Real-time Deduction Dashboard -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Preset Cases -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Load Common DSE Graph Presets</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="applyPreset(1, -2, -4)" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition">
+                            Positive Slope, Negative $y$-int (Q1 Passed)
+                        </button>
+                        <button onclick="applyPreset(1, 2, 4)" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold transition">
+                            Negative Slope, Negative $y$-int (Q2 Passed)
+                        </button>
+                        <button onclick="applyPreset(2, -3, 0)" class="px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg text-xs font-bold transition">
+                            Passes Through Origin ($C=0$)
+                        </button>
+                        <button onclick="applyPreset(0, 3, -6)" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition">
+                            Horizontal Line ($A=0$)
+                        </button>
+                        <button onclick="applyPreset(4, 0, -8)" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition">
+                            Vertical Line ($B=0$)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analysis Summary Widgets -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Slope Metric -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Slope ($m$)</span>
+                        <div class="my-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-bold tracking-tight text-slate-700" id="metricSlopeSign">+</span>
+                            <span class="text-sm font-semibold text-slate-500" id="metricSlopeValue">(-A/B)</span>
+                        </div>
+                        <div class="text-xs font-bold px-2 py-1 rounded inline-block text-center" id="metricSlopeBadge">
+                            Positive
+                        </div>
+                    </div>
+                    <!-- Y-Intercept Metric -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase">$y$-intercept</span>
+                        <div class="my-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-bold tracking-tight text-slate-700" id="metricYIntSign">-</span>
+                            <span class="text-sm font-semibold text-slate-500" id="metricYIntValue">(-C/B)</span>
+                        </div>
+                        <div class="text-xs font-bold px-2 py-1 rounded inline-block text-center" id="metricYIntBadge">
+                            Negative
+                        </div>
+                    </div>
+                    <!-- X-Intercept Metric -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase">$x$-intercept</span>
+                        <div class="my-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-bold tracking-tight text-slate-700" id="metricXIntSign">+</span>
+                            <span class="text-sm font-semibold text-slate-500" id="metricXIntValue">(-C/A)</span>
+                        </div>
+                        <div class="text-xs font-bold px-2 py-1 rounded inline-block text-center" id="metricXIntBadge">
+                            Positive
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Step-by-Step Pedagogical Guide -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex-grow flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
+                        <span class="bg-emerald-100 text-emerald-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-black">?</span>
+                        Interactive 3-Step Deduction Breakdown
+                    </h3>
+                    
+                    <div class="space-y-6 text-sm flex-grow">
+                        <!-- Step 1 -->
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0">
+                                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center">1</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-700 text-base">Geometric Analysis</h4>
+                                <p class="text-slate-500 mt-1" id="step1Text">
+                                    The straight line passes through quadrants <span class="font-bold text-indigo-600">I, III, and IV</span> only (avoiding II).
+                                </p>
+                                <div class="mt-2 flex gap-3 flex-wrap">
+                                    <span class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-600" id="step1SlopeGeo">Slope is <strong>positive</strong></span>
+                                    <span class="px-2 py-1 bg-slate-100 rounded text-xs text-slate-600" id="step1YIntGeo">$y$-intercept is <strong>negative</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0">
+                                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center">2</span>
+                            </div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-slate-700 text-base">Convert to Formulas</h4>
+                                <p class="text-slate-500 mt-1">Substitute parameters into standard algebraic fractions:</p>
+                                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
+                                        <span class="font-semibold text-slate-600">Slope ($m$):</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-slate-500 font-mono">-${A \over B}$</span>
+                                            <span class="font-bold" id="step2SlopeFormula">> 0</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
+                                        <span class="font-semibold text-slate-600">$y$-intercept ($c$):</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-slate-500 font-mono">-${C \over B}$</span>
+                                            <span class="font-bold" id="step2YIntFormula">&lt; 0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0">
+                                <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center">3</span>
+                            </div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-slate-700 text-base">Determine Coefficient Sign & Products</h4>
+                                <p class="text-slate-500 mt-1">Evaluate the sign properties and products of your coefficients:</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 font-semibold text-center text-xs">
+                                    <div class="p-2 border rounded-xl" id="signAB">
+                                        <div class="text-slate-400 font-bold">AB product</div>
+                                        <div class="text-lg font-bold my-1" id="signABVal">AB &lt; 0</div>
+                                        <div class="text-[10px]" id="signABDesc">Opposite Signs</div>
+                                    </div>
+                                    <div class="p-2 border rounded-xl" id="signBC">
+                                        <div class="text-slate-400 font-bold">BC product</div>
+                                        <div class="text-lg font-bold my-1" id="signBCVal">BC &gt; 0</div>
+                                        <div class="text-[10px]" id="signBCDesc">Same Signs</div>
+                                    </div>
+                                    <div class="p-2 border rounded-xl" id="signAC">
+                                        <div class="text-slate-400 font-bold">AC product</div>
+                                        <div class="text-lg font-bold my-1" id="signACVal">AC &lt; 0</div>
+                                        <div class="text-[10px]" id="signACDesc">Opposite Signs</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= REVISION / PRACTICE TAB CONTENT ================= -->
+        <div id="revisionTab" class="lg:col-span-12 hidden flex flex-col gap-6">
+            <!-- Instructions Panel -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-indigo-900 flex flex-col md:flex-row items-center gap-4">
+                <div class="bg-indigo-600 text-white w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold shrink-0">📝</div>
+                <div>
+                    <h3 class="font-bold text-lg">HKDSE Paper 2 Simulator</h3>
+                    <p class="text-indigo-700 text-sm">Attempt these 3 curriculum questions. You can toggle the dynamic explainer to view the exact live graph that matches the question parameters.</p>
+                </div>
+            </div>
+
+            <!-- Quiz Layout Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Question Cards -->
+                <!-- Q1 -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col justify-between" id="cardQ1">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded">Question 1</span>
+                            <span class="text-xs text-slate-400">Target Time: 1 min</span>
+                        </div>
+                        <h4 class="font-semibold text-slate-700 leading-relaxed text-sm mb-4">
+                            The straight line $L: Ax + By + C = 0$ passes through the <strong>first, third, and fourth quadrants</strong> only. Which of the following must be true?
+                        </h4>
+                        
+                        <!-- Options list -->
+                        <div class="space-y-2 text-xs">
+                            <button onclick="checkAnswer(1, 'A')" class="option-btn-1 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>A. $AB > 0$ and $BC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(1, 'B')" class="option-btn-1 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>B. $AB > 0$ and $BC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(1, 'C')" class="option-btn-1 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>C. $AB < 0$ and $BC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(1, 'D')" class="option-btn-1 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>D. $AB < 0$ and $BC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                        <button onclick="loadQuestionPreset(1)" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            👁️ Load on Graph
+                        </button>
+                        <button onclick="toggleExplainer(1)" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition">
+                            Explain
+                        </button>
+                    </div>
+
+                    <!-- Explainer Overlay text -->
+                    <div id="explainer1" class="hidden mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
+                        <p class="font-bold text-slate-800">Pedagogical Walkthrough:</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-slate-600">
+                            <li><strong>Quadrant Sketch:</strong> Passes through I, III, IV only $\implies$ avoids QII $\implies$ positive slope ($m > 0$) and negative $y$-intercept ($c < 0$).</li>
+                            <li><strong>Formula substitution:</strong> Slope $m = -\frac{A}{B} > 0 \implies \frac{A}{B} < 0 \implies AB < 0$.</li>
+                            <li><strong>Constant term check:</strong> $y$-int $c = -\frac{C}{B} < 0 \implies \frac{C}{B} > 0 \implies BC > 0$.</li>
+                        </ol>
+                        <p class="text-[11px] font-bold text-indigo-600">Therefore, Option C must be true!</p>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col justify-between" id="cardQ2">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded">Question 2</span>
+                            <span class="text-xs text-slate-400">Target Time: 1 min</span>
+                        </div>
+                        <h4 class="font-semibold text-slate-700 leading-relaxed text-sm mb-4">
+                            The straight line $L: Ax + By + C = 0$ passes through the <strong>second, third, and fourth quadrants</strong> only. Which of the following must be true?
+                        </h4>
+                        
+                        <!-- Options list -->
+                        <div class="space-y-2 text-xs">
+                            <button onclick="checkAnswer(2, 'A')" class="option-btn-2 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>A. $AC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(2, 'B')" class="option-btn-2 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>B. $AC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(2, 'C')" class="option-btn-2 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>C. $BC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(2, 'D')" class="option-btn-2 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>D. $BC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                        <button onclick="loadQuestionPreset(2)" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            👁️ Load on Graph
+                        </button>
+                        <button onclick="toggleExplainer(2)" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition">
+                            Explain
+                        </button>
+                    </div>
+
+                    <!-- Explainer Overlay text -->
+                    <div id="explainer2" class="hidden mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
+                        <p class="font-bold text-slate-800">Pedagogical Walkthrough:</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-slate-600">
+                            <li><strong>Quadrant Sketch:</strong> Passes QII, QIII, QIV $\implies$ avoids QI $\implies$ negative slope ($m < 0$) and negative $y$-intercept ($c < 0$).</li>
+                            <li><strong>Substitutions:</strong> Slope $m = -\frac{A}{B} < 0 \implies \frac{A}{B} > 0 \implies A, B$ have same sign.</li>
+                            <li><strong>Intercept formula:</strong> $y$-int $c = -\frac{C}{B} < 0 \implies \frac{C}{B} > 0 \implies B, C$ have same sign.</li>
+                            <li><strong>Transitive deduction:</strong> If $A$ shares sign with $B$, and $B$ shares sign with $C$, then $A$ shares sign with $C \implies AC > 0$.</li>
+                        </ol>
+                        <p class="text-[11px] font-bold text-indigo-600">Therefore, Option A must be true!</p>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col justify-between" id="cardQ3">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded">Question 3</span>
+                            <span class="text-xs text-slate-400">Target Time: 1 min</span>
+                        </div>
+                        <h4 class="font-semibold text-slate-700 leading-relaxed text-sm mb-4">
+                            The straight line $L: Ax + By + C = 0$ has a <strong>negative $x$-intercept</strong> and passes through the <strong>first quadrant</strong>, but does <strong>not</strong> pass through the third quadrant. Which of the following must be true?
+                        </h4>
+                        
+                        <!-- Options list -->
+                        <div class="space-y-2 text-xs">
+                            <button onclick="checkAnswer(3, 'A')" class="option-btn-3 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>A. $AB > 0$ and $AC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(3, 'B')" class="option-btn-3 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>B. $AB > 0$ and $AC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(3, 'C')" class="option-btn-3 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>C. $AB < 0$ and $AC > 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                            <button onclick="checkAnswer(3, 'D')" class="option-btn-3 w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center">
+                                <span>D. $AB < 0$ and $AC < 0$</span>
+                                <span class="feedback-icon hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+                        <button onclick="loadQuestionPreset(3)" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            👁️ Load on Graph
+                        </button>
+                        <button onclick="toggleExplainer(3)" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition">
+                            Explain
+                        </button>
+                    </div>
+
+                    <!-- Explainer Overlay text -->
+                    <div id="explainer3" class="hidden mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
+                        <p class="font-bold text-slate-800">Pedagogical Walkthrough:</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-slate-600">
+                            <li><strong>Quadrant Sketch:</strong> Negative $x$-intercept. Passes through QI but avoids QIII. This forces the line to have a negative slope ($m < 0$) and cross the vertical axis above the origin, so $y$-intercept is positive ($c > 0$).</li>
+                            <li><strong>Formula analysis:</strong> $m = -\frac{A}{B} < 0 \implies \frac{A}{B} > 0 \implies AB > 0$ (same sign).</li>
+                            <li><strong>Constant checks:</strong> $y$-int $c = -\frac{C}{B} > 0 \implies \frac{C}{B} < 0 \implies B, C$ have opposite signs.</li>
+                            <li><strong>Cross sign match:</strong> Since $A$ is same sign as $B$, and $C$ has opposite sign to $B$, then $A$ and $C$ must have opposite signs $\implies AC < 0$.</li>
+                        </ol>
+                        <p class="text-[11px] font-bold text-indigo-600">Therefore, Option B must be true!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer / Sticky Sheet -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 space-y-1">
+            <p class="font-bold text-slate-500 text-sm">HKDSE Mathematics Paper 2 Core Helper</p>
+            <p>Formulas Recap: Slope $m = -\frac{A}{B}$ | $y$-intercept $c = -\frac{C}{B}$ | $x$-intercept $d = -\frac{C}{A}$</p>
+            <p class="pt-2 text-slate-400">&copy; 2026 Mathematics Exam Preparation Tool. Optimized for tablet and mobile tap targets.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript logic -->
+    <script>
+        // Track the current application state
+        let currentA = 2;
+        let currentB = -3;
+        let currentC = 6;
+
+        // Correct Answers mapping
+        const correctAnswers = {
+            1: 'C',
+            2: 'A',
+            3: 'B'
+        };
+
+        // Graph presets that represent the exam questions
+        const questionPresets = {
+            1: { a: 1, b: -2, c: -4 },  // m = 0.5 (positive), y-int = -2 (negative) -> Q1, Q3, Q4 only
+            2: { a: 1, b: 2, c: 4 },    // m = -0.5 (negative), y-int = -2 (negative) -> Q2, Q3, Q4 only
+            3: { a: 1, b: 3, c: -3 }    // m = -0.33 (negative), x-int = -3 (negative), y-int = 1 (positive) -> Q1, Q2, Q4 only
+        };
+
+        // Initialize elements on load
+        window.addEventListener('DOMContentLoaded', () => {
+            setupInputs();
+            updateVisualization();
+        });
+
+        function setupInputs() {
+            const sliderA = document.getElementById('sliderA');
+            const sliderB = document.getElementById('sliderB');
+            const sliderC = document.getElementById('sliderC');
+
+            // Hook Event Listeners
+            sliderA.addEventListener('input', (e) => {
+                currentA = parseInt(e.target.value);
+                updateVisualization();
+            });
+
+            sliderB.addEventListener('input', (e) => {
+                currentB = parseInt(e.target.value);
+                updateVisualization();
+            });
+
+            sliderC.addEventListener('input', (e) => {
+                currentC = parseInt(e.target.value);
+                updateVisualization();
+            });
+        }
+
+        // Apply pre-configured coefficient configurations
+        function applyPreset(a, b, c) {
+            currentA = a;
+            currentB = b;
+            currentC = c;
+            
+            document.getElementById('sliderA').value = a;
+            document.getElementById('sliderB').value = b;
+            document.getElementById('sliderC').value = c;
+            
+            updateVisualization();
+        }
+
+        // Main Drawing and Text-Generator engine
+        function updateVisualization() {
+            // Update labels
+            document.getElementById('valueA').innerText = currentA;
+            document.getElementById('valueB').innerText = currentB;
+            document.getElementById('valueC').innerText = currentC;
+
+            // Update formula text representation
+            updateLiveFormulaText();
+
+            // Calculate metrics & properties
+            const slope = currentB !== 0 ? (-currentA / currentB) : Infinity;
+            const yIntercept = currentB !== 0 ? (-currentC / currentB) : Infinity;
+            const xIntercept = currentA !== 0 ? (-currentC / currentA) : Infinity;
+
+            // Draw line on SVG
+            drawLineOnGrid();
+
+            // Update intercepts highlighted nodes on plane
+            updateInterceptPoints(xIntercept, yIntercept);
+
+            // Quadrant analysis & visualization shading
+            const activeQuadrants = findActiveQuadrants(slope, yIntercept, xIntercept);
+            highlightQuadrants(activeQuadrants);
+
+            // Update Dashboard Metrics cards
+            updateMetricsCards(slope, yIntercept, xIntercept);
+
+            // Update Step-by-Step interactive deduction narrative
+            updateStepByStepGuide(activeQuadrants, slope, yIntercept, xIntercept);
+        }
+
+        function updateLiveFormulaText() {
+            let formulaStr = '';
+            
+            // X part
+            if (currentA !== 0) {
+                formulaStr += `${currentA}x `;
+            }
+
+            // Y part
+            if (currentB !== 0) {
+                if (currentB > 0 && currentA !== 0) {
+                    formulaStr += `+ ${currentB}y `;
+                } else if (currentB < 0) {
+                    formulaStr += `- ${Math.abs(currentB)}y `;
+                } else {
+                    formulaStr += `${currentB}y `;
+                }
+            }
+
+            // Constant C part
+            if (currentC !== 0) {
+                if (currentC > 0 && (currentA !== 0 || currentB !== 0)) {
+                    formulaStr += `+ ${currentC} `;
+                } else if (currentC < 0) {
+                    formulaStr += `- ${Math.abs(currentC)} `;
+                } else {
+                    formulaStr += `${currentC} `;
+                }
+            }
+
+            formulaStr += '= 0';
+            document.getElementById('liveFormula').innerText = formulaStr;
+        }
+
+        // Calculate intersection of general line equation on bounded 10x10 viewport
+        function drawLineOnGrid() {
+            const lineElem = document.getElementById('straightLine');
+            let points = [];
+
+            // Boundary clipping at x = -10, x = 10, y = -10, y = 10
+            if (currentB !== 0) {
+                // x = -10
+                let y1 = (-currentA * -10 - currentC) / currentB;
+                if (y1 >= -10 && y1 <= 10) points.push({ x: -10, y: y1 });
+
+                // x = 10
+                let y2 = (-currentA * 10 - currentC) / currentB;
+                if (y2 >= -10 && y2 <= 10) points.push({ x: 10, y: y2 });
+            }
+
+            if (currentA !== 0) {
+                // y = -10
+                let x1 = (-currentB * -10 - currentC) / currentA;
+                if (x1 >= -10 && x1 <= 10) points.push({ x: x1, y: -10 });
+
+                // y = 10
+                let x2 = (-currentB * 10 - currentC) / currentA;
+                if (x2 >= -10 && x2 <= 10) points.push({ x: x2, y: 10 });
+            }
+
+            // Clean duplicates
+            let uniquePoints = [];
+            points.forEach(p => {
+                if (!uniquePoints.some(up => Math.abs(up.x - p.x) < 0.001 && Math.abs(up.y - p.y) < 0.001)) {
+                    uniquePoints.push(p);
+                }
+            });
+
+            if (uniquePoints.length >= 2) {
+                // Convert viewport coordinates [-10, 10] to SVG grid coordinates [0, 400]
+                const pt1 = mathToSvg(uniquePoints[0].x, uniquePoints[0].y);
+                const pt2 = mathToSvg(uniquePoints[1].x, uniquePoints[1].y);
+
+                lineElem.setAttribute('x1', pt1.x);
+                lineElem.setAttribute('y1', pt1.y);
+                lineElem.setAttribute('x2', pt2.x);
+                lineElem.setAttribute('y2', pt2.y);
+                lineElem.style.display = 'block';
+            } else {
+                // Occurs if the parameters don't plot inside our viewport (e.g. C is too large)
+                lineElem.style.display = 'none';
+            }
+        }
+
+        // Align highlight dots accurately over current axis intersection values
+        function updateInterceptPoints(xInt, yInt) {
+            const xDot = document.getElementById('xInterceptNode');
+            const yDot = document.getElementById('yInterceptNode');
+
+            if (isFinite(xInt) && xInt >= -10 && xInt <= 10) {
+                const pt = mathToSvg(xInt, 0);
+                xDot.setAttribute('cx', pt.x);
+                xDot.setAttribute('cy', pt.y);
+                xDot.style.display = 'block';
+            } else {
+                xDot.style.display = 'none';
+            }
+
+            if (isFinite(yInt) && yInt >= -10 && yInt <= 10) {
+                const pt = mathToSvg(0, yInt);
+                yDot.setAttribute('cx', pt.x);
+                yDot.setAttribute('cy', pt.y);
+                yDot.style.display = 'block';
+            } else {
+                yDot.style.display = 'none';
+            }
+        }
+
+        // Maps math [-10, 10] axis into layout space [0, 400] SVG coordinates
+        function mathToSvg(x, y) {
+            return {
+                x: 200 + x * 20,
+                y: 200 - y * 20 // y axis inverted in SVG coordinate space
+            };
+        }
+
+        // Trace line path to verify intersected quadrants
+        function findActiveQuadrants(slope, yIntercept, xIntercept) {
+            let quads = new Set();
+
+            if (currentA === 0 && currentB === 0) return quads;
+
+            // Handle vertical line boundary cases
+            if (currentB === 0) {
+                if (xIntercept > 0) { quads.add(1); quads.add(4); }
+                else if (xIntercept < 0) { quads.add(2); quads.add(3); }
+                return quads;
+            }
+
+            // Handle horizontal line boundary cases
+            if (currentA === 0) {
+                if (yIntercept > 0) { quads.add(1); quads.add(2); }
+                else if (yIntercept < 0) { quads.add(3); quads.add(4); }
+                return quads;
+            }
+
+            // General diagonal lines
+            // Sampling along the viewport to capture intersection
+            for (let x = -10; x <= 10; x += 0.1) {
+                let y = (-currentA * x - currentC) / currentB;
+                if (y >= -10 && y <= 10) {
+                    if (x > 0 && y > 0) quads.add(1);
+                    if (x < 0 && y > 0) quads.add(2);
+                    if (x < 0 && y < 0) quads.add(3);
+                    if (x > 0 && y < 0) quads.add(4);
+                }
+            }
+            return quads;
+        }
+
+        // Shading quadrants dynamically on visualizer plane
+        function highlightQuadrants(quads) {
+            for (let i = 1; i <= 4; i++) {
+                const qEl = document.getElementById(`quad${i}`);
+                if (quads.has(i)) {
+                    qEl.setAttribute('fill-opacity', '0.08');
+                    qEl.setAttribute('fill', '#4f46e5'); // Highlight active
+                } else {
+                    qEl.setAttribute('fill-opacity', '0.0');
+                }
+            }
+        }
+
+        // Update indicators on small info badges
+        function updateMetricsCards(slope, yInt, xInt) {
+            const slopeSign = document.getElementById('metricSlopeSign');
+            const slopeValue = document.getElementById('metricSlopeValue');
+            const slopeBadge = document.getElementById('metricSlopeBadge');
+
+            const yIntSign = document.getElementById('metricYIntSign');
+            const yIntValue = document.getElementById('metricYIntValue');
+            const yIntBadge = document.getElementById('metricYIntBadge');
+
+            const xIntSign = document.getElementById('metricXIntSign');
+            const xIntValue = document.getElementById('metricXIntValue');
+            const xIntBadge = document.getElementById('metricXIntBadge');
+
+            // Slope Info Card
+            if (currentB === 0) {
+                slopeSign.innerText = 'Undefined';
+                slopeValue.innerHTML = 'Vertical';
+                styleBadge(slopeBadge, 'slate');
+            } else {
+                const roundedSlope = slope.toFixed(2);
+                slopeSign.innerText = slope > 0 ? '+' : (slope < 0 ? '-' : '0');
+                slopeValue.innerHTML = `<span class="fraction"><span class="numerator">-${currentA}</span><span class="denominator">${currentB}</span></span> = ${roundedSlope}`;
+                styleBadge(slopeBadge, slope > 0 ? 'green' : (slope < 0 ? 'red' : 'slate'), slope > 0 ? 'Positive' : (slope < 0 ? 'Negative' : 'Zero'));
+            }
+
+            // Y Intercept Card
+            if (currentB === 0) {
+                yIntSign.innerText = 'None';
+                yIntValue.innerHTML = 'Parallel to Y-axis';
+                styleBadge(yIntBadge, 'slate');
+            } else {
+                const roundedY = yInt.toFixed(2);
+                yIntSign.innerText = yInt > 0 ? '+' : (yInt < 0 ? '-' : '0');
+                yIntValue.innerHTML = `<span class="fraction"><span class="numerator">-${currentC}</span><span class="denominator">${currentB}</span></span> = ${roundedY}`;
+                styleBadge(yIntBadge, yInt > 0 ? 'green' : (yInt < 0 ? 'red' : 'slate'), yInt > 0 ? 'Positive' : (yInt < 0 ? 'Negative' : 'At Origin'));
+            }
+
+            // X Intercept Card
+            if (currentA === 0) {
+                xIntSign.innerText = 'None';
+                xIntValue.innerHTML = 'Parallel to X-axis';
+                styleBadge(xIntBadge, 'slate');
+            } else {
+                const roundedX = xInt.toFixed(2);
+                xIntSign.innerText = xInt > 0 ? '+' : (xInt < 0 ? '-' : '0');
+                xIntValue.innerHTML = `<span class="fraction"><span class="numerator">-${currentC}</span><span class="denominator">${currentA}</span></span> = ${roundedX}`;
+                styleBadge(xIntBadge, xInt > 0 ? 'green' : (xInt < 0 ? 'red' : 'slate'), xInt > 0 ? 'Positive' : (xInt < 0 ? 'Negative' : 'At Origin'));
+            }
+        }
+
+        // Mini utility function to colorize layout badges based on calculation metrics
+        function styleBadge(element, color, text = '') {
+            if (text) element.innerText = text;
+            element.className = "text-xs font-bold px-2 py-1 rounded inline-block text-center w-full ";
+            
+            if (color === 'green') {
+                element.className += "bg-emerald-50 text-emerald-700 border border-emerald-200";
+            } else if (color === 'red') {
+                element.className += "bg-rose-50 text-rose-700 border border-rose-200";
+            } else {
+                element.className += "bg-slate-100 text-slate-700 border border-slate-200";
+            }
+        }
+
+        // Live text translation for step-by-step mathematical reasoning
+        function updateStepByStepGuide(quads, slope, yInt, xInt) {
+            const sortedQuads = Array.from(quads).sort();
+            
+            // Step 1: Quadrants
+            let quadStr = sortedQuads.map(toRoman).join(', ');
+            let avoidanceStr = [1,2,3,4].filter(q => !quads.has(q)).map(toRoman).join(', ');
+            
+            let geomText = `The straight line currently cuts through Quadrants <strong class="text-indigo-600">${quadStr || 'None'}</strong>.`;
+            if (avoidanceStr) {
+                geomText += ` It avoids Quadrant(s) <strong class="text-rose-600">${avoidanceStr}</strong>.`;
+            }
+            document.getElementById('step1Text').innerHTML = geomText;
+
+            // Step 1 extra badges
+            let slopeGeoState = slope > 0 ? 'Positive' : (slope < 0 ? 'Negative' : 'Zero');
+            if (currentB === 0) slopeGeoState = 'Vertical';
+            let yIntGeoState = yInt > 0 ? 'Positive' : (yInt < 0 ? 'Negative' : 'Zero');
+            if (currentB === 0) yIntGeoState = 'Undefined';
+
+            document.getElementById('step1SlopeGeo').innerHTML = `Slope direction: <strong>${slopeGeoState}</strong>`;
+            document.getElementById('step1YIntGeo').innerHTML = `$y$-intercept height: <strong>${yIntGeoState}</strong>`;
+
+            // Step 2 Formulas
+            const slopeFormulaEl = document.getElementById('step2SlopeFormula');
+            const yIntFormulaEl = document.getElementById('step2YIntFormula');
+
+            if (currentB === 0) {
+                slopeFormulaEl.innerText = "Undefined";
+                yIntFormulaEl.innerText = "Undefined";
+            } else {
+                slopeFormulaEl.innerText = slope > 0 ? " > 0" : (slope < 0 ? " < 0" : " = 0");
+                yIntFormulaEl.innerText = yInt > 0 ? " > 0" : (yInt < 0 ? " < 0" : " = 0");
+            }
+
+            // Step 3 Products (AB, BC, AC)
+            updateProductBadge('AB', currentA, currentB);
+            updateProductBadge('BC', currentB, currentC);
+            updateProductBadge('AC', currentA, currentC);
+        }
+
+        function updateProductBadge(pair, val1, val2) {
+            const valBox = document.getElementById(`sign${pair}Val`);
+            const labelBox = document.getElementById(`sign${pair}Desc`);
+            const containerBox = document.getElementById(`sign${pair}`);
+
+            if (val1 === 0 || val2 === 0) {
+                valBox.innerText = `${pair} = 0`;
+                labelBox.innerText = "Zero Term";
+                containerBox.className = "p-2 border rounded-xl bg-slate-50 border-slate-200 text-slate-500";
+            } else {
+                const product = val1 * val2;
+                if (product > 0) {
+                    valBox.innerText = `${pair} > 0`;
+                    labelBox.innerText = "Same Signs";
+                    containerBox.className = "p-2 border rounded-xl bg-emerald-50 border-emerald-200 text-emerald-800";
+                } else {
+                    valBox.innerText = `${pair} < 0`;
+                    labelBox.innerText = "Opposite Signs";
+                    containerBox.className = "p-2 border rounded-xl bg-rose-50 border-rose-200 text-rose-800";
+                }
+            }
+        }
+
+        function toRoman(num) {
+            const roman = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV' };
+            return roman[num] || num;
+        }
+
+        // ================= TABS & QUIZ CONTROLLERS =================
+
+        function switchTab(tabId) {
+            const explTab = document.getElementById('explorerTab');
+            const revTab = document.getElementById('revisionTab');
+            const btnExpl = document.getElementById('tabBtnExplorer');
+            const btnRev = document.getElementById('tabBtnRevision');
+
+            if (tabId === 'explorer') {
+                explTab.classList.remove('hidden');
+                revTab.classList.add('hidden');
+                btnExpl.className = "px-4 py-2 rounded-lg font-semibold text-sm transition bg-white text-indigo-900 shadow";
+                btnRev.className = "px-4 py-2 rounded-lg font-semibold text-sm transition bg-indigo-800 hover:bg-indigo-700 text-indigo-100";
+            } else {
+                explTab.classList.add('hidden');
+                revTab.classList.remove('hidden');
+                btnRev.className = "px-4 py-2 rounded-lg font-semibold text-sm transition bg-white text-indigo-900 shadow";
+                btnExpl.className = "px-4 py-2 rounded-lg font-semibold text-sm transition bg-indigo-800 hover:bg-indigo-700 text-indigo-100";
+            }
+        }
+
+        // Load targeted question presets into main explorer
+        function loadQuestionPreset(qNum) {
+            const preset = questionPresets[qNum];
+            if (preset) {
+                applyPreset(preset.a, preset.b, preset.c);
+                switchTab('explorer');
+            }
+        }
+
+        // Interactive checking with rich green/red border feedback
+        function checkAnswer(qNum, selectedOption) {
+            const correctOpt = correctAnswers[qNum];
+            const optionButtons = document.querySelectorAll(`.option-btn-${qNum}`);
+
+            optionButtons.forEach(btn => {
+                // Reset styling
+                btn.className = `option-btn-${qNum} w-full text-left p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition font-medium flex justify-between items-center`;
+                const iconEl = btn.querySelector('.feedback-icon');
+                iconEl.classList.add('hidden');
+                iconEl.innerText = '';
+
+                // Identify parsed choice label
+                const optionLabel = btn.querySelector('span').innerText.trim().charAt(0);
+                
+                if (optionLabel === selectedOption) {
+                    if (selectedOption === correctOpt) {
+                        btn.className = `option-btn-${qNum} w-full text-left p-3 border-2 border-emerald-500 bg-emerald-50 text-emerald-900 rounded-xl transition font-semibold flex justify-between items-center`;
+                        iconEl.innerText = '✅ Correct';
+                    } else {
+                        btn.className = `option-btn-${qNum} w-full text-left p-3 border-2 border-rose-500 bg-rose-50 text-rose-900 rounded-xl transition font-semibold flex justify-between items-center`;
+                        iconEl.innerText = '❌ Incorrect';
+                    }
+                    iconEl.classList.remove('hidden');
+                } else if (optionLabel === correctOpt) {
+                    // Highlight correct option if student got it wrong
+                    btn.className = `option-btn-${qNum} w-full text-left p-3 border border-emerald-300 bg-emerald-50/50 text-emerald-800 rounded-xl transition font-medium flex justify-between items-center`;
+                }
+            });
+        }
+
+        // Show/Hide question breakdown panels
+        function toggleExplainer(qNum) {
+            const panel = document.getElementById(`explainer${qNum}`);
+            panel.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

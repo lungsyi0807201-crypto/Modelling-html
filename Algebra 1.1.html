@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Scale Equation Solver</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --primary-color: #2c3e50;
+            --x-color: #e67e22;      /* Orange for X */
+            --pos-color: #2ecc71;    /* Green for +1 */
+            --neg-color: #e74c3c;    /* Red for -1 */
+            --scale-color: #7f8c8d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--primary-color);
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        /* Information & Step Display */
+        #display-container {
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 100px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #explanation {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 10px;
+            height: 30px;
+        }
+
+        #equation {
+            font-size: 2rem;
+            font-weight: bold;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: inline-block;
+        }
+
+        /* Balance Scale Layout */
+        #scale-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            margin-top: 40px;
+            border-bottom: 15px solid var(--scale-color); /* Base */
+            display: flex;
+            justify-content: center;
+        }
+
+        #fulcrum {
+            position: absolute;
+            bottom: 0;
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 80px solid var(--scale-color);
+        }
+
+        #beam {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+            height: 12px;
+            background-color: var(--scale-color);
+            border-radius: 4px;
+            transition: transform 0.5s ease-in-out;
+            transform-origin: center bottom;
+        }
+
+        .pan-assembly {
+            position: absolute;
+            top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 320px;
+        }
+
+        #left-assembly { left: 40px; }
+        #right-assembly { right: 40px; }
+
+        .string {
+            width: 2px;
+            height: 100px;
+            background-color: #bdc3c7;
+        }
+
+        .pan {
+            width: 100%;
+            height: 15px;
+            background-color: #95a5a6;
+            border-radius: 0 0 15px 15px;
+            position: relative;
+            box-shadow: 0 4px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Container where blocks actually sit */
+        .block-area {
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap-reverse;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            min-height: 150px;
+        }
+
+        /* Block Styles & Animations */
+        .block {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+            user-select: none;
+            transition: all 0.5s ease;
+        }
+
+        .block.x-block {
+            background-color: var(--x-color);
+            width: 45px; /* X blocks slightly distinct */
+        }
+
+        .block.pos-block {
+            background-color: var(--pos-color);
+        }
+
+        .block.neg-block {
+            background-color: var(--neg-color);
+        }
+
+        /* Animations */
+        @keyframes floatOut {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+
+        .fade-out {
+            animation: floatOut 0.6s ease forwards;
+        }
+
+        /* Control UI */
+        #controls {
+            margin-top: 45px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        #btn-next-step {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #btn-next-step:hover { background-color: #2980b9; }
+
+        #btn-next-q {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #btn-next-q:hover { background-color: #27ae60; }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display-container">
+        <div id="explanation">Loading problem...</div>
+        <div id="equation"></div>
+    </div>
+
+    <div id="scale-container">
+        <div id="fulcrum"></div>
+        <div id="beam">
+            <div class="pan-assembly" id="left-assembly">
+                <div class="string"></div>
+                <div class="pan">
+                    <div class="block-area" id="left-blocks"></div>
+                </div>
+            </div>
+            <div class="pan-assembly" id="right-assembly">
+                <div class="string"></div>
+                <div class="pan">
+                    <div class="block-area" id="right-blocks"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="btn-next-step" onclick="nextStep()">Next Step</button>
+        <button id="btn-next-q" onclick="generateProblem()">Next Question</button>
+    </div>
+
+    <script>
+        // State management object
+        let state = {
+            a: 0, b: 0, c: 0, d: 0, // Form: ax + b = cx + d
+            currentStep: 0,
+            leftX: 0, leftC: 0,
+            rightX: 0, rightC: 0
+        };
+
+        // DOM elements
+        const explDiv = document.getElementById('explanation');
+        const eqDiv = document.getElementById('equation');
+        const leftBlocksDiv = document.getElementById('left-blocks');
+        const rightBlocksDiv = document.getElementById('right-blocks');
+        const btnNextStep = document.getElementById('btn-next-step');
+
+        /**
+         * Generates a completely new random linear algebra equation.
+         * Form: ax + b = cx + d
+         * Ensures standard Form 1 HK curriculum variability (handles fractions and negatives).
+         */
+        function generateProblem() {
+            // Loop guarantees we get a valid equation where variable coefficients don't instantly cancel out completely (a != c)
+            do {
+                state.a = Math.floor(Math.random() * 7) - 3; // range -3 to 3
+                state.c = Math.floor(Math.random() * 5) - 2; // range -2 to 2
+                state.b = Math.floor(Math.random() * 15) - 7; // range -7 to 7
+                state.d = Math.floor(Math.random() * 15) - 7; // range -7 to 7
+            } while (state.a === state.c || (state.a === 0 && state.c === 0));
+
+            // Setup working state variables tracking live blocks on screen
+            state.leftX = state.a;
+            state.leftC = state.b;
+            state.rightX = state.c;
+            state.rightC = state.d;
+            
+            state.currentStep = 0;
+            btnNextStep.classList.remove('hidden');
+
+            renderScale();
+            updateEquationText(`Initial Equation`);
+        }
+
+        /**
+         * Formats numeric variables into clean mathematical strings.
+         */
+        function formatEquationString(a, b, c, d) {
+            function formatSide(xCoeff, constant) {
+                let res = "";
+                if (xCoeff !== 0) {
+                    if (xCoeff === 1) res += "x";
+                    else if (xCoeff === -1) res += "-x";
+                    else res += xCoeff + "x";
+                }
+                if (constant !== 0) {
+                    if (constant > 0) res += (res ? " + " : "") + constant;
+                    else res += (res ? " - " : "-") + Math.abs(constant);
+                }
+                return res === "" ? "0" : res;
+            }
+            return `${formatSide(a, b)} = ${formatSide(c, d)}`;
+        }
+
+        /**
+         * Syncs mathematical display elements on the viewport interface.
+         */
+        function updateEquationText(explanationMessage) {
+            explDiv.innerText = explanationMessage;
+            eqDiv.innerText = formatEquationString(state.leftX, state.leftC, state.rightX, state.rightC);
+        }
+
+        /**
+         * Builds blocks cleanly inside target container zones on UI layout.
+         */
+        function populateBlocks(container, xCount, cCount) {
+            container.innerHTML = '';
+            
+            // Generate X Blocks
+            const xAbs = Math.abs(xCount);
+            for(let i=0; i<xAbs; i++) {
+                const block = document.createElement('div');
+                block.className = `block x-block`;
+                block.innerText = xCount > 0 ? 'x' : '-x';
+                // Negative coefficients get standard X styling but differentiated text sign representation
+                if(xCount < 0) block.style.border = "2px dashed #c0392b"; 
+                container.appendChild(block);
+            }
+
+            // Generate Constant Blocks (+1 or -1)
+            const cAbs = Math.abs(cCount);
+            for(let i=0; i<cAbs; i++) {
+                const block = document.createElement('div');
+                block.className = `block ${cCount > 0 ? 'pos-block' : 'neg-block'}`;
+                block.innerText = cCount > 0 ? '+1' : '-1';
+                container.appendChild(block);
+            }
+        }
+
+        /**
+         * Master canvas rendering sequencer matching memory matrix variables.
+         */
+        function renderScale() {
+            populateBlocks(leftBlocksDiv, state.leftX, state.leftC);
+            populateBlocks(rightBlocksDiv, state.rightX, state.rightC);
+        }
+
+        /**
+         * Main deterministic algorithmic solver engine tracking steps step-by-step.
+         */
+        function nextStep() {
+            state.currentStep++;
+
+            // --- STEP 1: Consolidate X variables to one side ---
+            if (state.currentStep === 1) {
+                // If both sides have matching polarities or mixed configurations, subtract smaller coefficient value cleanly
+                if (state.leftX !== 0 && state.rightX !== 0) {
+                    let subX = 0;
+                    
+                    // Logic rule setup: subtract the smaller coefficient value to preserve positive counts where possible
+                    if (state.leftX >= state.rightX) {
+                        subX = state.rightX;
+                        animateRemoval(rightBlocksDiv, 'x-block', Math.abs(subX), () => {
+                            state.leftX -= subX;
+                            state.rightX = 0;
+                            finishStep(subX > 0 ? `Subtract ${subX}x from both sides` : `Add ${Math.abs(subX)}x to both sides`);
+                        });
+                    } else {
+                        subX = state.leftX;
+                        animateRemoval(leftBlocksDiv, 'x-block', Math.abs(subX), () => {
+                            state.rightX -= subX;
+                            state.leftX = 0;
+                            finishStep(subX > 0 ? `Subtract ${subX}x from both sides` : `Add ${Math.abs(subX)}x to both sides`);
+                        });
+                    }
+                    return;
+                } else {
+                    // Skip step safely if X terms are already isolated onto a single side automatically
+                    state.currentStep++; 
+                }
+            }
+
+            // --- STEP 2: Isolate Constants away from remaining variable side ---
+            if (state.currentStep === 2) {
+                // Determine which pan holds variable terms to isolate constants appropriately
+                if (state.leftX !== 0 && state.leftC !== 0) {
+                    let subC = state.leftC;
+                    animateRemoval(leftBlocksDiv, subC > 0 ? 'pos-block' : 'neg-block', Math.abs(subC), () => {
+                        state.leftC = 0;
+                        state.rightC -= subC;
+                        finishStep(subC > 0 ? `Subtract ${subC} from both sides` : `Add ${Math.abs(subC)} to both sides`);
+                    });
+                    return;
+                } else if (state.rightX !== 0 && state.rightC !== 0) {
+                    let subC = state.rightC;
+                    animateRemoval(rightBlocksDiv, subC > 0 ? 'pos-block' : 'neg-block', Math.abs(subC), () => {
+                        state.rightC = 0;
+                        state.leftC -= subC;
+                        finishStep(subC > 0 ? `Subtract ${subC} from both sides` : `Add ${Math.abs(subC)} to both sides`);
+                    });
+                    return;
+                } else {
+                    state.currentStep++;
+                }
+            }
+
+            // --- STEP 3: Division Calculation to output absolute final single unit factor answer ---
+            if (state.currentStep === 3) {
+                let finalX = state.leftX !== 0 ? state.leftX : state.rightX;
+                let finalC = state.leftX !== 0 ? state.rightC : state.leftC;
+                
+                // Handle edge-cases safely protecting division properties
+                if (finalX === 0) {
+                    explDiv.innerText = "No unique solution or mathematical edge case reached.";
+                    btnNextStep.classList.add('hidden');
+                    return;
+                }
+
+                let answer = finalC / finalX;
+                // Calculate beautiful fractional representations for cleaner screen presentation
+                let displayAns = Number.isInteger(answer) ? answer : `${finalC}/${finalX}`;
+
+                // Process group animation sequence grouping targets gracefully
+                const activeContainer = state.leftX !== 0 ? rightBlocksDiv : leftBlocksDiv;
+                const activeXContainer = state.leftX !== 0 ? leftBlocksDiv : rightBlocksDiv;
+
+                // Animate grouping effect by turning elements invisible/transparent save for one theoretical ratio sector
+                activeXContainer.innerHTML = `<div class="block x-block">x</div>`;
+                activeContainer.innerHTML = `<div class="block ${answer >= 0 ? 'pos-block' : 'neg-block'}">${displayAns}</div>`;
+                
+                eqDiv.innerText = `x = ${displayAns}`;
+                explDiv.innerText = `Divide both sides by ${finalX} to solve!`;
+                
+                // Set memory state parameters cleanly to lock finalized display UI matching parameters
+                state.leftX = (state.leftX !== 0) ? 1 : 0;
+                state.rightX = (state.rightX !== 0) ? 1 : 0;
+                state.leftC = (state.leftX === 1) ? 0 : answer;
+                state.rightC = (state.rightX === 1) ? 0 : answer;
+
+                btnNextStep.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Clean helper callback script logic committing transitions across visual loops smoothly.
+         */
+        function finishStep(msg) {
+            renderScale();
+            updateEquationText(msg);
+        }
+
+        /**
+         * CSS Visual Orchestration engine mapping timed physics loops to matches.
+         */
+        function animateRemoval(container, blockClass, count, callback) {
+            const blocks = container.getElementsByClassName(blockClass);
+            let targetCount = Math.min(count, blocks.length);
+            
+            if (targetCount === 0) {
+                callback();
+                return;
+            }
+
+            // Apply specific fade-out styles to targeting parameters sequentially
+            for (let i = 0; i < targetCount; i++) {
+                if (blocks[i]) blocks[i].classList.add('fade-out');
+            }
+
+            // Delay structural mutations until the animations complete smoothly
+            setTimeout(() => {
+                callback();
+            }, 550);
+        }
+
+        // Initialize first configuration array mapping immediately on structural layout page boot
+        window.onload = generateProblem;
+    </script>
+</body>
+</html>

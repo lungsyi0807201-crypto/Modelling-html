@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Asteroid Defense</title>
+    <style>
+        :root {
+            --space-bg: #0b0b1e;
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --panel-bg: rgba(16, 16, 48, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--space-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+            border: 4px solid #1a1a40;
+            border-radius: 8px;
+        }
+
+        canvas {
+            display: block;
+            background: radial-gradient(circle at center, #14143c 0%, #050515 100%);
+        }
+
+        /* UI Overlay Layer */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .hud-item span {
+            color: var(--neon-blue);
+        }
+
+        #lives-display {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        /* Bottom Control Panel */
+        #control-panel {
+            pointer-events: auto;
+            align-self: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: var(--panel-bg);
+            padding: 15px 30px;
+            border-radius: 30px;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+            margin-bottom: 10px;
+        }
+
+        #input-zone {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-label {
+            font-size: 1.3rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #answer-input {
+            width: 120px;
+            background: #000;
+            border: 2px solid var(--neon-pink);
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 1.4rem;
+            color: var(--neon-green);
+            text-align: center;
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+        }
+
+        #answer-input:focus {
+            box-shadow: 0 0 15px var(--neon-pink);
+            border-color: #fff;
+        }
+
+        /* Modal Screens */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 15, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--panel-bg);
+            border: 3px solid var(--neon-blue);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.4);
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 550px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--neon-pink);
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px var(--neon-pink);
+            letter-spacing: 2px;
+        }
+
+        .tutorial-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #e0e0ff;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00f0ff, #0077ff);
+            color: #fff;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--neon-blue);
+            transition: transform 0.1s, filter 0.2s;
+        }
+
+        .btn:hover {
+            filter: brightness(1.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="ui-layer">
+            <div class="hud">
+                <div class="hud-item">SCORE: <span id="score-val">0000</span></div>
+                <div class="hud-item">DEFENSE: <span id="lives-display">█████</span></div>
+            </div>
+
+            <div id="control-panel">
+                <div id="input-zone">
+                    <span class="input-label">X =</span>
+                    <input type="number" id="answer-input" disabled autocomplete="off" placeholder="?">
+                </div>
+            </div>
+        </div>
+
+        <div id="tutorial-modal" class="modal">
+            <div class="modal-content">
+                <h2>METEOR INBOUND!</h2>
+                <p class="tutorial-text">
+                    Gameplay: Asteroids carrying equations are about to fall! Quickly calculate the value of 𝑥 in your head, enter it into the cannon at the bottom of the screen, and press Enter to fire a laser. Don’t let the asteroids hit the ground!
+                </p>
+                <button id="start-btn" class="btn">START GAME</button>
+            </div>
+        </div>
+
+        <div id="gameover-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>SYSTEM FAILURE</h2>
+                <p class="tutorial-text" style="text-align: center; font-size: 1.4rem;">
+                    The defense grid collapsed.<br>
+                    Final Score: <span id="final-score" style="color:var(--neon-blue); font-weight:bold;">0</span>
+                </p>
+                <button id="restart-btn" class="btn">RETRY ARCHITECTURE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game Configuration and State
+        const state = {
+            running: false,
+            score: 0,
+            lives: 5,
+            asteroids: [],
+            lasers: [],
+            particles: [],
+            stars: [],
+            spawnTimer: 0,
+            spawnInterval: 2500, // ms between spawns
+            baseSpeed: 0.6,
+            difficultyMultiplier: 1.0,
+            lastTime: 0
+        };
+
+        // Cannon Dimensions & Config
+        const cannon = {
+            x: canvas.width / 2,
+            y: canvas.height - 85,
+            radius: 35
+        };
+
+        // UI Cache elements
+        const ui = {
+            tutorial: document.getElementById('tutorial-modal'),
+            gameover: document.getElementById('gameover-modal'),
+            startBtn: document.getElementById('start-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+            input: document.getElementById('answer-input'),
+            score: document.getElementById('score-val'),
+            lives: document.getElementById('lives-display'),
+            finalScore: document.getElementById('final-score')
+        };
+
+        // --- MATH ENGINE: LINEAR EQUATION GENERATOR ---
+        function generateEquation() {
+            const operations = ['+', '-', '*', '/'];
+            const op = operations[Math.floor(Math.random() * operations.length)];
+            let x = Math.floor(Math.random() * 12) + 1; // Ans restricted to [1..12] for rapid human execution
+            let a, b, eqString;
+
+            switch(op) {
+                case '+':
+                    a = Math.floor(Math.random() * 15) + 1;
+                    b = x + a;
+                    eqString = `x + ${a} = ${b}`;
+                    break;
+                case '-':
+                    a = Math.floor(Math.random() * 15) + 1;
+                    b = x - a;
+                    // Keep positive outcome syntax variations clean for presentation
+                    if (b < 0) {
+                        eqString = `x - ${a} = ${b}`;
+                    } else {
+                        eqString = `x - ${a} = ${b}`;
+                    }
+                    break;
+                case '*':
+                    a = Math.floor(Math.random() * 8) + 2;
+                    b = x * a;
+                    eqString = `${a}x = ${b}`;
+                    break;
+                case '/':
+                    a = Math.floor(Math.random() * 5) + 2;
+                    b = x;
+                    let displayNum = b * a;
+                    eqString = `x / ${a} = ${displayNum}`;
+                    break;
+            }
+
+            return { text: eqString, solution: x };
+        }
+
+        // --- PARTICLE EFFECTS SYSTEM ---
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                state.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1,
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.01,
+                    color: color
+                });
+            }
+        }
+
+        function initStars() {
+            state.stars = [];
+            for(let i=0; i<60; i++) {
+                state.stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.2 + 0.05
+                });
+            }
+        }
+
+        // --- ENTITY MANIPULATION CLASS GENERATORS ---
+        function spawnAsteroid() {
+            const radius = 45;
+            // Ensure bounds limits protect readability edge boundaries
+            const x = Math.random() * (canvas.width - radius * 2) + radius; 
+            const y = -radius;
+            const eqData = generateEquation();
+            
+            state.asteroids.push({
+                x: x,
+                y: y,
+                radius: radius,
+                text: eqData.text,
+                solution: eqData.solution,
+                speed: (state.baseSpeed + Math.random() * 0.3) * state.difficultyMultiplier,
+                pulse: 0
+            });
+        }
+
+        function fireLaser(targetAsteroid) {
+            // Target line configuration mapping vector
+            state.lasers.push({
+                startX: cannon.x,
+                startY: cannon.y,
+                endX: targetAsteroid.x,
+                endY: targetAsteroid.y,
+                alpha: 1.0,
+                color: '#39ff14'
+            });
+            
+            // Instantly resolve point score impact data via line trace structural hook
+            createExplosion(targetAsteroid.x, targetAsteroid.y, '#00f0ff');
+            state.score += 100;
+            
+            // Adjust linear speed ratios scaling parameters incrementally
+            state.difficultyMultiplier = 1.0 + (state.score / 1500) * 0.25;
+            
+            // Remove from main tracking loop arrays
+            state.asteroids = state.asteroids.filter(a => a !== targetAsteroid);
+            updateHUD();
+        }
+
+        function updateHUD() {
+            ui.score.textContent = String(state.score).padStart(4, '0');
+            ui.lives.textContent = '█'.repeat(Math.max(0, state.lives));
+        }
+
+        // --- MAIN ENGINE SIMULATION LOGIC LOOP ---
+        function update(dt) {
+            // Background environmental simulation loop
+            state.stars.forEach(star => {
+                star.y += star.speed * dt * 0.06;
+                if(star.y > canvas.height) star.y = 0;
+            });
+
+            // Update Particle physics pipelines
+            state.particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if(p.alpha <= 0) state.particles.splice(idx, 1);
+            });
+
+            // Diminish Laser alpha visual pipelines paths
+            state.lasers.forEach((l, idx) => {
+                l.alpha -= 0.08 * (dt * 0.06);
+                if(l.alpha <= 0) state.lasers.splice(idx, 1);
+            });
+
+            if (!state.running) return;
+
+            // Spawning systems clock management
+            state.spawnTimer += dt;
+            // Dynamic dynamic runtime frequency optimization adjustments
+            const currentInterval = Math.max(1000, state.spawnInterval - (state.score / 1000) * 200);
+            if (state.spawnTimer >= currentInterval) {
+                spawnAsteroid();
+                state.spawnTimer = 0;
+            }
+
+            // Move and trace collision boundaries logic models
+            for (let i = state.asteroids.length - 1; i >= 0; i--) {
+                const ast = state.asteroids[i];
+                ast.y += ast.speed * dt * 0.06;
+                ast.pulse += 0.05;
+
+                // Collision detection frame checks (Hitting the Ground threshold line barrier)
+                if (ast.y + ast.radius >= canvas.height - 40) {
+                    createExplosion(ast.x, ast.y, '#ff007f');
+                    state.asteroids.splice(i, 1);
+                    state.lives--;
+                    updateHUD();
+
+                    if (state.lives <= 0) {
+                        endGame();
+                    }
+                }
+            }
+        }
+
+        // --- CANVAS GRAPHICS RENDERING LAYER ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Starfield Environment
+            ctx.fillStyle = '#fff';
+            state.stars.forEach(star => {
+                ctx.globalAlpha = star.speed * 4;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 2. Draw Planetary Ground Shield Threshold Line Marker Graphic Boundary
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.3)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 40);
+            ctx.lineTo(canvas.width, canvas.height - 40);
+            ctx.stroke();
+
+            // 3. Draw Particle Array elements
+            state.particles.forEach(p => {
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 4. Draw Array Laser Lines Vector Graphics Paths
+            state.lasers.forEach(l => {
+                ctx.globalAlpha = l.alpha;
+                ctx.strokeStyle = l.color;
+                ctx.lineWidth = 5;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = l.color;
+                ctx.beginPath();
+                ctx.moveTo(l.startX, l.startY);
+                ctx.lineTo(l.endX, l.endY);
+                ctx.stroke();
+                // Reset standard operations canvas pipeline matrix modifiers contexts
+                ctx.shadowBlur = 0; 
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 5. Draw Asteroids Form Framework Entities Structures
+            state.asteroids.forEach(ast => {
+                ctx.save();
+                ctx.translate(ast.x, ast.y);
+
+                // External structural core geometric rock configuration outline layers
+                ctx.fillStyle = '#1c1c3a';
+                ctx.strokeStyle = '#ff007f';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10 + Math.sin(ast.pulse) * 4;
+                ctx.shadowColor = '#ff007f';
+                
+                ctx.beginPath();
+                // Draw segmented stylized space arcade vector asteroid configuration pathing loops
+                const points = 8;
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const cr = ast.radius + (i % 2 === 0 ? 3 : -3);
+                    const rx = Math.cos(angle) * cr;
+                    const ry = Math.sin(angle) * cr;
+                    if (i === 0) ctx.moveTo(rx, ry);
+                    else ctx.lineTo(rx, ry);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Dynamic UI Inner Typography display text processing structures inside asteroids
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 15px "Courier New"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(ast.text, 0, 0);
+
+                ctx.restore();
+            });
+
+            // 6. Draw Planetary Defense Interactive Core Cannon Structural Elements
+            ctx.save();
+            ctx.translate(cannon.x, cannon.y);
+            
+            // Cannon base asset configurations glow effects paths
+            ctx.fillStyle = '#0a0a28';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00f0ff';
+            
+            ctx.beginPath();
+            ctx.arc(0, 40, cannon.radius + 10, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Turret asset configuration paths
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(-8, -10, 16, 40);
+            ctx.restore();
+            ctx.shadowBlur = 0; // complete system clear resetting operations metrics bounds variables
+        }
+
+        // --- GAME FLOW INFRASTRUCTURE ARCHITECTURES ---
+        function gameLoop(timestamp) {
+            if (!state.lastTime) state.lastTime = timestamp;
+            const elapsed = timestamp - state.lastTime;
+            
+            // Frame execution pipeline operations limits checks definitions caps parameter configurations guards
+            update(Math.min(elapsed, 50)); 
+            render();
+
+            state.lastTime = timestamp;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            state.score = 0;
+            state.lives = 5;
+            state.asteroids = [];
+            state.lasers = [];
+            state.particles = [];
+            state.difficultyMultiplier = 1.0;
+            state.spawnTimer = 0;
+            updateHUD();
+            
+            ui.tutorial.classList.add('hidden');
+            ui.gameover.classList.add('hidden');
+            ui.input.disabled = false;
+            ui.input.value = '';
+            ui.input.focus();
+            
+            state.running = true;
+        }
+
+        function endGame() {
+            state.running = false;
+            ui.input.disabled = true;
+            ui.finalScore.textContent = state.score;
+            ui.gameover.classList.remove('hidden');
+        }
+
+        // --- EVENT CAPTURE HANDLING LISTENER FRAMEWORKS ---
+        ui.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = ui.input.value.trim();
+                if (val === '') return;
+
+                const parsedAns = parseInt(val, 10);
+                
+                // Find matching horizontal scanning elements inside tracking buffer space vectors arrays data
+                // Targets closest threat match vector logic patterns solutions structure arrays paths matrix
+                let targetAsteroid = null;
+                let lowestY = -999;
+
+                state.asteroids.forEach(ast => {
+                    if (ast.solution === parsedAns && ast.y > lowestY) {
+                        lowestY = ast.y;
+                        targetAsteroid = ast;
+                    }
+                });
+
+                if (targetAsteroid) {
+                    fireLaser(targetAsteroid);
+                } else {
+                    // Flash error structural layout indications contexts markers patterns systems
+                    createExplosion(cannon.x, cannon.y - 20, '#ff007f');
+                }
+
+                ui.input.value = '';
+            }
+        });
+
+        // Initialize general structural window binding execution layers paths parameters properties runtime targets hooks
+        ui.startBtn.addEventListener('click', startGame);
+        ui.restartBtn.addEventListener('click', startGame);
+
+        // Map setup parameters definitions contexts calls
+        initStars();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

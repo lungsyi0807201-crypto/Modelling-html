@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Balloon Shooting</title>
+    <style>
+        :root {
+            --sky-bg: linear-gradient(to bottom, #1a81e2 0%, #6fb6ffd6 60%, #eaf5ff 100%);
+            --banner-bg: #ff6f59;
+            --panel-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #2c3e50;
+            --accent-color: #f1c40f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Ubuntu', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--sky-bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Fixed Banner */
+        #game-banner {
+            background-color: var(--banner-bg);
+            color: #fff;
+            padding: 15px 25px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-bottom: 4px solid #e0533c;
+            z-index: 100;
+        }
+
+        /* Top HUD and Equation Display Area */
+        #display-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            z-index: 90;
+        }
+
+        #score-board {
+            background: var(--panel-bg);
+            color: var(--text-color);
+            padding: 8px 25px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            border: 2px solid #3498db;
+        }
+
+        #score-board span {
+            color: #e74c3c;
+        }
+
+        #equation-card {
+            background: var(--panel-bg);
+            border: 4px dashed #3498db;
+            border-radius: 15px;
+            padding: 15px 40px;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #2980b9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            min-width: 300px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Amusement Park / Sky Environment Details */
+        #sky-stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .cloud {
+            position: absolute;
+            background: #fff;
+            border-radius: 50px;
+            opacity: 0.85;
+            pointer-events: none;
+            animation: drift linear infinite;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+        }
+        .cloud::before { width: 50px; height: 50px; top: -20px; left: 15px; }
+        .cloud::after { width: 70px; height: 70px; top: -35px; left: 40px; }
+
+        @keyframes drift {
+            from { transform: translateX(-150px); }
+            to { transform: translateX(calc(100vw + 150px)); }
+        }
+
+        /* Interactive Balloon Elements */
+        .balloon {
+            position: absolute;
+            bottom: -120px;
+            width: 90px;
+            height: 110px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            cursor: crosshair;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            box-shadow: inset -8px -10px 15px rgba(0,0,0,0.2), 0 6px 12px rgba(0,0,0,0.15);
+            animation: floatUp linear forwards;
+            transition: transform 0.1s ease;
+        }
+
+        /* Balloon Tail/Knot */
+        .balloon::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 41px;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 8px solid rgba(0,0,0,0.2);
+        }
+
+        /* Balloon String */
+        .balloon-string {
+            position: absolute;
+            bottom: -32px;
+            left: 44px;
+            width: 2px;
+            height: 25px;
+            background-color: rgba(0,0,0,0.15);
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-50vh) rotate(3deg); }
+            100% { transform: translateY(-120vh) rotate(-3deg); }
+        }
+
+        /* Game Interaction / Feedback Effects */
+        .balloon:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; filter: brightness(1.5); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .popped {
+            animation: popOut 0.25s ease-out forwards !important;
+            pointer-events: none;
+        }
+
+        /* Floating Score Indicators */
+        .score-popup {
+            position: absolute;
+            font-size: 1.8rem;
+            font-weight: 900;
+            pointer-events: none;
+            animation: fadeUp 0.6s ease-out forwards;
+            z-index: 200;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(0); }
+            20% { opacity: 1; transform: translateY(-15px); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-banner">
+        Gameplay: Look at the equation shown at the top of the screen, calculate the correct value of 𝑥. Then, click (shoot) the balloon below that carries the correct number. Clicking the right balloon earns points; clicking the wrong one deducts points!
+    </div>
+
+    <div id="display-zone">
+        <div id="score-board">SCORE: <span id="score-value">0</span></div>
+        <div id="equation-card">x + 3 = 7</div>
+    </div>
+
+    <div id="sky-stage"></div>
+
+    <script>
+        const stage = document.getElementById('sky-stage');
+        const equationDisplay = document.getElementById('equation-card');
+        const scoreDisplay = document.getElementById('score-value');
+
+        // Game Configuration and State Mapping Matrices
+        const state = {
+            score: 0,
+            currentSolution: 0,
+            balloonColors: ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#9b59b6', '#ff6b81', '#10ac84'],
+            baseFloatDuration: 8.5, // Seconds for a balloon to cross screen
+            activeBalloons: 0,
+            totalBalloonsPerRound: 5
+        };
+
+        // Static Cloud Background Layer Generators
+        function generateClouds() {
+            for(let i = 0; i < 4; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.width = `${Math.floor(Math.random() * 80) + 100}px`;
+                cloud.style.height = `${Math.floor(Math.random() * 30) + 40}px`;
+                cloud.style.top = `${Math.random() * 40 + 5}%`;
+                cloud.style.left = `${Math.random() * 100}%`;
+                cloud.style.animationDuration = `${Math.random() * 40 + 40}s`;
+                cloud.style.animationDelay = `-${Math.random() * 30}s`;
+                stage.appendChild(cloud);
+            }
+        }
+
+        // Random Arithmetic Engine Utilities
+        function getRandomInt(min, max, exclude = []) {
+            let num;
+            do {
+                num = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (exclude.includes(num));
+            return num;
+        }
+
+        // Core Mathematical Problem Architecture Generator
+        function generateAlgebraProblem() {
+            const problemType = getRandomInt(1, 4); // 1: Add, 2: Sub, 3: Mult, 4: Div
+            let x = getRandomInt(1, 12); // Targeted answer limits for junior secondary rapid execution
+            let a, b;
+            let equationText = "";
+
+            switch (problemType) {
+                case 1: // x + a = b
+                    a = getRandomInt(2, 20);
+                    b = x + a;
+                    equationText = `x + ${a} = ${b}`;
+                    break;
+                case 2: // x - a = b
+                    a = getRandomInt(2, 15);
+                    b = x - a;
+                    equationText = `x - ${a} = ${b}`;
+                    break;
+                case 3: // ax = b
+                    a = getRandomInt(2, 7);
+                    b = x * a;
+                    equationText = `${a}x = ${b}`;
+                    break;
+                case 4: // x / a = b
+                    a = getRandomInt(2, 5);
+                    b = x;
+                    let displayNum = b * a;
+                    equationText = `x / ${a} = ${displayNum}`;
+                    break;
+            }
+
+            state.currentSolution = x;
+            equationDisplay.textContent = equationText;
+        }
+
+        // Spawning System Processing Interface Loops
+        function spawnRound() {
+            // Flush leftover configuration frameworks safely
+            stage.querySelectorAll('.balloon').forEach(b => b.remove());
+            
+            state.activeBalloons = state.totalBalloonsPerRound;
+            
+            // Build answer option sets matrices mapping array
+            const options = [state.currentSolution];
+            while (options.length < state.totalBalloonsPerRound) {
+                const distractor = getRandomInt(1, 25, options);
+                options.push(distractor);
+            }
+
+            // Shuffle choice indexes
+            options.sort(() => Math.random() - 0.5);
+
+            // Establish segmented window lanes to maximize distribution spread
+            const segmentWidth = 100 / state.totalBalloonsPerRound;
+
+            options.forEach((val, index) => {
+                const balloon = document.createElement('div');
+                balloon.className = 'balloon';
+                balloon.textContent = val;
+
+                // Unique entity parameters configurations settings
+                const color = state.balloonColors[Math.floor(Math.random() * state.balloonColors.length)];
+                balloon.style.backgroundColor = color;
+                balloon.style.borderBottomColor = color;
+
+                // Thread string attachment line configuration structures
+                const string = document.createElement('div');
+                string.className = 'balloon-string';
+                balloon.appendChild(string);
+
+                // Grid mapping position offsets calculations
+                const minX = index * segmentWidth + 2;
+                const maxX = (index + 1) * segmentWidth - 10;
+                const posX = getRandomInt(minX, maxX);
+                balloon.style.left = `${posX}%`;
+
+                // Staggered timing values
+                const duration = (state.baseFloatDuration + (Math.random() * 3 - 1.5));
+                const delay = Math.random() * 1.8;
+                balloon.style.animationDuration = `${duration}s`;
+                balloon.style.animationDelay = `${delay}s`;
+
+                // Handle clicking/shooting mechanics 
+                balloon.addEventListener('mousedown', (e) => handleShooting(e, val, balloon));
+
+                // Cleanup hook logic if the balloon leaves the upper troposphere unstopped
+                balloon.addEventListener('animationend', () => {
+                    balloon.remove();
+                    state.activeBalloons--;
+                    if (state.activeBalloons <= 0) {
+                        // All elements expired without correct resolution: regenerate problem context safely
+                        generateAlgebraProblem();
+                        spawnRound();
+                    }
+                });
+
+                stage.appendChild(balloon);
+            });
+        }
+
+        // Score HUD Feedback Node Generator Mechanics
+        function createFeedbackIndicator(x, y, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.color = color;
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+            stage.appendChild(popup);
+            setTimeout(() => popup.remove(), 600);
+        }
+
+        // Logic Resolution Processing Controller Hook Matrix
+        function handleShooting(event, chosenValue, balloonElement) {
+            event.stopPropagation();
+            const rect = balloonElement.getBoundingClientRect();
+            const clickX = rect.left + rect.width / 2;
+            const clickY = rect.top + rect.height / 2;
+
+            if (chosenValue === state.currentSolution) {
+                // SUCCESS CONDITION MET
+                state.score += 10;
+                scoreDisplay.textContent = state.score;
+                createFeedbackIndicator(clickX, clickY, "+10", "#2ecc71");
+                
+                // Pop all operational elements gracefully
+                balloonElement.classList.add('popped');
+                
+                // Advance runtime cycles instantly 
+                setTimeout(() => {
+                    generateAlgebraProblem();
+                    spawnRound();
+                }, 200);
+            } else {
+                // FAILURE CONDITION HIT
+                state.score = Math.max(0, state.score - 5);
+                scoreDisplay.textContent = state.score;
+                createFeedbackIndicator(clickX, clickY, "-5", "#e74c3c");
+                
+                // Burst current selection object but block total cycle advancement mapping matrix
+                balloonElement.classList.add('popped');
+                state.activeBalloons--;
+
+                if (state.activeBalloons <= 0) {
+                    setTimeout(() => {
+                        generateAlgebraProblem();
+                        spawnRound();
+                    }, 300);
+                }
+            }
+        }
+
+        // Initializer Execution Context Entry Hook Loops
+        generateClouds();
+        generateAlgebraProblem();
+        spawnRound();
+    </script>
+</body>
+</html>
