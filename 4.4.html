@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Function Graph Transformations</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .canvas-container {
+            position: relative;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .equation-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            color: #2980b9;
+            min-height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-group {
+            margin-bottom: 25px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .slider-label span.val {
+            color: #e74c3c;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            font-size: 0.9rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Quadratic Graph Transformations</h1>
+    <p>Explore how parameters change the vertex form: <em>y = a(x - h)² + k</em></p>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="graphCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="equation-display" id="equation">
+                y = 1(x - 0)² + 0
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Parameter <strong>a</strong> (Vertical Stretch/Reflection)</span>
+                    <span class="val" id="valA">1.0</span>
+                </div>
+                <input type="range" id="sliderA" min="-5" max="5" step="0.1" value="1">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Parameter <strong>h</strong> (Horizontal Shift)</span>
+                    <span class="val" id="valH">0.0</span>
+                </div>
+                <input type="range" id="sliderH" min="-10" max="10" step="0.5" value="0">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Parameter <strong>k</strong> (Vertical Shift)</span>
+                    <span class="val" id="valK">0.0</span>
+                </div>
+                <input type="range" id="sliderK" min="-10" max="10" step="0.5" value="0">
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: #bdc3c7; border-top: 2px dashed #95a5a6;"></div>
+                    <span>Parent Function: y = x²</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: #e74c3c; height: 3px;"></div>
+                    <span>Transformed Function</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM Elements
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const sliderA = document.getElementById('sliderA');
+        const sliderH = document.getElementById('sliderH');
+        const sliderK = document.getElementById('sliderK');
+        
+        const valA = document.getElementById('valA');
+        const valH = document.getElementById('valH');
+        const valK = document.getElementById('valK');
+        const equationDisplay = document.getElementById('equation');
+
+        // Grid Configuration Constants
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
+        const GRID_SIZE = 20; // Size of each grid square in pixels
+        const SCALE = 20;     // 1 unit in math = 20 pixels on canvas
+        const ORIGIN_X = WIDTH / 2;
+        const ORIGIN_Y = HEIGHT / 2;
+
+        // Core Drawing Function
+        function draw() {
+            // Get current numeric values from sliders
+            const a = parseFloat(sliderA.value);
+            const h = parseFloat(sliderH.value);
+            const k = parseFloat(sliderK.value);
+
+            // Update UI text readouts
+            valA.textContent = a.toFixed(1);
+            valH.textContent = h.toFixed(1);
+            valK.textContent = k.toFixed(1);
+            updateEquationText(a, h, k);
+
+            // Clear the entire canvas canvas area
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // 1. Draw Grid System
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            
+            // Vertical grid lines
+            for (let x = 0; x <= WIDTH; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, HEIGHT);
+                ctx.stroke();
+            }
+            // Horizontal grid lines
+            for (let y = 0; y <= HEIGHT; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(WIDTH, y);
+                ctx.stroke();
+            }
+
+            // 2. Draw X and Y Coordinate Axes
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+            
+            // X-Axis
+            ctx.beginPath();
+            ctx.moveTo(0, ORIGIN_Y);
+            ctx.lineTo(WIDTH, ORIGIN_Y);
+            ctx.stroke();
+            
+            // Y-Axis
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X, 0);
+            ctx.lineTo(ORIGIN_X, HEIGHT);
+            ctx.stroke();
+
+            // Add basic tick labels for reference
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.fillText('5', ORIGIN_X + 5 * SCALE, ORIGIN_Y + 12);
+            ctx.fillText('-5', ORIGIN_X - 5 * SCALE, ORIGIN_Y + 12);
+            ctx.fillText('5', ORIGIN_X - 12, ORIGIN_Y - 5 * SCALE);
+            ctx.fillText('-5', ORIGIN_X - 15, ORIGIN_Y + 5 * SCALE);
+
+            // 3. Draw Parent Reference Parabola: y = x^2 (Dashed Gray)
+            ctx.strokeStyle = '#95a5a6';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // Create a dashed pattern
+            drawParabola(1, 0, 0);
+            ctx.setLineDash([]); // Reset dash pattern to solid for the next drawing
+
+            // 4. Draw Transformed Parabola: y = a(x-h)^2 + k (Solid Red)
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 3;
+            drawParabola(a, h, k);
+        }
+
+        /**
+         * Helper logic to map mathematical coordinates to HTML canvas pixel indices
+         * and plot a smooth parabola curve.
+         */
+        function drawParabola(a, h, k) {
+            ctx.beginPath();
+            
+            // Iterate through every pixel column along the width of the canvas
+            for (let pixelX = 0; pixelX <= WIDTH; pixelX++) {
+                // Convert pixel coordinate back to math Cartesian X coordinate
+                let mathX = (pixelX - ORIGIN_X) / SCALE;
+                
+                // Calculate vertex form formula: y = a * (x - h)^2 + k
+                let mathY = a * Math.pow((mathX - h), 2) + k;
+                
+                // Convert math Y back into Canvas pixel Y coordinates 
+                // (Note: Canvas inversion occurs because pixel coordinate Y increases downward)
+                let pixelY = ORIGIN_Y - (mathY * SCALE);
+                
+                // Establish start or line paths across coordinates
+                if (pixelX === 0) {
+                    ctx.moveTo(pixelX, pixelY);
+                } else {
+                    ctx.lineTo(pixelX, pixelY);
+                }
+            }
+            ctx.stroke();
+        }
+
+        /**
+         * Dynamically formats the algebraic notation text elegantly 
+         * matching signed standards (+/- formatting logic)
+         */
+        function updateEquationText(a, h, k) {
+            // Standard formatting cleanup for h
+            let hPart = "";
+            if (h === 0) {
+                hPart = "x";
+            } else if (h > 0) {
+                hPart = `(x - ${h})`;
+            } else {
+                hPart = `(x + ${Math.abs(h)})`;
+            }
+            
+            // Handle square notation styling cleanly
+            if (h !== 0) hPart += "²";
+            else hPart = "x²";
+
+            // Clean parsing formatting for coefficient a
+            let aPart = "";
+            if (a === 1) aPart = "";
+            else if (a === -1) aPart = "-";
+            else aPart = a;
+
+            // Clean parsing formatting for constant vertical translation k
+            let kPart = "";
+            if (k > 0) kPart = ` + ${k}`;
+            else if (k < 0) kPart = ` - ${Math.abs(k)}`;
+
+            // Build total string structure dynamically
+            equationDisplay.innerHTML = `y = ${aPart}${hPart}${kPart}`;
+        }
+
+        // Event listeners to handle manual range updates responsively
+        sliderA.addEventListener('input', draw);
+        sliderH.addEventListener('input', draw);
+        sliderK.addEventListener('input', draw);
+
+        // Initial paint execution on load
+        draw();
+    </script>
+</body>
+</html>
