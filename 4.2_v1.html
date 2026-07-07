@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completing the Square - Geometric Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --primary: #3b82f6;      /* Color for x^2 */
+            --secondary: #10b981;    /* Color for bx portions */
+            --accent: #f59e0b;       /* Color for the missing square (b/2)^2 */
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #0f172a;
+        }
+
+        .formula-display {
+            font-size: 1.4rem;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-left: 5px solid var(--primary);
+        }
+
+        /* Highlight specific parts of the math formula dynamically */
+        .f-x2 { color: var(--primary); }
+        .f-bx { color: var(--secondary); }
+        .f-missing { color: var(--accent); font-weight: bold; }
+
+        /* Main visualization canvas workspace */
+        .visualization-space {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            margin: 30px 0;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        /* Abstract Shape Classes representing the algebraic tiles */
+        .tile {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            font-size: 1.1rem;
+        }
+
+        .x2-tile {
+            background-color: var(--primary);
+            width: 160px;
+            height: 160px;
+            top: 130px;
+            left: 200px;
+        }
+
+        /* The full bx rectangle at the start */
+        .bx-tile-full {
+            background-color: var(--secondary);
+            width: 100px;
+            height: 160px;
+            top: 130px;
+            left: 370px;
+        }
+
+        /* Split rectangles (b/2) */
+        .bx-tile-half-1 {
+            background-color: var(--secondary);
+            width: 50px;
+            height: 160px;
+            top: 130px;
+            left: 370px;
+            opacity: 0;
+        }
+
+        .bx-tile-half-2 {
+            background-color: var(--secondary);
+            width: 50px;
+            height: 160px;
+            top: 130px;
+            left: 425px;
+            opacity: 0;
+            transform-origin: center center;
+        }
+
+        /* The actual completing piece (b/2)^2 */
+        .missing-tile {
+            background-color: var(--accent);
+            width: 160px;
+            height: 50px;
+            top: 75px;
+            left: 200px;
+            opacity: 0;
+            border: 2px dashed #d97706;
+        }
+
+        /* Explanatory subtitle captioning text */
+        .narration {
+            text-align: center;
+            font-size: 1.1rem;
+            min-height: 3em;
+            padding: 0 20px;
+            color: #475569;
+            font-style: italic;
+        }
+
+        /* UI Controls interface styling */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #1e293b;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #resetBtn {
+            background-color: #ef4444;
+        }
+        #resetBtn:hover {
+            background-color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Completing the Square</h1>
+        <p>A Geometric Area Model Visualization</p>
+    </header>
+
+    <div class="formula-display" id="formula">
+        <span class="f-x2">x²</span> + <span class="f-bx">bx</span><span id="formula-ext" style="opacity:0;"> + <span class="f-missing">(b/2)²</span></span> = <span id="formula-rhs">Area</span>
+    </div>
+
+    <div class="visualization-space" id="canvas">
+        <div class="tile x2-tile" id="tileX2">x²</div>
+        
+        <div class="tile bx-tile-full" id="tileBxFull">bx</div>
+        
+        <div class="tile bx-tile-half-1" id="tileBxHalf1">b/2 x</div>
+        <div class="tile bx-tile-half-2" id="tileBxHalf2">b/2 x</div>
+        
+        <div class="tile missing-tile" id="tileMissing">(b/2)²</div>
+    </div>
+
+    <div class="narration" id="narrationText">
+        We start with the expression x² + bx represented as geometric areas. Click "Animate Step" to begin.
+    </div>
+
+    <div class="controls">
+        <button id="nextBtn" onclick="nextStep()">Animate Step</button>
+        <button id="resetBtn" onclick="resetVisualization()">Reset</button>
+    </div>
+</div>
+
+<script>
+    // Global tracking index pointing to active presentation steps
+    let currentStep = 0;
+    
+    // Master sequential timeline handling geometry translations securely via GSAP
+    let tl = gsap.timeline({ defaults: { ease: "power2.out", duration: 1.2 } });
+
+    // Elements cache optimization
+    const narration = document.getElementById("narrationText");
+    const nextBtn = document.getElementById("nextBtn");
+    const formulaExt = document.getElementById("formula-ext");
+    const formulaRhs = document.getElementById("formula-rhs");
+
+    // Interactive step management array mapping narrative beats and state engines
+    function nextStep() {
+        if (tl.isActive()) return; // Prevent clicking while an animation is playing
+        
+        currentStep++;
+        
+        if (currentStep === 1) {
+            // STEP 1: Split the linear 'bx' element into two matching 'b/2 x' pieces
+            narration.innerHTML = "To start forming a square symmetric framework, we divide the <strong>bx</strong> block exactly into two equal halves of area <strong>(b/2)x</strong>.";
+            
+            tl.to("#tileBxFull", { opacity: 0, duration: 0.4 })
+              .to(["#tileBxHalf1", "#tileBxHalf2"], { opacity: 1, duration: 0.4 }, "<")
+              .play();
+              
+        } else if (currentStep === 2) {
+            // STEP 2: Rotate and relocate one half to the top edge of the x^2 tile
+            narration.innerHTML = "Next, we move one half to the top of the <strong>x²</strong> square. To make it fit perfectly along the edge, we rotate it 90 degrees clockwise.";
+            
+            tl.to("#tileBxHalf2", {
+                x: -225,       // Move left toward the top of x^2 tile
+                y: -105,       // Move upward
+                rotation: 90,  // Perform 90-degree transformation rotation mapping
+                duration: 1.5,
+                backgroundColor: "#0d9488" // Subtle color shift indicating structural change
+            }).play();
+
+        } else if (currentStep === 3) {
+            // STEP 3: Reveal the missing corner geometric area component
+            narration.innerHTML = "Notice that a small corner piece is missing to complete a perfect large square. The dimensions of this empty space are <strong>b/2</strong> by <strong>b/2</strong>, which means its area is <strong>(b/2)²</strong>.";
+            
+            tl.to("#tileMissing", { opacity: 1, duration: 1 })
+              .play();
+
+        } else if (currentStep === 4) {
+            // STEP 4: Close algebraic loops mapping complete area architecture changes
+            narration.innerHTML = "By adding <strong>(b/2)²</strong>, we 'complete the square'! The entire area can now be factored cleanly as one big square with side lengths of <strong>(x + b/2)</strong>.";
+            
+            // Sync the HTML text expressions with standard algebraic definitions
+            gsap.to(formulaExt, { opacity: 1, duration: 0.5 });
+            
+            tl.to("#tileMissing", { backgroundColor: "#d97706", borderStyle: "solid", duration: 0.5 })
+              .to(formulaRhs, { 
+                  opacity: 0, 
+                  duration: 0.3, 
+                  onComplete: () => {
+                      formulaRhs.innerHTML = "<span style='color: #3b82f6;'>(x + b/2)²</span>";
+                  } 
+              })
+              .to(formulaRhs, { opacity: 1, duration: 0.5 })
+              .play();
+
+            nextBtn.disabled = true; // Terminate step index controls safely at absolute end
+        }
+    }
+
+    // Complete reset restoring defaults cleanly
+    function resetVisualization() {
+        tl.kill(); // Stop any active running animations instantly
+        currentStep = 0;
+        
+        // Restore DOM controls and string parameters uniformly
+        nextBtn.disabled = false;
+        narration.innerHTML = 'We start with the expression x² + bx represented as geometric areas. Click "Animate Step" to begin.';
+        formulaExt.style.opacity = "0";
+        formulaRhs.innerHTML = "Area";
+
+        // Direct reset properties via GSAP to initial spatial positions
+        gsap.set(["#tileBxFull", "#tileBxHalf1", "#tileBxHalf2", "#tileMissing"], { clearProps: "all" });
+    }
+</script>
+
+</body>
+</html>

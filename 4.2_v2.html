@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completing the Square - Geometric Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --color-x2: #3b82f6;       /* Blue for x^2 */
+            --color-bx: #10b981;       /* Green for bx segments */
+            --color-missing: #f59e0b;  /* Orange/Gold for the completing square */
+            --border-color: #cbd5e1;
+            /* Base scaling pixel metric for variable sizing */
+            --unit-scale: 25px; 
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.8rem;
+            color: #0f172a;
+        }
+
+        p.subtitle {
+            margin: 0 0 25px 0;
+            color: #64748b;
+        }
+
+        /* --- UI CONTROLS TOP BAR --- */
+        .controls-panel {
+            width: 100%;
+            background: #f1f5f9;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            box-sizing: border-box;
+            margin-bottom: 25px;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+            accent-color: var(--color-x2);
+            width: 150px;
+        }
+
+        button {
+            background-color: #0f172a;
+            color: #ffffff;
+            border: none;
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+        }
+
+        button:hover {
+            background-color: #1e293b;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* --- VISUALIZATION CANVAS --- */
+        .canvas {
+            position: relative;
+            width: 100%;
+            height: 460px;
+            background: #fafafa;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        /* Base Class for Geometric Tiles */
+        .tile {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .tile .label-area {
+            font-size: 1.2rem;
+        }
+
+        .tile .label-dim {
+            position: absolute;
+            font-size: 0.85rem;
+            color: #475569;
+            font-weight: 500;
+            text-shadow: none;
+        }
+
+        /* Color profiles */
+        .x2-tile { background-color: var(--color-x2); }
+        .bx-tile { background-color: var(--color-bx); }
+        .missing-tile { background-color: var(--color-missing); }
+
+        /* Perfect square macro outer wrapper highlighting flash effect */
+        #perfectSquareOutline {
+            position: absolute;
+            border: 0px solid transparent;
+            box-sizing: border-box;
+            pointer-events: none;
+            border-radius: 8px;
+            z-index: 10;
+        }
+
+        /* --- FORMULA FOOTER DISPLAY --- */
+        .formula-container {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 18px 40px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 40px;
+        }
+
+        .f-part { transition: all 0.3s ease; }
+        .f-x2 { color: var(--color-x2); }
+        .f-bx { color: var(--color-bx); }
+        .f-missing { color: var(--color-missing); opacity: 0; transform: scale(0.5); display: inline-block; }
+        .f-rhs { color: #0f172a; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Completing the Square</h1>
+    <p class="subtitle">Geometric Area Model & Algebraic Mapping</p>
+
+    <div class="controls-panel">
+        <div class="slider-group">
+            <label for="bSlider">Value of b:</label>
+            <input type="range" id="bSlider" min="2" max="8" value="4" step="0.5">
+            <span id="bValDisplay">4</span>
+        </div>
+        <button id="playBtn">Play Animation</button>
+    </div>
+
+    <div class="canvas" id="canvas">
+        <div id="perfectSquareOutline"></div>
+    </div>
+
+    <div class="formula-container" id="formula">
+        <span class="f-part f-x2">x²</span>
+        <span class="f-part f-bx"> + <span id="f-bx-val">4</span>x</span>
+        <span class="f-part f-missing" id="f-missing-node"> + (<span id="f-b2-val">2</span>)²</span>
+        <span class="f-part" id="f-equal-node"></span>
+        <span class="f-part f-rhs" id="f-rhs-node"></span>
+    </div>
+</div>
+
+<script>
+    // Configuration constants tracking fixed size constants
+    const X_VALUE = 6; // Fixed baseline standard size matching 'x' layout units
+    const SCALE = 22;  // UI multiplier conversion ratio maps logical coordinates cleanly to pixels
+
+    // Canvas layout anchor origins
+    const ORIGIN_X = 150;
+    const ORIGIN_Y = 150;
+
+    // DOM Reference Element Cache Map
+    const bSlider = document.getElementById('bSlider');
+    const bValDisplay = document.getElementById('bValDisplay');
+    const playBtn = document.getElementById('playBtn');
+    const canvas = document.getElementById('canvas');
+    const perfectSquareOutline = document.getElementById('perfectSquareOutline');
+    
+    // Formula Text Value Hooks
+    const fBxVal = document.getElementById('f-bx-val');
+    const fB2Val = document.getElementById('f-b2-val');
+    const fMissingNode = document.getElementById('f-missing-node');
+    const fEqualNode = document.getElementById('f-equal-node');
+    const fRhsNode = document.getElementById('f-rhs-node');
+
+    // Global timeline scope tracking GSAP tasks safely
+    let animTimeline = null;
+
+    /**
+     * Build and inject components dynamically inside rendering context mapping user configuration matrix 
+     */
+    function initScene() {
+        // Clear active running processes cleanly before building elements
+        if (animTimeline) {
+            animTimeline.kill();
+            animTimeline = null;
+        }
+        
+        // Remove old dynamic structural divs if existing
+        document.querySelectorAll('.runtime-tile').forEach(el => el.remove());
+        playBtn.disabled = false;
+        bSlider.disabled = false;
+
+        const b = parseFloat(bSlider.value);
+        bValDisplay.textContent = b;
+        
+        // Dynamic formula text definitions
+        fBxVal.textContent = b;
+        fB2Val.textContent = (b / 2);
+        
+        // Setup initial string tracking values
+        fMissingNode.style.opacity = "0";
+        fMissingNode.style.transform = "scale(0.5)";
+        fEqualNode.textContent = "";
+        fRhsNode.textContent = "";
+        perfectSquareOutline.style.border = "0px solid transparent";
+
+        // Convert computational structural dimensions directly into render tracking dimensions
+        const xPx = X_VALUE * SCALE;
+        const bPx = b * SCALE;
+        const bHalfPx = (b / 2) * SCALE;
+
+        // 1. GENERATE THE CENTRAL MANDATORY X^2 CONTAINER TILE
+        const tileX2 = document.createElement('div');
+        tileX2.className = 'tile x2-tile runtime-tile';
+        tileX2.id = 'tileX2';
+        tileX2.style.width = `${xPx}px`;
+        tileX2.style.height = `${xPx}px`;
+        tileX2.style.left = `${ORIGIN_X}px`;
+        tileX2.style.top = `${ORIGIN_Y}px`;
+        tileX2.innerHTML = `<div class="label-area">x²</div>
+                            <div class="label-dim" style="left: -20px; top:50%; transform:translateY(-50%);">x</div>
+                            <div class="label-dim" style="bottom: -25px; left:50%; transform:translateX(-50%);">x</div>`;
+        canvas.appendChild(tileX2);
+
+        // 2. GENERATE ORIGINAL FULL 'BX' COMBINED BOX
+        const tileBxFull = document.createElement('div');
+        tileBxFull.className = 'tile bx-tile runtime-tile';
+        tileBxFull.id = 'tileBxFull';
+        tileBxFull.style.width = `${bPx}px`;
+        tileBxFull.style.height = `${xPx}px`;
+        tileBxFull.style.left = `${ORIGIN_X + xPx + 40}px`; // Built with a 40px buffer separator initially
+        tileBxFull.style.top = `${ORIGIN_Y}px`;
+        tileBxFull.innerHTML = `<div class="label-area">${b}x</div>
+                                <div class="label-dim" style="bottom: -25px; left:50%; transform:translateX(-50%);">${b}</div>`;
+        canvas.appendChild(tileBxFull);
+
+        // 3. GENERATE THE SPLIT TILES (Pre-positioned precisely stacked underneath the source layout element)
+        const tilePart1 = document.createElement('div');
+        tilePart1.className = 'tile bx-tile runtime-tile';
+        tilePart1.id = 'tilePart1';
+        tilePart1.style.width = `${bHalfPx}px`;
+        tilePart1.style.height = `${xPx}px`;
+        tilePart1.style.left = `${ORIGIN_X + xPx + 40}px`;
+        tilePart1.style.top = `${ORIGIN_Y}px`;
+        tilePart1.style.opacity = 0;
+        tilePart1.innerHTML = `<div class="label-area">${b/2}x</div>
+                               <div class="label-dim" style="bottom: -25px; left:50%; transform:translateX(-50%);">${b/2}</div>`;
+        canvas.appendChild(tilePart1);
+
+        const tilePart2 = document.createElement('div');
+        tilePart2.className = 'tile bx-tile runtime-tile';
+        tilePart2.id = 'tilePart2';
+        tilePart2.style.width = `${bHalfPx}px`;
+        tilePart2.style.height = `${xPx}px`;
+        tilePart2.style.left = `${ORIGIN_X + xPx + 40 + bHalfPx}px`;
+        tilePart2.style.top = `${ORIGIN_Y}px`;
+        tilePart2.style.opacity = 0;
+        tilePart2.innerHTML = `<div class="label-area">${b/2}x</div>
+                               <div class="label-dim" style="bottom: -25px; left:50%; transform:translateX(-50%);">${b/2}</div>`;
+        canvas.appendChild(tilePart2);
+
+        // 4. GENERATE THE MISSING CORNER PIECE BLOCK
+        const tileMissing = document.createElement('div');
+        tileMissing.className = 'tile missing-tile runtime-tile';
+        tileMissing.id = 'tileMissing';
+        tileMissing.style.width = `${bHalfPx}px`;
+        tileMissing.style.height = `${bHalfPx}px`;
+        // Targeted landing coordinates aligned perfectly with the upper-right geometry
+        tileMissing.style.left = `${ORIGIN_X + xPx}px`;
+        tileMissing.style.top = `${ORIGIN_Y - bHalfPx}px`;
+        tileMissing.style.opacity = 0;
+        tileMissing.style.border = "2px dashed #d97706"; // Starting state uses dotted lines
+        tileMissing.innerHTML = `<div class="label-area">(${b/2})²</div>
+                                 <div class="label-dim" style="right: -30px; top:50%; transform:translateY(-50%);">${b/2}</div>`;
+        canvas.appendChild(tileMissing);
+
+        // Pre-configure spatial sizing measurements tracking structural outlines cleanly
+        perfectSquareOutline.style.width = `${xPx + bHalfPx}px`;
+        perfectSquareOutline.style.height = `${xPx + bHalfPx}px`;
+        perfectSquareOutline.style.left = `${ORIGIN_X}px`;
+        perfectSquareOutline.style.top = `${ORIGIN_Y - bHalfPx}px`;
+    }
+
+    /**
+     * Executes the educational geometric timeline transition sequences.
+     */
+    function startAnimation() {
+        playBtn.disabled = true;
+        bSlider.disabled = true;
+
+        const b = parseFloat(bSlider.value);
+        const xPx = X_VALUE * SCALE;
+        const bHalfPx = (b / 2) * SCALE;
+
+        // Instantiate safe sequenced GSAP engine instance parameters cleanly
+        animTimeline = gsap.timeline();
+
+        /* --- STEP 1: SPLITTING TRANSITION --- */
+        animTimeline.to("#tileBxFull", { 
+            opacity: 0, 
+            duration: 0.4, 
+            ease: "power1.inOut" 
+        });
+        
+        animTimeline.to(["#tilePart1", "#tilePart2"], { 
+            opacity: 1, 
+            duration: 0.4, 
+            ease: "power1.inOut" 
+        }, "<");
+
+        // Small pause to let students examine the divided area
+        animTimeline.to({}, { duration: 0.6 }); 
+
+        /* --- STEP 2: MOVING AND ATTACHING --- */
+        // Move Part 1 cleanly to snap onto the right edge of x^2
+        animTimeline.to("#tilePart1", {
+            left: ORIGIN_X + xPx,
+            top: ORIGIN_Y,
+            duration: 1.2,
+            ease: "power2.inOut"
+        });
+
+        // Relocate, rotate, and re-label Part 2 to attach seamlessly to the top edge of x^2
+        animTimeline.to("#tilePart2", {
+            left: ORIGIN_X,
+            top: ORIGIN_Y - bHalfPx,
+            width: xPx,       // Invert dimensions to match rotation geometry change
+            height: bHalfPx,
+            duration: 1.2,
+            ease: "power2.inOut",
+            onComplete: () => {
+                // Adjust label dimensions dynamically to preserve horizontal reading
+                document.querySelector('#tilePart2 .label-dim').style.left = "-20px";
+                document.querySelector('#tilePart2 .label-dim').style.top = "50%";
+                document.querySelector('#tilePart2 .label-dim').style.transform = "translateY(-50%)";
+            }
+        }, "<"); // Runs synchronously with Part 1 moving
+
+        animTimeline.to({}, { duration: 0.5 });
+
+        /* --- STEP 3: HIGHLIGHT & FILL MISSING CORNER --- */
+        // Flash a dashed boundary box around the missing space to highlight it
+        animTimeline.to("#tileMissing", { 
+            opacity: 0.4, 
+            borderWidth: "3px",
+            repeat: 3, 
+            yoyo: true, 
+            duration: 0.25 
+        });
+        
+        // Solidify the structural corner square piece cleanly
+        animTimeline.to("#tileMissing", { 
+            opacity: 1, 
+            borderStyle: "solid", 
+            borderColor: "transparent", 
+            duration: 0.6, 
+            ease: "power1.out" 
+        });
+
+        // Animate the formula display concurrently to include the new term (+ (b/2)^2)
+        animTimeline.to(fMissingNode, { 
+            opacity: 1, 
+            scale: 1, 
+            duration: 0.5, 
+            ease: "back.out(1.7)" 
+        }, "<");
+
+        animTimeline.to({}, { duration: 0.6 });
+
+        /* --- FINAL STEP: SHOW PERFECT SQUARE COMPLETION --- */
+        // Fade in the algebraic equality operators
+        animTimeline.call(() => {
+            fEqualNode.textContent = " = ";
+            fRhsNode.innerHTML = `(x + ${b/2})²`;
+        });
+
+        animTimeline.fromTo([fEqualNode, fRhsNode], 
+            { opacity: 0, y: 10 }, 
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+        );
+
+        // Flash and expand the outer composite perfect square frame border
+        animTimeline.to(perfectSquareOutline, {
+            borderColor: "#0f172a",
+            borderWidth: "4px",
+            boxShadow: "0 0 20px rgba(15, 23, 42, 0.3)",
+            duration: 0.3,
+            repeat: 1,
+            yoyo: true,
+            ease: "power1.inOut",
+            onComplete: () => {
+                // Maintain solid highlight look upon termination
+                perfectSquareOutline.style.border = "3px solid #0f172a";
+            }
+        });
+    }
+
+    // Interactive event hooks
+    bSlider.addEventListener('input', initScene);
+    playBtn.addEventListener('click', startAnimation);
+
+    // Bootstrap initialization step run upon ready state
+    window.onload = initScene;
+</script>
+
+</body>
+</html>
