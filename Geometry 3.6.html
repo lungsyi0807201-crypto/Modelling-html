@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSE M2: Volume of Revolution Visualizer</title>
+  
+  <!-- Tailwind CSS for UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- KaTeX for beautiful, fast math equations -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Three.js for 3D Graphics -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Lucide Icons (Inline SVGs will be used for robustness, but script is here as fallback) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Premium custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Simple canvas styling */
+    #canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Navigation Bar -->
+  <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-md py-4 px-6 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-white/10 rounded-lg">
+          <!-- Geometric icon -->
+          <svg class="w-6 h-6 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">HKDSE M2: Solids of Revolution</h1>
+          <p class="text-xs text-blue-100">Interactive Volume Derivations & Visualizer</p>
+        </div>
+      </div>
+      <div class="flex gap-4 text-sm font-medium">
+        <span class="bg-blue-600/50 border border-blue-400/30 px-3 py-1 rounded-full text-blue-100">Curriculum Code: Area & Volume Applications</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT COLUMN: 3D Scene and Visual Controls (7 cols on large screens) -->
+    <section class="lg:col-span-7 flex flex-col gap-4">
+      
+      <!-- Interactive Visualizer Panel -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col h-[520px] relative">
+        <!-- Visualizer Header / Controls overlay -->
+        <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
+          <div class="bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            3D Revolving Canvas (Drag to orbit, scroll to zoom)
+          </div>
+        </div>
+
+        <div class="absolute top-4 right-4 z-10 flex gap-2">
+          <button id="btn-reset-camera" class="bg-white/90 hover:bg-white text-slate-700 text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 flex items-center gap-1 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Reset View
+          </button>
+        </div>
+
+        <!-- Three.js Canvas Div -->
+        <div id="canvas-container" class="w-full flex-grow bg-slate-950 relative">
+          <!-- Loading placeholder -->
+          <div id="canvas-loading" class="absolute inset-0 flex items-center justify-center text-white bg-slate-950 z-20">
+            <div class="flex flex-col items-center gap-3">
+              <svg class="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-sm font-medium text-slate-400">Initializing 3D Environment...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls / Slices Legend -->
+        <div class="bg-slate-900 text-slate-300 p-4 border-t border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+            <span>Profile Curve $y = f(x)$</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-amber-500/50 border border-amber-400 rounded-md"></div>
+            <span>Revolved Solid</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-rose-500 rounded-md"></div>
+            <span>Representative Disk ($dx$)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 bg-slate-500 rounded-full"></div>
+            <span>Axis of Rotation ($x$-axis)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Interactive Configurator -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col gap-4">
+        <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+          Active Simulation Controls
+        </h3>
+
+        <!-- Configuration sliders grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Left Sliders: Rotations and Slicing -->
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label for="slider-rotation" class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  Rotation Angle ($\theta$)
+                </label>
+                <span id="label-rotation" class="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">360°</span>
+              </div>
+              <input type="range" id="slider-rotation" min="10" max="360" value="360" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              <p class="text-[11px] text-slate-500 mt-1">Sweep the curve around the $x$-axis to construct the solid.</p>
+            </div>
+
+            <div class="border-t border-slate-100 pt-3">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" id="checkbox-show-disk" checked class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 mr-1">
+                  Show Representative Disk ($dx$)
+                </label>
+              </div>
+              <div class="space-y-2" id="disk-position-control">
+                <div class="flex justify-between items-center">
+                  <span class="text-[11px] text-slate-500">Disk Position ($x$)</span>
+                  <span id="label-disk-pos" class="text-xs font-mono font-bold bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded">0.00</span>
+                </div>
+                <input type="range" id="slider-disk-pos" step="0.05" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Sliders: Dimensions (Dynamic based on selected shape) -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex flex-col justify-center space-y-4">
+            <h4 class="text-xs font-bold text-slate-700 tracking-wide uppercase">Geometry Dimensions</h4>
+            
+            <!-- Cone Dimensions -->
+            <div id="dims-cone" class="space-y-4">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-slate-600">Radius ($r$)</span>
+                  <span id="label-cone-r" class="text-xs font-mono font-bold">3.0</span>
+                </div>
+                <input type="range" id="slider-cone-r" min="1.0" max="5.0" step="0.2" value="3.0" class="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-slate-600">Height ($h$)</span>
+                  <span id="label-cone-h" class="text-xs font-mono font-bold">5.0</span>
+                </div>
+                <input type="range" id="slider-cone-h" min="2.0" max="8.0" step="0.2" value="5.0" class="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700">
+              </div>
+            </div>
+
+            <!-- Sphere Dimensions -->
+            <div id="dims-sphere" class="space-y-4 hidden">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-slate-600">Radius ($R$)</span>
+                  <span id="label-sphere-r" class="text-xs font-mono font-bold">4.0</span>
+                </div>
+                <input type="range" id="slider-sphere-r" min="1.0" max="5.0" step="0.2" value="4.0" class="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700">
+              </div>
+            </div>
+
+            <!-- Ellipsoid Dimensions -->
+            <div id="dims-ellipsoid" class="space-y-4 hidden">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-slate-600">Semi-major Axis ($a$, along $x$)</span>
+                  <span id="label-ellipsoid-a" class="text-xs font-mono font-bold">5.0</span>
+                </div>
+                <input type="range" id="slider-ellipsoid-a" min="2.0" max="6.0" step="0.2" value="5.0" class="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-medium text-slate-600">Semi-minor Axis ($b$, along $y$)</span>
+                  <span id="label-ellipsoid-b" class="text-xs font-mono font-bold">3.0</span>
+                </div>
+                <input type="range" id="slider-ellipsoid-b" min="1.0" max="4.0" step="0.2" value="3.0" class="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-700">
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Mathematical Derivations & Calculations (5 cols on large screens) -->
+    <section class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- Shape Navigation Tabs -->
+      <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-200/80 flex gap-1">
+        <button id="tab-cone" class="flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all cursor-pointer bg-blue-600 text-white shadow-sm">
+          Cone
+        </button>
+        <button id="tab-sphere" class="flex-1 py-3 text-center text-xs font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
+          Sphere
+        </button>
+        <button id="tab-ellipsoid" class="flex-1 py-3 text-center text-xs font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
+          Ellipsoid
+        </button>
+      </div>
+
+      <!-- Live Derivation Card -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col gap-5 flex-grow overflow-y-auto max-h-[600px]">
+        
+        <!-- Tab Content: Cone -->
+        <div id="content-cone" class="space-y-5">
+          <div class="border-b border-slate-100 pb-3">
+            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">DSE M2 Standard Derivation</span>
+            <h2 class="text-lg font-bold text-slate-900 mt-2">Volume of a Right Circular Cone</h2>
+          </div>
+
+          <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div>
+              <p class="font-semibold text-slate-800 mb-1">Graphical Setup:</p>
+              <p>Consider revolving the straight line passing through the origin $(0,0)$ and $(h, r)$ about the $x$-axis from $x = 0$ to $x = h$.</p>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 1: Write equation & isolate $y^2$</span>
+              <p class="mb-2">The straight line has gradient $m = \frac{r}{h}$. The equation is:</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$y = \frac{r}{h}x \implies \mathbf{y^2 = \frac{r^2}{h^2}x^2}$$
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 2: Setup integration limits</span>
+              <p class="mb-2">The cone starts at the vertex $x = 0$ and ends at the base $x = h$. Thus, the integration boundaries are **$a = 0$** and **$b = h$**.</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$V = \pi \int_{0}^{h} y^2 \, dx = \pi \int_{0}^{h} \frac{r^2}{h^2}x^2 \, dx$$
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 3: Integrate and substitute</span>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium space-y-2">
+                <div>$$V = \frac{\pi r^2}{h^2} \mathbf{\left[ \frac{x^3}{3} \right]_{0}^{h}}$$</div>
+                <div>$$V = \frac{\pi r^2}{h^2} \left( \frac{h^3}{3} - 0 \right)$$</div>
+                <div>$$\mathbf{V = \frac{1}{3}\pi r^2 h}$$</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: Sphere -->
+        <div id="content-sphere" class="space-y-5 hidden">
+          <div class="border-b border-slate-100 pb-3">
+            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">DSE M2 Standard Derivation</span>
+            <h2 class="text-lg font-bold text-slate-900 mt-2">Volume of a Sphere</h2>
+          </div>
+
+          <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div>
+              <p class="font-semibold text-slate-800 mb-1">Graphical Setup:</p>
+              <p>Consider revolving the upper semi-circle centered at $(0,0)$ with radius $R$ about the $x$-axis from $x = -R$ to $x = R$.</p>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 1: Write equation & isolate $y^2$</span>
+              <p class="mb-2">The circle centered at the origin has the formula $x^2 + y^2 = R^2$. Making $y^2$ the subject:</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$\mathbf{y^2 = R^2 - x^2}$$
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 2: Setup integration limits</span>
+              <p class="mb-2">The sphere boundaries span from the leftmost point to the rightmost point on the $x$-axis. Thus, the integration boundaries are **$a = -R$** and **$b = R$**.</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$V = \pi \int_{-R}^{R} y^2 \, dx = \pi \int_{-R}^{R} (R^2 - x^2) \, dx$$
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 3: Integrate and substitute</span>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium space-y-2">
+                <div>$$V = \pi \mathbf{\left[ R^2x - \frac{x^3}{3} \right]_{-R}^{R}}$$</div>
+                <div>$$V = \pi \left\{ \left( R^3 - \frac{R^3}{3} \right) - \left( -R^3 + \frac{R^3}{3} \right) \right\}$$</div>
+                <div>$$V = \pi \left( \frac{2}{3}R^3 + \frac{2}{3}R^3 \right)$$</div>
+                <div>$$\mathbf{V = \frac{4}{3}\pi R^3}$$</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: Ellipsoid -->
+        <div id="content-ellipsoid" class="space-y-5 hidden">
+          <div class="border-b border-slate-100 pb-3">
+            <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">DSE M2 Standard Derivation</span>
+            <h2 class="text-lg font-bold text-slate-900 mt-2">Volume of an Ellipsoid</h2>
+          </div>
+
+          <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+            <div>
+              <p class="font-semibold text-slate-800 mb-1">Graphical Setup:</p>
+              <p>Consider revolving the upper semi-ellipse centered at $(0,0)$ with semi-major axis $a$ (along $x$) and semi-minor axis $b$ (along $y$) about the $x$-axis from $x = -a$ to $x = a$.</p>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 1: Write equation & isolate $y^2$</span>
+              <p class="mb-2">The general standard equation of an ellipse is $\frac{x^2}{a^2} + \frac{y^2}{b^2} = 1$. Making $y^2$ the subject:</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$\frac{y^2}{b^2} = 1 - \frac{x^2}{a^2} \implies \mathbf{y^2 = b^2 \left( 1 - \frac{x^2}{a^2} \right)}$$
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 2: Setup integration limits</span>
+              <p class="mb-2">Setting $y = 0$ gives the $x$-intercepts of the ellipse at $x = \pm a$. Thus, the integration boundaries are **$a_{\text{limit}} = -a$** and **$b_{\text{limit}} = a$**.</p>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium">
+                $$V = \pi \int_{-a}^{a} y^2 \, dx = \pi b^2 \int_{-a}^{a} \left( 1 - \frac{x^2}{a^2} \right) \, dx$$
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span class="font-bold text-slate-800 block mb-1">Step 3: Integrate and substitute</span>
+              <div class="my-2 p-2 bg-white rounded border border-slate-100 text-center text-slate-900 font-medium space-y-2">
+                <div>$$V = \pi b^2 \mathbf{\left[ x - \frac{x^3}{3a^2} \right]_{-a}^{a}}$$</div>
+                <div>$$V = \pi b^2 \left\{ \left( a - \frac{a}{3} \right) - \left( -a + \frac{a}{3} \right) \right\}$$</div>
+                <div>$$V = \pi b^2 \left( \frac{2a}{3} + \frac{2a}{3} \right)$$</div>
+                <div>$$\mathbf{V = \frac{4}{3}\pi a b^2}$$</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Calculation Box -->
+        <div class="bg-blue-50/70 rounded-2xl p-4 border border-blue-100 mt-2">
+          <h4 class="text-xs font-bold text-blue-900 tracking-wide uppercase mb-2">Live Evaluation</h4>
+          <div class="text-xs text-blue-800 space-y-1.5 font-mono">
+            <div id="live-calc-integral">$$V = \pi \int_{0}^{5} \frac{3^2}{5^2} x^2 \, dx$$</div>
+            <div class="border-t border-blue-200/40 my-1"></div>
+            <div class="flex justify-between items-center text-sm font-bold text-blue-950">
+              <span>Calculated Volume:</span>
+              <span id="live-calc-result">15.00 \pi \approx 47.12</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM QUIZ SECTION -->
+  <section class="max-w-7xl w-full mx-auto px-4 md:px-6 pb-12">
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+      <div class="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+        <div class="p-1.5 bg-indigo-50 rounded text-indigo-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">DSE M2 Examination Practice</h3>
+          <p class="text-xs text-slate-500">Test your understanding with actual-style M2 curriculum questions.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Question 1 -->
+        <div class="border border-slate-100 bg-slate-50/50 p-5 rounded-xl flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase">Question 1</span>
+            <p class="text-xs text-slate-800 font-semibold mt-2 leading-relaxed">
+              Find the volume of the solid of revolution formed by revolving the region bounded by $y = \frac{1}{2}x$, $x=0$, $x=4$ and the $x$-axis through $360^\circ$ about the $x$-axis.
+            </p>
+            <div class="mt-4 space-y-2">
+              <button onclick="checkAnswer(1, 'A')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">A) $2\pi$</button>
+              <button onclick="checkAnswer(1, 'B')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">B) $\frac{4}{3}\pi$</button>
+              <button onclick="checkAnswer(1, 'C')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">C) $\frac{16}{3}\pi$</button>
+              <button onclick="checkAnswer(1, 'D')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">D) $8\pi$</button>
+            </div>
+          </div>
+          <div id="q1-explanation" class="hidden mt-4 text-xs p-3 rounded-lg"></div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="border border-slate-100 bg-slate-50/50 p-5 rounded-xl flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase">Question 2</span>
+            <p class="text-xs text-slate-800 font-semibold mt-2 leading-relaxed">
+              If the region enclosed by the ellipse $4x^2 + 9y^2 = 36$ is rotated $360^\circ$ about the $x$-axis, the volume of the resulting ellipsoid is:
+            </p>
+            <div class="mt-4 space-y-2">
+              <button onclick="checkAnswer(2, 'A')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">A) $16\pi$</button>
+              <button onclick="checkAnswer(2, 'B')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">B) $24\pi$</button>
+              <button onclick="checkAnswer(2, 'C')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">C) $36\pi$</button>
+              <button onclick="checkAnswer(2, 'D')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">D) $12\pi$</button>
+            </div>
+          </div>
+          <div id="q2-explanation" class="hidden mt-4 text-xs p-3 rounded-lg"></div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="border border-slate-100 bg-slate-50/50 p-5 rounded-xl flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase">Question 3</span>
+            <p class="text-xs text-slate-800 font-semibold mt-2 leading-relaxed">
+              In M2 problems, if a solid has a cross-sectional area perpendicular to the $x$-axis of $A(x)$, which of the following represents its volume from $x=a$ to $x=b$?
+            </p>
+            <div class="mt-4 space-y-2">
+              <button onclick="checkAnswer(3, 'A')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">A) $\pi \int_{a}^{b} [A(x)]^2 \, dx$</button>
+              <button onclick="checkAnswer(3, 'B')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">B) $\int_{a}^{b} A(x) \, dx$</button>
+              <button onclick="checkAnswer(3, 'C')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">C) $2\pi \int_{a}^{b} x A(x) \, dx$</button>
+              <button onclick="checkAnswer(3, 'D')" class="w-full text-left text-xs p-2.5 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-all font-medium">D) $\pi^2 \int_{a}^{b} A(x) \, dx$</button>
+            </div>
+          </div>
+          <div id="q3-explanation" class="hidden mt-4 text-xs p-3 rounded-lg"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3D Scene Initialization Script -->
+  <script>
+    // Global App State
+    let activeShape = 'cone'; // 'cone' | 'sphere' | 'ellipsoid'
+    
+    // Geometric Dimensions
+    let coneR = 3.0, coneH = 5.0;
+    let sphereR = 4.0;
+    let ellipsoidA = 5.0, ellipsoidB = 3.0;
+
+    let rotationAngle = 360; // 0 to 360 degrees
+    let showDisk = true;
+    let diskPos = 0.0;
+
+    // Three.js Objects
+    let scene, camera, renderer;
+    let profileLine, revolvedMesh, diskMesh, axisLine, gridHelper;
+    let isMouseDown = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let cameraRotation = { x: -0.5, y: 0.8, radius: 15 };
+
+    // Initialize Page Content
+    window.onload = function() {
+      // Hide standard loading banner when script initializes
+      document.getElementById('canvas-loading').style.display = 'none';
+
+      // Setup MathJax/KaTeX automatic rendering
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+
+      // Initialize 3D Engine
+      init3D();
+      
+      // Setup UI Listeners
+      setupUIEventListeners();
+      
+      // Initial render & sync
+      updateVisuals();
+      syncFormulasAndMath();
+    };
+
+    // Initialize ThreeJS Scene
+    function init3D() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b1329); // Premium dark slate background
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      updateCameraPosition();
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // 4. Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight1.position.set(10, 20, 15);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x3b82f6, 0.4); // Blue accent fill light
+      dirLight2.position.set(-10, -10, -10);
+      scene.add(dirLight2);
+
+      // 5. Grid helper and Axes representing coordinate planes
+      gridHelper = new THREE.GridHelper(20, 20, 0x334155, 0x1e293b);
+      gridHelper.position.y = -5; // Shift down slightly
+      scene.add(gridHelper);
+
+      // Create primary x-axis of rotation
+      const axisMaterial = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.7 });
+      const axisPoints = [new THREE.Vector3(-10, 0, 0), new THREE.Vector3(10, 0, 0)];
+      const axisGeometry = new THREE.BufferGeometry().setFromPoints(axisPoints);
+      axisLine = new THREE.Line(axisGeometry, axisMaterial);
+      scene.add(axisLine);
+
+      // Add simple custom controls (drag to orbit)
+      container.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+      });
+
+      container.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const deltaX = e.clientX - previousMousePosition.x;
+        const deltaY = e.clientY - previousMousePosition.y;
+
+        cameraRotation.y -= deltaX * 0.01;
+        cameraRotation.x = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraRotation.x - deltaY * 0.01));
+
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+        updateCameraPosition();
+      });
+
+      window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+      // Handle touch controls for mobile/tablet responsive interactions
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isMouseDown = true;
+          previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        if (!isMouseDown || e.touches.length !== 1) return;
+        const deltaX = e.touches[0].clientX - previousMousePosition.x;
+        const deltaY = e.touches[0].clientY - previousMousePosition.y;
+
+        cameraRotation.y -= deltaX * 0.01;
+        cameraRotation.x = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, cameraRotation.x - deltaY * 0.01));
+
+        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        updateCameraPosition();
+      }, { passive: true });
+
+      container.addEventListener('touchend', () => { isMouseDown = false; });
+
+      // Scroll zoom
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        cameraRotation.radius = Math.max(5, Math.min(30, cameraRotation.radius + e.deltaY * 0.01));
+        updateCameraPosition();
+      }, { passive: false });
+
+      // Resize event
+      window.addEventListener('resize', onWindowResize);
+
+      // Start the render loop
+      animate();
+    }
+
+    // Helper to update camera positions around target
+    function updateCameraPosition() {
+      camera.position.x = cameraRotation.radius * Math.sin(cameraRotation.y) * Math.cos(cameraRotation.x);
+      camera.position.y = cameraRotation.radius * Math.sin(cameraRotation.x);
+      camera.position.z = cameraRotation.radius * Math.cos(cameraRotation.y) * Math.cos(cameraRotation.x);
+      camera.lookAt(0, 0, 0);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    // Main animation frame render
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // Updates all meshes when inputs change
+    function updateVisuals() {
+      // 1. Remove older generated objects
+      if (profileLine) scene.remove(profileLine);
+      if (revolvedMesh) scene.remove(revolvedMesh);
+      if (diskMesh) scene.remove(diskMesh);
+
+      // Initialize points based on shape
+      const points = [];
+      const numPoints = 60;
+      let startX = 0, endX = 0;
+
+      if (activeShape === 'cone') {
+        startX = 0;
+        endX = coneH;
+        // Shift geometry slightly to center of scene
+        const offset = -coneH / 2;
+        
+        for (let i = 0; i <= numPoints; i++) {
+          const t = i / numPoints;
+          const x = startX + t * (endX - startX);
+          const y = (coneR / coneH) * x;
+          points.push(new THREE.Vector2(y, x + offset)); // Lathe revolves around vertical Y axis, we rotate later to orient on X
+        }
+      } 
+      else if (activeShape === 'sphere') {
+        startX = -sphereR;
+        endX = sphereR;
+        
+        for (let i = 0; i <= numPoints; i++) {
+          const t = i / numPoints;
+          const x = startX + t * (endX - startX);
+          const y = Math.sqrt(Math.max(0, sphereR * sphereR - x * x));
+          points.push(new THREE.Vector2(y, x));
+        }
+      } 
+      else if (activeShape === 'ellipsoid') {
+        startX = -ellipsoidA;
+        endX = ellipsoidA;
+        
+        for (let i = 0; i <= numPoints; i++) {
+          const t = i / numPoints;
+          const x = startX + t * (endX - startX);
+          const y = ellipsoidB * Math.sqrt(Math.max(0, 1 - (x * x) / (ellipsoidA * ellipsoidA)));
+          points.push(new THREE.Vector2(y, x));
+        }
+      }
+
+      // 2. Generate 2D Profile Curve representation
+      const curvePoints3D = [];
+      points.forEach(pt => {
+        // Translate back the vertical-axis Lathe coordinate system to standard XYZ horizontal curve representation
+        curvePoints3D.push(new THREE.Vector3(pt.y, pt.x, 0));
+      });
+      const profileGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints3D);
+      const profileMaterial = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 3 });
+      profileLine = new THREE.Line(profileGeometry, profileMaterial);
+      profileLine.rotation.z = -Math.PI / 2; // Orient along x axis
+      scene.add(profileLine);
+
+      // 3. Generate Revolved Shell (Volume representation)
+      const phiLength = (rotationAngle / 360) * Math.PI * 2;
+      const latheGeometry = new THREE.LatheGeometry(points, 64, 0, phiLength);
+      const latheMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b, // Warm gold
+        roughness: 0.4,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.65,
+        side: THREE.DoubleSide
+      });
+      revolvedMesh = new THREE.Mesh(latheGeometry, latheMaterial);
+      revolvedMesh.rotation.z = -Math.PI / 2; // Rotate the Y-axis Lathe to make X-axis solid of revolution
+      scene.add(revolvedMesh);
+
+      // 4. Update and display Representative disk (dx) slice
+      if (showDisk) {
+        let currentRadius = 0;
+        let geometryDisk;
+        const dxThickness = 0.2;
+
+        const offset = activeShape === 'cone' ? -coneH/2 : 0;
+        const mappedX = diskPos + offset;
+
+        if (activeShape === 'cone') {
+          currentRadius = (coneR / coneH) * diskPos;
+        } else if (activeShape === 'sphere') {
+          currentRadius = Math.sqrt(Math.max(0, sphereR * sphereR - diskPos * diskPos));
+        } else if (activeShape === 'ellipsoid') {
+          currentRadius = ellipsoidB * Math.sqrt(Math.max(0, 1 - (diskPos * diskPos) / (ellipsoidA * ellipsoidA)));
+        }
+
+        if (currentRadius > 0.05) {
+          geometryDisk = new THREE.CylinderGeometry(currentRadius, currentRadius, dxThickness, 32);
+          const materialDisk = new THREE.MeshStandardMaterial({
+            color: 0xf43f5e, // Rose red slice
+            emissive: 0x3f0010,
+            roughness: 0.2,
+            metalness: 0.2,
+            transparent: true,
+            opacity: 0.9
+          });
+          diskMesh = new THREE.Mesh(geometryDisk, materialDisk);
+          diskMesh.rotation.z = Math.PI / 2; // Orient flat along the x-axis
+          diskMesh.position.x = mappedX;
+          scene.add(diskMesh);
+        }
+      }
+    }
+
+    // Handles sliders dynamic range based on dimensions
+    function syncDiskSliders() {
+      const sliderDisk = document.getElementById('slider-disk-pos');
+      let minX = 0, maxX = 0;
+
+      if (activeShape === 'cone') {
+        minX = 0;
+        maxX = coneH;
+      } else if (activeShape === 'sphere') {
+        minX = -sphereR;
+        maxX = sphereR;
+      } else if (activeShape === 'ellipsoid') {
+        minX = -ellipsoidA;
+        maxX = ellipsoidA;
+      }
+
+      sliderDisk.min = minX;
+      sliderDisk.max = maxX;
+
+      // Keep within bounds if changing shapes
+      if (parseFloat(sliderDisk.value) < minX || parseFloat(sliderDisk.value) > maxX) {
+        diskPos = (minX + maxX) / 2;
+        sliderDisk.value = diskPos;
+      } else {
+        diskPos = parseFloat(sliderDisk.value);
+      }
+      document.getElementById('label-disk-pos').textContent = diskPos.toFixed(2);
+    }
+
+    // Sync formulas and recalculate live integration parameters
+    function syncFormulasAndMath() {
+      const containerIntegral = document.getElementById('live-calc-integral');
+      const containerResult = document.getElementById('live-calc-result');
+
+      let integralLatex = '';
+      let calculatedVal = 0;
+
+      if (activeShape === 'cone') {
+        const fraction = ((coneR * coneR) / (coneH * coneH)).toFixed(4);
+        integralLatex = `V = \\pi \\int_{0}^{${coneH}} \\left(\\frac{${coneR}}{${coneH}}x\\right)^2 \\, dx = \\pi \\int_{0}^{${coneH}} ${fraction} x^2 \\, dx`;
+        calculatedVal = (1/3) * Math.PI * coneR * coneR * coneH;
+        
+        const piCoeff = ((1/3) * coneR * coneR * coneH).toFixed(2);
+        containerResult.innerHTML = `V = ${piCoeff} \\pi \\approx ${calculatedVal.toFixed(2)}`;
+      } 
+      else if (activeShape === 'sphere') {
+        const RSq = (sphereR * sphereR).toFixed(1);
+        integralLatex = `V = \\pi \\int_{-${sphereR}}^{${sphereR}} (${RSq} - x^2) \\, dx`;
+        calculatedVal = (4/3) * Math.PI * Math.pow(sphereR, 3);
+        
+        const piCoeff = ((4/3) * Math.pow(sphereR, 3)).toFixed(2);
+        containerResult.innerHTML = `V = ${piCoeff} \\pi \\approx ${calculatedVal.toFixed(2)}`;
+      } 
+      else if (activeShape === 'ellipsoid') {
+        const bSq = (ellipsoidB * ellipsoidB).toFixed(1);
+        const aSq = (ellipsoidA * ellipsoidA).toFixed(1);
+        integralLatex = `V = \\pi \\int_{-${ellipsoidA}}^{${ellipsoidA}} ${bSq} \\left( 1 - \\frac{x^2}{${aSq}} \\right) \\, dx`;
+        calculatedVal = (4/3) * Math.PI * ellipsoidA * ellipsoidB * ellipsoidB;
+        
+        const piCoeff = ((4/3) * ellipsoidA * ellipsoidB * ellipsoidB).toFixed(2);
+        containerResult.innerHTML = `V = ${piCoeff} \\pi \\approx ${calculatedVal.toFixed(2)}`;
+      }
+
+      containerIntegral.innerHTML = `$$${integralLatex}$$`;
+      
+      // Force KaTeX to render the newly updated math equations live
+      renderMathInElement(containerIntegral, { throwOnError: false });
+      renderMathInElement(containerResult, { throwOnError: false });
+    }
+
+    // Set UI bindings
+    function setupUIEventListeners() {
+      // Shape Tabs
+      document.getElementById('tab-cone').addEventListener('click', (e) => switchTab('cone', e.target));
+      document.getElementById('tab-sphere').addEventListener('click', (e) => switchTab('sphere', e.target));
+      document.getElementById('tab-ellipsoid').addEventListener('click', (e) => switchTab('ellipsoid', e.target));
+
+      // Reset Camera
+      document.getElementById('btn-reset-camera').addEventListener('click', () => {
+        cameraRotation = { x: -0.5, y: 0.8, radius: 15 };
+        updateCameraPosition();
+      });
+
+      // Rotation Sweep Slider
+      const rotSlider = document.getElementById('slider-rotation');
+      rotSlider.addEventListener('input', (e) => {
+        rotationAngle = parseInt(e.target.value);
+        document.getElementById('label-rotation').textContent = `${rotationAngle}°`;
+        updateVisuals();
+      });
+
+      // Show Disk Checkbox
+      const diskCheckbox = document.getElementById('checkbox-show-disk');
+      diskCheckbox.addEventListener('change', (e) => {
+        showDisk = e.target.checked;
+        const controlPanel = document.getElementById('disk-position-control');
+        if (showDisk) {
+          controlPanel.classList.remove('opacity-40', 'pointer-events-none');
+        } else {
+          controlPanel.classList.add('opacity-40', 'pointer-events-none');
+        }
+        updateVisuals();
+      });
+
+      // Disk position slider
+      const diskPosSlider = document.getElementById('slider-disk-pos');
+      diskPosSlider.addEventListener('input', (e) => {
+        diskPos = parseFloat(e.target.value);
+        document.getElementById('label-disk-pos').textContent = diskPos.toFixed(2);
+        updateVisuals();
+      });
+
+      // --- Geometry Sliders ---
+      // Cone Radius
+      const crSlider = document.getElementById('slider-cone-r');
+      crSlider.addEventListener('input', (e) => {
+        coneR = parseFloat(e.target.value);
+        document.getElementById('label-cone-r').textContent = coneR.toFixed(1);
+        syncDiskSliders();
+        updateVisuals();
+        syncFormulasAndMath();
+      });
+
+      // Cone Height
+      const chSlider = document.getElementById('slider-cone-h');
+      chSlider.addEventListener('input', (e) => {
+        coneH = parseFloat(e.target.value);
+        document.getElementById('label-cone-h').textContent = coneH.toFixed(1);
+        syncDiskSliders();
+        updateVisuals();
+        syncFormulasAndMath();
+      });
+
+      // Sphere Radius
+      const srSlider = document.getElementById('slider-sphere-r');
+      srSlider.addEventListener('input', (e) => {
+        sphereR = parseFloat(e.target.value);
+        document.getElementById('label-sphere-r').textContent = sphereR.toFixed(1);
+        syncDiskSliders();
+        updateVisuals();
+        syncFormulasAndMath();
+      });
+
+      // Ellipsoid Major Axis a
+      const eaSlider = document.getElementById('slider-ellipsoid-a');
+      eaSlider.addEventListener('input', (e) => {
+        ellipsoidA = parseFloat(e.target.value);
+        document.getElementById('label-ellipsoid-a').textContent = ellipsoidA.toFixed(1);
+        syncDiskSliders();
+        updateVisuals();
+        syncFormulasAndMath();
+      });
+
+      // Ellipsoid Minor Axis b
+      const ebSlider = document.getElementById('slider-ellipsoid-b');
+      ebSlider.addEventListener('input', (e) => {
+        ellipsoidB = parseFloat(e.target.value);
+        document.getElementById('label-ellipsoid-b').textContent = ellipsoidB.toFixed(1);
+        syncDiskSliders();
+        updateVisuals();
+        syncFormulasAndMath();
+      });
+
+      // Run initial configuration sync
+      syncDiskSliders();
+    }
+
+    // Tab switcher
+    function switchTab(shape, element) {
+      activeShape = shape;
+
+      // Update tabs styling
+      const tabs = ['tab-cone', 'tab-sphere', 'tab-ellipsoid'];
+      tabs.forEach(t => {
+        const el = document.getElementById(t);
+        el.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl text-slate-600 hover:bg-slate-50 transition-all cursor-pointer";
+      });
+      element.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all cursor-pointer bg-blue-600 text-white shadow-sm";
+
+      // Toggle dimension sidebars
+      const dims = ['dims-cone', 'dims-sphere', 'dims-ellipsoid'];
+      dims.forEach(d => document.getElementById(d).classList.add('hidden'));
+      document.getElementById(`dims-${shape}`).classList.remove('hidden');
+
+      // Toggle math derivations panels
+      const contents = ['content-cone', 'content-sphere', 'content-ellipsoid'];
+      contents.forEach(c => document.getElementById(c).classList.add('hidden'));
+      document.getElementById(`content-${shape}`).classList.remove('hidden');
+
+      // Reset values parameters
+      syncDiskSliders();
+      updateVisuals();
+      syncFormulasAndMath();
+    }
+
+    // Standard DSE Practice Answer evaluation engine
+    function checkAnswer(questionNum, chosenOption) {
+      const explanationDiv = document.getElementById(`q${questionNum}-explanation`);
+      explanationDiv.classList.remove('hidden');
+
+      if (questionNum === 1) {
+        if (chosenOption === 'C') {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200";
+          explanationDiv.innerHTML = "<strong>✓ Correct!</strong><br>Using formula: $V = \\pi \\int_0^4 \\left(\\frac{1}{2}x\\right)^2 dx = \\frac{\\pi}{4} \\left[ \\frac{x^3}{3} \\right]_0^4 = \\frac{\\pi}{12}(64 - 0) = \\frac{16}{3}\\pi$.";
+        } else {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-200";
+          explanationDiv.innerHTML = "<strong>✗ Incorrect.</strong> Try setting up the integral $\\pi \\int_{0}^{4} y^2 \\, dx$ where $y^2 = \\frac{1}{4}x^2$.";
+        }
+      } 
+      else if (questionNum === 2) {
+        if (chosenOption === 'A') {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200";
+          explanationDiv.innerHTML = "<strong>✓ Correct!</strong><br>Rearrange the ellipse equation to get $y^2 = 4 \\left(1 - \\frac{x^2}{9}\\right)$. The $x$-intercepts (limits) are where $y=0 \\implies x^2 = 9 \\implies x = \\pm 3$. Integrating $V = 4\\pi \\int_{-3}^{3} (1 - \\frac{x^2}{9}) dx$ yields $16\\pi$.";
+        } else {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-200";
+          explanationDiv.innerHTML = "<strong>✗ Incorrect.</strong> Rearrange to the form $\\frac{x^2}{9} + \\frac{y^2}{4} = 1$. The semi-major axis is $a=3$ and semi-minor axis is $b=2$. Substitute into $V = \\frac{4}{3}\\pi ab^2$.";
+        }
+      } 
+      else if (questionNum === 3) {
+        if (chosenOption === 'B') {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200";
+          explanationDiv.innerHTML = "<strong>✓ Correct!</strong><br>By basic Riemann slice theory, the volume is the definite integral of the cross-sectional area $A(x)$ over the bounds, i.e., $V = \\int_a^b A(x) dx$. When cross sections are circles, $A(x) = \\pi y^2$, which yields the solid of revolution formula.";
+        } else {
+          explanationDiv.className = "mt-4 text-xs p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-200";
+          explanationDiv.innerHTML = "<strong>✗ Incorrect.</strong> Remember that the volume is the sum of slices. If $A(x)$ is already the area of the cross section, we just integrate $A(x)$ directly with respect to $x$.";
+        }
+      }
+
+      // Re-trigger math formatting inside explanation div
+      renderMathInElement(explanationDiv, { throwOnError: false });
+    }
+  </script>
+</body>
+</html>
