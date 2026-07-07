@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Quadratic Factorization with Area Models</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --highlight-color: #ff9800;
+            
+            /* Color scheme for polynomial terms */
+            --x2-bg: #e3f2fd;
+            --x2-border: #1e88e5;
+            --x-bg: #e8f5e9;
+            --x-border: #43a047;
+            --unit-bg: #fffde7;
+            --unit-border: #fbc02d;
+        }
+
+/******************************************************************************
+* 1. Basic Page Layout
+******************************************************************************/
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+/******************************************************************************
+* 2. Headers and Instructions
+******************************************************************************/
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .lesson-text {
+            line-height: 1.6;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+        }
+
+/******************************************************************************
+* 3. Interactive Controls
+******************************************************************************/
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+/******************************************************************************
+* 4. Dynamic Area Model Grid
+******************************************************************************/
+        #area-model-container {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto auto auto;
+            gap: 0;
+            width: fit-content;
+            margin: 0 auto;
+            position: relative;
+            padding: 20px;
+        }
+
+        .am-label, .am-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        #inner-grid {
+            grid-column: 2;
+            grid-row: 2;
+            display: grid;
+            border: 2px solid #333;
+        }
+
+        .am-tile {
+            position: relative;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .am-term {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.2em;
+            pointer-events: none;
+        }
+
+        .am-label {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-style: italic;
+        }
+
+        #row-labels-left {
+            grid-column: 1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-right: 10px;
+        }
+
+        #column-labels-top {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            justify-content: flex-start;
+            padding-bottom: 10px;
+        }
+
+        #row-labels-left .am-label { width: 40px; margin-right: 10px; text-align: right;}
+        #column-labels-top .am-label { height: 40px; margin-bottom: 10px; text-align: center;}
+
+/******************************************************************************
+* 5. Interactive Equation Display
+******************************************************************************/
+        #equation-display {
+            grid-column: 1 / span 3;
+            grid-row: 3;
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            background-color: #fafafa;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.4em;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        .eq-term, .eq-factor, .eq-operator {
+            display: inline-block;
+            margin: 0 3px;
+            transition: color 0.2s ease, font-weight 0.2s ease;
+        }
+
+/******************************************************************************
+* 6. Factorization Process Section
+******************************************************************************/
+        .process-section {
+            margin-top: 40px;
+            border-top: 2px dashed #ccc;
+            padding-top: 20px;
+            width: 100%;
+        }
+
+        .process-title {
+            color: #2c3e50;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .step-box {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid #95a5a6;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-size: 1.1em;
+            transition: border-left-color 0.3s;
+        }
+
+        .step-box.active-step {
+            border-left-color: var(--highlight-color);
+            background-color: #fffbf5;
+        }
+
+        .step-num {
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-right: 10px;
+            font-family: sans-serif;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+/******************************************************************************
+* 7. Term Coloring & Highlights
+******************************************************************************/
+        .tile-x2 { background-color: var(--x2-bg); border-color: var(--x2-border); }
+        .tile-x  { background-color: var(--x-bg);  border-color: var(--x-border);  }
+        .tile-1  { background-color: var(--unit-bg); border-color: var(--unit-border); }
+
+        .eq-active { font-weight: bold; }
+        .eq-x2.hovered   { color: var(--x2-border); }
+        .eq-x.hovered    { color: var(--x-border);  }
+        .eq-unit.hovered { color: var(--unit-border); }
+        .eq-factor.hovered { color: var(--highlight-color); border-bottom: 2px solid var(--highlight-color); }
+        
+        .tile-hovered {
+            background-color: var(--highlight-color) !important;
+            border-color: #e65100 !important;
+            box-shadow: 0 0 8px rgba(255,152,0,0.5);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .label-hovered {
+            background-color: var(--highlight-color);
+            color: white;
+            border-radius: 4px;
+        }
+
+        .proc-highlight {
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .ph-x2 { background-color: var(--x2-bg); border: 1px solid var(--x2-border); }
+        .ph-x1 { background-color: #e8f5e9; border: 1px solid var(--x-border); } /* Top-right/Bottom-left splits */
+        .ph-unit { background-color: var(--unit-bg); border: 1px solid var(--unit-border); }
+
+        .footer {
+            margin-top: 40px;
+            text-align: right;
+            color: #888;
+            font-size: 0.9em;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Visualizing Quadratic Factorization</h1>
+
+        <div class="lesson-text">
+            <p><strong>Welcome, Class!</strong> An area model treats factorization as finding the side dimensions of a giant rectangle when you only know its total inner area pieces.</p>
+            <p><strong>Hover</strong> over the tiles inside the grid to see how inner elements connect instantly to their side measurements and matching algebraic components!</p>
+        </div>
+
+        <div class="controls">
+            <button id="generateBtn">Generate New Random Example</button>
+        </div>
+
+        <div id="area-model-container">
+            <div id="row-labels-left"></div>
+            <div id="inner-grid"></div>
+            <div id="column-labels-top"></div>
+            <div id="equation-display"></div>
+        </div>
+
+        <div class="process-section">
+            <div class="process-title">The Algebraic Factorization Process:</div>
+            <div id="steps-container"></div>
+        </div>
+
+        <div class="footer">
+            Page 59 - Mathematics Lesson
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('inner-grid');
+        const rowLabels = document.getElementById('row-labels-left');
+        const colLabels = document.getElementById('column-labels-top');
+        const eqDisplay = document.getElementById('equation-display');
+        const stepsContainer = document.getElementById('steps-container');
+        const generateBtn = document.getElementById('generateBtn');
+
+        const sizeX = 80; 
+        const size1 = 20; 
+
+        function clearModel() {
+            grid.innerHTML = '';
+            rowLabels.innerHTML = '';
+            colLabels.innerHTML = '';
+            eqDisplay.innerHTML = '';
+            stepsContainer.innerHTML = '';
+        }
+
+        function createLabel(text, type) {
+            const label = document.createElement('div');
+            label.className = `am-label label-${text}`;
+            label.textContent = text;
+            if (type === 'row') label.style.height = (text === 'x' ? sizeX : size1) + 'px';
+            else if (type === 'col') label.style.width = (text === 'x' ? sizeX : size1) + 'px';
+            return label;
+        }
+
+        function createTile(width, height, type, rowIdx, colIdx) {
+            const tile = document.createElement('div');
+            tile.className = `am-tile tile-${type}`;
+            tile.style.width = width + 'px';
+            tile.style.height = height + 'px';
+            tile.id = `tile-${rowIdx}-${colIdx}`;
+
+            const termText = document.createElement('div');
+            termText.className = 'am-term';
+            if (type === 'x2') termText.innerHTML = 'x<sup>2</sup>';
+            else if (type === 'x') termText.textContent = 'x';
+            else termText.textContent = '1';
+            
+            tile.appendChild(termText);
+            return tile;
+        }
+
+        function generateModel(a, b, c, d, e, f, g) {
+            clearModel();
+
+            grid.style.gridTemplateColumns = `repeat(${d}, ${sizeX}px) repeat(${e}, ${size1}px)`;
+            grid.style.gridTemplateRows = `repeat(${f}, ${sizeX}px) repeat(${g}, ${size1}px)`;
+
+            for (let i = 0; i < d; i++) colLabels.appendChild(createLabel('x', 'col'));
+            for (let i = 0; i < e; i++) colLabels.appendChild(createLabel('1', 'col'));
+
+            for (let i = 0; i < f; i++) rowLabels.appendChild(createLabel('x', 'row'));
+            for (let i = 0; i < g; i++) rowLabels.appendChild(createLabel('1', 'row'));
+
+            for (let row = 0; row < f + g; row++) {
+                for (let col = 0; col < d + e; col++) {
+                    let type, width, height;
+                    if (row < f && col < d) { 
+                        type = 'x2'; width = sizeX; height = sizeX;
+                    } else if ((row < f && col >= d) || (row >= f && col < d)) { 
+                        type = 'x';
+                        width = (col < d ? sizeX : size1);
+                        height = (row < f ? sizeX : size1);
+                    } else { 
+                        type = 'unit'; width = size1; height = size1;
+                    }
+                    const tile = createTile(width, height, type, row, col);
+                    grid.appendChild(tile);
+                    
+                    addInteractivity(tile, row, col, type, d, e, f, g);
+                }
+            }
+
+            displayEquation(a, b, c, d, e, f, g);
+            displayProcessSteps(a, b, c, d, e, f, g);
+        }
+
+        function displayEquation(a, b, c, d, e, f, g) {
+            let eqHtml = '<span class="eq-factor full-polynomial"> ';
+            eqHtml += (a > 1 ? a : '') + '<span class="eq-term eq-x2">x<sup>2</sup></span> ';
+            eqHtml += `<span class="eq-operator"> + </span> <span class="eq-term eq-x">${b}x</span> `;
+            eqHtml += `<span class="eq-operator"> + </span> <span class="eq-term eq-unit">${c}</span> `;
+            eqHtml += ' </span><span class="eq-operator">=</span> ';
+            eqHtml += `<span class="eq-factor row-factor">(${f === 1 ? '' : f}x + ${g})</span>`;
+            eqHtml += `<span class="eq-factor col-factor">(${d === 1 ? '' : d}x + ${e})</span>`;
+            eqDisplay.innerHTML = eqHtml;
+            eqDisplay.style.display = 'block';
+        }
+
+        // Renders step-by-step factorization breakdown linking to grid regions
+        function displayProcessSteps(a, b, c, d, e, f, g) {
+            const topXSplit = d * g; // Area of vertical x blocks
+            const sideXSplit = e * f; // Area of horizontal x blocks
+
+            const steps = [
+                {
+                    num: "Step 1: Identify Total Inner Components",
+                    text: `Start with the given polynomial expressions matching the total grid pieces: 
+                           <span class="proc-highlight ph-x2">${a}x²</span>, 
+                           <span class="proc-highlight ph-x1">${b}x</span>, and 
+                           <span class="proc-highlight ph-unit">${c}</span>.`
+                },
+                {
+                    num: "Step 2: Split the Middle Term (bx)",
+                    text: `Look at the grid setup. The ${b}x blocks are naturally separated into two rectangular sections: 
+                           a top-right area containing <span class="proc-highlight ph-x1">${topXSplit}x</span> 
+                           and a lower-left area containing <span class="proc-highlight ph-x1">${sideXSplit}x</span>. <br>
+                           Rewrite the expression: <b>${a}x² + ${topXSplit}x + ${sideXSplit}x + ${c}</b>`
+                },
+                {
+                    num: "Step 3: Factor by Grouping",
+                    text: `Group the first two terms and the last two terms together: <br>
+                           &nbsp;&nbsp;&bull; Group 1 (Top Row sections): <b>${a}x² + ${topXSplit}x</b> &rarr; Factor out common parts: <b>${f}x(${d}x + ${g})</b><br>
+                           &nbsp;&nbsp;&bull; Group 2 (Bottom Row sections): <b>${sideXSplit}x + ${c}</b> &rarr; Factor out constants: <b>${e}(${d}x + ${g})</b>`
+                },
+                {
+                    num: "Step 4: Extract the Common Binomial Factor",
+                    text: `Both groups share the matching row profile factor <b>(${d}x + ${g})</b>. Gather what remains to find your outside width and height lengths: <br>
+                           <b>(${f}x + ${e})(${d}x + ${g})</b>`
+                }
+            ];
+
+            steps.forEach((s) => {
+                const stepBox = document.createElement('div');
+                stepBox.className = 'step-box';
+                stepBox.innerHTML = `<span class="step-num">${s.num}</span><p style="margin: 8px 0 0 0;">${s.text}</p>`;
+                stepsContainer.appendChild(stepBox);
+            });
+        }
+
+        function addInteractivity(tile, row, col, termType, d, e, f, g) {
+            tile.addEventListener('mouseover', () => {
+                tile.classList.add('tile-hovered');
+
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.add('label-hovered');
+                if (rowLabel) rowLabel.classList.add('label-hovered');
+
+                const eqX2 = eqDisplay.querySelector('.eq-x2');
+                const eqX = eqDisplay.querySelector('.eq-x');
+                const eqUnit = eqDisplay.querySelector('.eq-unit');
+
+                // Dynamic step highlights depending on what tile block type is hovered
+                const stepBoxes = stepsContainer.children;
+
+                if (termType === 'x2') {
+                    if (eqX2) eqX2.classList.add('hovered', 'eq-active');
+                    if (stepBoxes[0]) stepBoxes[0].classList.add('active-step');
+                    if (stepBoxes[2]) stepBoxes[2].classList.add('active-step');
+                } else if (termType === 'x') {
+                    if (eqX) eqX.classList.add('hovered', 'eq-active');
+                    if (stepBoxes[1]) stepBoxes[1].classList.add('active-step');
+                } else if (termType === 'unit') {
+                    if (eqUnit) eqUnit.classList.add('hovered', 'eq-active');
+                    if (stepBoxes[0]) stepBoxes[0].classList.add('active-step');
+                    if (stepBoxes[3]) stepBoxes[3].classList.add('active-step');
+                }
+            });
+
+            tile.addEventListener('mouseout', () => {
+                tile.classList.remove('tile-hovered');
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.remove('label-hovered');
+                if (rowLabel) rowLabel.classList.remove('label-hovered');
+
+                eqDisplay.querySelectorAll('.eq-term, .eq-active, .eq-factor').forEach(el => {
+                    el.classList.remove('hovered', 'eq-active');
+                });
+
+                if(stepsContainer.children) {
+                    Array.from(stepsContainer.children).forEach(box => box.classList.remove('active-step'));
+                }
+            });
+        }
+
+        function generateRandomExample() {
+            const d = Math.floor(Math.random() * 2) + 1; 
+            const e = Math.floor(Math.random() * 3) + 1; 
+            const f = Math.floor(Math.random() * 2) + 1; 
+            const g = Math.floor(Math.random() * 3) + 1; 
+
+            const a = d * f;
+            const b = d * g + e * f;
+            const c = e * g;
+
+            if (a >= 4 || b >= 12 || c >= 8 || d * g === 0 || e * f === 0) {
+                return generateRandomExample();
+            }
+
+            generateModel(a, b, c, d, e, f, g);
+        }
+
+        generateBtn.addEventListener('click', generateRandomExample);
+        generateRandomExample(); 
+    </script>
+</body>
+</html>

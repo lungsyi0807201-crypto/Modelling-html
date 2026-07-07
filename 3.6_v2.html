@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Formulas: Discovering Shortcuts</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .game-container {
+            background-color: var(--surface);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Progress Tracker */
+        .stages-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .stages-nav::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #334155;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .stage-indicator {
+            background-color: #334155;
+            color: var(--text-muted);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+            border: 2px solid #334155;
+        }
+
+        .stage-indicator.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);
+        }
+
+        .stage-indicator.completed {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* UI Elements */
+        .instruction-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: monospace;
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--warning);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* STAGE 1: Labor Grid with Input Challenges */
+        .grid-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .expression-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .algebra-grid-container {
+            display: grid;
+            grid-template-columns: 50px 1fr 1fr;
+            grid-template-rows: 50px 1fr 1fr;
+            gap: 12px;
+            width: 400px;
+            height: 400px;
+            margin: 1rem auto;
+        }
+
+        .grid-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0.25rem;
+        }
+
+        .grid-cell {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 2px dashed #475569;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0.5rem;
+        }
+
+        .grid-cell.active-input {
+            border-color: var(--secondary);
+            background-color: rgba(6, 182, 212, 0.05);
+        }
+
+        .grid-cell.filled {
+            border-style: solid;
+        }
+
+        .cell-input {
+            width: 80%;
+            background: #0f172a;
+            border: 2px solid #475569;
+            color: white;
+            text-align: center;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .cell-input:focus {
+            border-color: var(--secondary);
+            outline: none;
+        }
+
+        .cell-x2 { background-color: rgba(79, 70, 229, 0.2); border-color: var(--primary); color: #a5b4fc; }
+        .cell-pos-x { background-color: rgba(16, 185, 129, 0.2); border-color: var(--success); color: #6ee7b7; }
+        .cell-neg-x { background-color: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+        .cell-const { background-color: rgba(245, 158, 11, 0.2); border-color: var(--warning); color: #fde047; }
+
+        .combination-area {
+            width: 100%;
+            max-width: 550px;
+            background: rgba(0,0,0,0.2);
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .expression-builder {
+            font-size: 1.4rem;
+            margin: 1rem 0;
+            min-height: 2.5rem;
+            letter-spacing: 1px;
+            color: #e2e8f0;
+        }
+
+        .clickable-term {
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            display: inline-block;
+            margin: 0 0.25rem;
+            border: 1px solid #475569;
+        }
+
+        .clickable-term:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* STAGE 2: Pattern Discovery */
+        .history-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .history-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .history-card h4 {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+            text-align: center;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 6px;
+            margin: 1rem auto;
+            width: 160px;
+            height: 160px;
+        }
+
+        .mini-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+
+        .highlight-match {
+            animation: pulse-gold 2s infinite ease-in-out;
+            border: 2px solid var(--warning) !important;
+        }
+
+        .highlight-cancel {
+            animation: pulse-red-blue 2s infinite ease-in-out;
+            border: 2px solid #ec4899 !important;
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { background-color: rgba(245, 158, 11, 0.2); box-shadow: 0 0 4px rgba(245, 158, 11, 0.2); }
+            50% { background-color: rgba(245, 158, 11, 0.55); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+        }
+
+        @keyframes pulse-red-blue {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.25); }
+            50% { background-color: rgba(6, 182, 212, 0.45); box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
+        }
+
+        .observations-box {
+            background-color: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .observations-box h3 {
+            color: #c7d2fe;
+            margin-bottom: 0.75rem;
+        }
+
+        .observations-box ul {
+            list-style-type: none;
+        }
+
+        .observations-box li {
+            margin-bottom: 0.75rem;
+            position: relative;
+            padding-left: 1.5rem;
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .observations-box li::before {
+            content: '➔';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+        }
+
+        /* STAGE 3: Shortcut Challenge */
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-val {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            font-family: monospace;
+        }
+
+        .game-lane {
+            background: #0b0f19;
+            height: 250px;
+            border-radius: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #1e293b;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .problem-display-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 1.2rem 2.5rem;
+            border-radius: 0.75rem;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            letter-spacing: 1px;
+            animation: pulse-card 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-card {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .answer-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.6rem;
+            background: rgba(0,0,0,0.15);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+        }
+
+        .math-input {
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+            padding: 0.5rem;
+            width: 90px;
+            text-align: center;
+            font-size: 1.4rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+
+        .math-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+        }
+
+        .sign-select {
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+            padding: 0.5rem;
+            font-size: 1.4rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .summary-card {
+            text-align: center;
+            padding: 2rem;
+        }
+        .summary-score {
+            font-size: 3rem;
+            color: var(--success);
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Multiplication Formulas: Discovering Shortcuts</h1>
+        <p class="subtitle">Why take the long route? Race against the clock and uncover algebraic patterns!</p>
+    </header>
+
+    <div class="game-container">
+        <div class="stages-nav">
+            <div class="stage-indicator active" id="ind-1">Stage 1: Grid Labor</div>
+            <div class="stage-indicator" id="ind-2">Stage 2: Pattern Discovery</div>
+            <div class="stage-indicator" id="ind-3">Stage 3: Turbo Challenge</div>
+        </div>
+
+        <div id="screen-stage1" class="screen active">
+            <div class="instruction-box">
+                <strong>Step-by-Step Production Line:</strong><br>
+                Calculate the area for each inner block by multiplying its row header and column header. Type the expression into each box and press enter/verify. Once filled, arrange and compress them into a simplified polynomial!
+            </div>
+            
+            <div class="grid-workspace">
+                <div class="expression-title" id="s1-target-expr">(x + 3)(x + 3)</div>
+                
+                <div class="timer-display">⏱️ Labor Clock: <span id="s1-stopwatch">0.00</span>s</div>
+
+                <div class="algebra-grid-container" id="s1-grid">
+                    </div>
+
+                <div class="combination-area" id="s1-combiner" style="display: none;">
+                    <p style="margin-bottom: 0.5rem; color: var(--text-muted);">Click the distributed terms below in sequence to assemble your full expanded expression:</p>
+                    <div id="s1-term-pool"></div>
+                    <div class="expression-builder" id="s1-expr-builder">Assembling: </div>
+                    <button class="btn" id="btn-s1-combine" style="display:none;">Simplify Polynomial</button>
+                </div>
+
+                <button class="btn" id="btn-next-s1-problem" style="display:none;">Next Problem</button>
+            </div>
+        </div>
+
+        <div id="screen-stage2" class="screen">
+            <div class="instruction-box">
+                <strong>Analysis Showroom: Look at your hard work!</strong><br>
+                Study your completed distributed grids side-by-side. Notice the unique cross-structural symmetries between these blocks.
+            </div>
+
+            <div class="history-showcase" id="s2-showcase">
+                </div>
+
+            <div class="observations-box">
+                <h3>💡 Structural Patterns Discovered:</h3>
+                <ul>
+                    <li><strong>Perfect Squares $(x+a)^2$ and $(x-a)^2$:</strong> The two diagonal cross-product boxes contain identical algebraic terms. They will always <strong>double up</strong> perfectly ($2ax$ or $-2ax$).</li>
+                    <li><strong>Difference of Squares $(x+a)(x-a)$:</strong> The diagonal boxes hold terms with equal values but opposite signs. They completely <strong>cancel out</strong> ($0x$), vanishing from the final equation!</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button class="btn" id="btn-start-stage3">I See the Shortcut! Start Turbo Challenge</button>
+            </div>
+        </div>
+
+        <div id="screen-stage3" class="screen">
+            <div class="instruction-box">
+                <strong>⚡ TURBO SHORTCUT CHALLENGE:</strong><br>
+                Instead of working against a stressful countdown, a global stopwatch is tracking your speed! Apply your new identity shortcuts to solve 5 equations as fast as possible. Drawing structural grids here will destroy your record time!
+            </div>
+
+            <div class="challenge-header">
+                <div class="stat-box">
+                    <div>Problems Solved</div>
+                    <div class="stat-val" id="s3-score">0 / 5</div>
+                </div>
+                <div class="stat-box">
+                    <div>Total Run Time</div>
+                    <div class="stat-val" id="s3-stopwatch" style="color: var(--danger);">0.00s</div>
+                </div>
+            </div>
+
+            <div class="game-lane">
+                <div class="problem-display-card" id="challenge-prob"></div>
+            </div>
+
+            <div class="input-container">
+                <p>Input the structural expanded output terms directly:</p>
+                <div class="answer-wrapper">
+                    <span style="font-family: monospace;">x²</span>
+                    <select class="sign-select" id="ans-sign1">
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                    </select>
+                    <input type="text" class="math-input" id="ans-coef" placeholder="bx">
+                    <select class="sign-select" id="ans-sign2">
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                    </select>
+                    <input type="number" class="math-input" id="ans-const" placeholder="c">
+                </div>
+                <button class="btn" id="btn-submit-answer" style="background-color: var(--success); width: 100%; max-width: 400px;">Deploy Identity Answer!</button>
+            </div>
+        </div>
+
+        <div id="screen-gameover" class="screen">
+            <div class="summary-card">
+                <h2>All Identities Mastered!</h2>
+                <p style="margin-top: 1rem; color: var(--text-muted);">You used structural shortcuts to solve polynomial expansions without building tedious area models!</p>
+                <div class="summary-score" id="final-score">0.00s</div>
+                <div class="instruction-box" style="text-align: left; max-width: 650px; margin: 1.5rem auto;">
+                    <strong>Mathematical Wrap-up:</strong><br>
+                    While the area grid is helpful for tracking distribution steps, mastering the <strong>Multiplication Formulas</strong> saves valuable time. Recognizing algebraic forms lets you skip writing intermediate lines entirely!
+                </div>
+                <button class="btn" onclick="location.reload()">Run the Experience Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Engine
+        const state = {
+            stage: 1,
+            s1ProblemIdx: 0,
+            s1Problems: [
+                { type: 'sqsum', factor1: ['x', 3], factor2: ['x', 3], expr: '(x + 3)(x + 3)', keys: ['x2', '3x', '3x', '9'], simplified: "x² + 6x + 9" },
+                { type: 'sqdiff', factor1: ['x', -4], factor2: ['x', -4], expr: '(x - 4)(x - 4)', keys: ['x2', '-4x', '-4x', '16'], simplified: "x² - 8x + 16" },
+                { type: 'diffsq', factor1: ['x', 5], factor2: ['x', -5], expr: '(x + 5)(x - 5)', keys: ['x2', '-5x', '5x', '-25'], simplified: "x² - 25" }
+            ],
+            s1StopwatchInterval: null,
+            s1StartTime: null,
+            s1CellsCorrect: 0,
+            s1SelectedSequence: [],
+            s3SolvedCount: 0,
+            s3TotalRequired: 5,
+            s3StartTime: null,
+            s3StopwatchInterval: null,
+            s3CurrentProblem: null
+        };
+
+        const screens = {
+            1: document.getElementById('screen-stage1'),
+            2: document.getElementById('screen-stage2'),
+            3: document.getElementById('screen-stage3'),
+            'gameover': document.getElementById('screen-gameover')
+        };
+        const indicators = {
+            1: document.getElementById('ind-1'),
+            2: document.getElementById('ind-2'),
+            3: document.getElementById('ind-3')
+        };
+
+        function changeStage(targetStage) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            if(screens[targetStage]) screens[targetStage].classList.add('active');
+            
+            Object.keys(indicators).forEach(k => {
+                indicators[k].classList.remove('active', 'completed');
+                if(k < targetStage) indicators[k].classList.add('completed');
+                if(k == targetStage) indicators[k].classList.add('active');
+            });
+            state.stage = targetStage;
+        }
+
+        // --- STAGE 1 LOGIC ---
+        function initStage1Problem() {
+            const prob = state.s1Problems[state.s1ProblemIdx];
+            document.getElementById('s1-target-expr').innerText = prob.expr;
+            const gridContainer = document.getElementById('s1-grid');
+            gridContainer.innerHTML = '';
+            
+            // Generate Layout Headers
+            gridContainer.appendChild(createLabel('×'));
+            gridContainer.appendChild(createLabel(prob.factor1[0]));
+            gridContainer.appendChild(createLabel(formatHeaderLabel(prob.factor1[1])));
+            gridContainer.appendChild(createLabel(prob.factor2[0]));
+            
+            // Build Matrix Cell Configurations
+            const cells = [
+                { id: 'cell-0-0', expected: 'x2', displayExpected: 'x²', type: 'x2' },
+                { id: 'cell-0-1', expected: formatExpected(prob.factor1[1], 'x'), displayExpected: formatExpected(prob.factor1[1], 'x'), type: prob.factor1[1] > 0 ? 'pos-x' : 'neg-x' },
+                { id: 'cell-1-0', expected: formatExpected(prob.factor2[1], 'x'), displayExpected: formatExpected(prob.factor2[1], 'x'), type: prob.factor2[1] > 0 ? 'pos-x' : 'neg-x' },
+                { id: 'cell-1-1', expected: String(prob.factor1[1] * prob.factor2[1]), displayExpected: String(prob.factor1[1] * prob.factor2[1]), type: 'const' }
+            ];
+
+            // Render Rows onto the Grid View
+            gridContainer.appendChild(createInteractiveAreaCell(cells[0]));
+            gridContainer.appendChild(createInteractiveAreaCell(cells[1]));
+            gridContainer.appendChild(createLabel(formatHeaderLabel(prob.factor2[1])));
+            gridContainer.appendChild(createInteractiveAreaCell(cells[2]));
+            gridContainer.appendChild(createInteractiveAreaCell(cells[3]));
+
+            // Reset States
+            document.getElementById('s1-combiner').style.display = 'none';
+            document.getElementById('s1-expr-builder').innerText = 'Assembling: ';
+            state.s1CellsCorrect = 0;
+            state.s1SelectedSequence = [];
+            document.getElementById('btn-s1-combine').style.display = 'none';
+
+            if(!state.s1StopwatchInterval) {
+                state.s1StartTime = Date.now();
+                state.s1StopwatchInterval = setInterval(() => {
+                    const elapsed = (Date.now() - state.s1StartTime) / 1000;
+                    document.getElementById('s1-stopwatch').innerText = elapsed.toFixed(2);
+                }, 40);
+            }
+        }
+
+        function createLabel(text) {
+            const div = document.createElement('div');
+            div.className = 'grid-label';
+            div.innerText = text;
+            return div;
+        }
+
+        function formatHeaderLabel(num) {
+            return num > 0 ? `+${num}` : `${num}`;
+        }
+
+        function formatExpected(num, variable) {
+            if(num === 1) return variable;
+            if(num === -1) return `-${variable}`;
+            return `${num}${variable}`;
+        }
+
+        function createInteractiveAreaCell(cfg) {
+            const div = document.createElement('div');
+            div.className = 'grid-cell active-input';
+            div.id = cfg.id;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'cell-input';
+            input.placeholder = '?';
+
+            const checkInput = () => {
+                let val = input.value.trim().replace(/\s+/g, '').toLowerCase();
+                let match = cfg.expected.toLowerCase().replace(/\s+/g, '');
+                
+                // Allow variations like +3x vs 3x
+                if(match.startsWith('+') === false && val.startsWith('+')) {
+                    val = val.substring(1);
+                }
+                if(match.startsWith('+') && !val.startsWith('+') && !val.startsWith('-')) {
+                    val = '+' + val;
+                }
+                if(match === 'x2' && (val === 'x^2' || val === 'x²')) val = 'x2';
+
+                if(val === match) {
+                    div.innerHTML = `<span style="font-size:1.3rem; font-weight:bold;">${cfg.displayExpected}</span>`;
+                    div.className = `grid-cell filled cell-${cfg.type}`;
+                    state.s1CellsCorrect++;
+                    if(state.s1CellsCorrect === 4) {
+                        revealCombinerArea();
+                    }
+                } else {
+                    input.style.borderColor = 'var(--danger)';
+                    setTimeout(() => input.style.borderColor = '#475569', 500);
+                }
+            };
+
+            input.addEventListener('keypress', (e) => { if(e.key === 'Enter') checkInput(); });
+            input.addEventListener('blur', checkInput);
+
+            div.appendChild(input);
+            return div;
+        }
+
+        function revealCombinerArea() {
+            const prob = state.s1Problems[state.s1ProblemIdx];
+            const pool = document.getElementById('s1-term-pool');
+            pool.innerHTML = '';
+            
+            // Mix tokens safely to prevent trivial tracking patterns
+            const tokens = [...prob.keys];
+            
+            tokens.forEach((t, i) => {
+                const span = document.createElement('span');
+                span.className = 'clickable-term';
+                span.innerText = t.includes('x2') ? 'x²' : t;
+                span.onclick = () => {
+                    state.s1SelectedSequence.push(t);
+                    span.style.pointerEvents = 'none';
+                    span.style.opacity = '0.3';
+                    
+                    const displayBuild = state.s1SelectedSequence.map(x => x.includes('x2') ? 'x²' : x).join(' + ').replace(/\+\s\-/g, '- ');
+                    document.getElementById('s1-expr-builder').innerText = `Assembling: ${displayBuild}`;
+
+                    if(state.s1SelectedSequence.length === 4) {
+                        document.getElementById('btn-s1-combine').style.display = 'inline-block';
+                    }
+                };
+                pool.appendChild(span);
+            });
+
+            document.getElementById('s1-combiner').style.display = 'block';
+        }
+
+        document.getElementById('btn-s1-combine').onclick = () => {
+            clearInterval(state.s1StopwatchInterval);
+            state.s1StopwatchInterval = null;
+            
+            const prob = state.s1Problems[state.s1ProblemIdx];
+            document.getElementById('s1-expr-builder').innerText = `Simplified Output: ${prob.simplified}`;
+            document.getElementById('btn-s1-combine').style.display = 'none';
+            
+            const nextBtn = document.getElementById('btn-next-s1-problem');
+            nextBtn.style.display = 'inline-block';
+            if(state.s1ProblemIdx === state.s1Problems.length - 1) {
+                nextBtn.innerText = "Proceed to Pattern Discovery Studio";
+            }
+        };
+
+        document.getElementById('btn-next-s1-problem').onclick = () => {
+            document.getElementById('btn-next-s1-problem').style.display = 'none';
+            
+            if(state.s1ProblemIdx < state.s1Problems.length - 1) {
+                state.s1ProblemIdx++;
+                initStage1Problem();
+            } else {
+                initStage2();
+            }
+        };
+
+        // --- STAGE 2 LOGIC ---
+        function initStage2() {
+            changeStage(2);
+            const showcase = document.getElementById('s2-showcase');
+            showcase.innerHTML = '';
+
+            const dataCards = [
+                { title: '(x + 3)²', match: true, cancel: false, cells: ['x²', '+3x', '+3x', '+9'] },
+                { title: '(x - 4)²', match: true, cancel: false, cells: ['x²', '-4x', '-4x', '+16'] },
+                { title: '(x + 5)(x - 5)', match: false, cancel: true, cells: ['x²', '+5x', '-5x', '-25'] }
+            ];
+
+            dataCards.forEach(dc => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `<h4>${dc.title}</h4>`;
+                
+                const miniGrid = document.createElement('div');
+                miniGrid.className = 'mini-grid';
+                
+                dc.cells.forEach((cTxt, idx) => {
+                    const cDiv = document.createElement('div');
+                    cDiv.className = 'mini-cell';
+                    cDiv.innerText = cTxt;
+                    
+                    if(idx === 0) cDiv.classList.add('cell-x2');
+                    else if(idx === 3) cDiv.classList.add('cell-const');
+                    else {
+                        if(dc.match) {
+                            cDiv.classList.add(dc.title.includes('-') ? 'cell-neg-x' : 'cell-pos-x', 'highlight-match');
+                        }
+                        if(dc.cancel) {
+                            cDiv.classList.add(idx === 1 ? 'cell-pos-x' : 'cell-neg-x', 'highlight-cancel');
+                        }
+                    }
+                    miniGrid.appendChild(cDiv);
+                });
+                
+                card.appendChild(miniGrid);
+                showcase.appendChild(card);
+            });
+        }
+
+        document.getElementById('btn-start-stage3').onclick = () => {
+            changeStage(3);
+            initStage3Challenge();
+        };
+
+        // --- STAGE 3 LOGIC (STOPWATCH DRIVEN) ---
+        const s3Pool = [
+            { q: '(x + 2)²', b: '4x', c: 4, s1: '+', s2: '+' },
+            { q: '(x - 3)²', b: '6x', c: 9, s1: '-', s2: '+' },
+            { q: '(x + 6)(x - 6)', b: '0', c: 36, s1: '+', s2: '-' },
+            { q: '(x - 5)²', b: '10x', c: 25, s1: '-', s2: '+' },
+            { q: '(x + 7)²', b: '14x', c: 49, s1: '+', s2: '+' },
+            { q: '(x + 8)(x - 8)', b: '0', c: 64, s1: '+', s2: '-' },
+            { q: '(x - 1)²', b: '2x', c: 1, s1: '-', s2: '+' },
+            { q: '(x + 10)(x - 10)', b: '0', c: 100, s1: '+', s2: '-' }
+        ];
+
+        function initStage3Challenge() {
+            state.s3SolvedCount = 0;
+            document.getElementById('s3-score').innerText = `${state.s3SolvedCount} / ${state.s3TotalRequired}`;
+            document.getElementById('s3-stopwatch').innerText = '0.00s';
+            
+            nextStage3Problem();
+
+            state.s3StartTime = Date.now();
+            state.s3StopwatchInterval = setInterval(() => {
+                const elapsed = (Date.now() - state.s3StartTime) / 1000;
+                document.getElementById('s3-stopwatch').innerText = elapsed.toFixed(2) + 's';
+            }, 40);
+        }
+
+        function nextStage3Problem() {
+            const available = s3Pool.filter(p => p !== state.s3CurrentProblem);
+            state.s3CurrentProblem = available[Math.floor(Math.random() * available.length)];
+            
+            document.getElementById('challenge-prob').innerText = state.s3CurrentProblem.q;
+
+            // Flush inputs clean
+            document.getElementById('ans-coef').value = '';
+            document.getElementById('ans-const').value = '';
+            document.getElementById('ans-sign1').value = '+';
+            document.getElementById('ans-sign2').value = '+';
+            
+            // Auto hide/handle the absolute 0 linear items for difference of squares answers
+            document.getElementById('ans-coef').oninput = (e) => {
+                if(e.target.value === '0') {
+                    document.getElementById('ans-sign1').value = '+';
+                }
+            };
+        }
+
+        document.getElementById('btn-submit-answer').onclick = checkStage3Answer;
+
+        function checkStage3Answer() {
+            const s1 = document.getElementById('ans-sign1').value;
+            const bVal = document.getElementById('ans-coef').value.trim().toLowerCase().replace(/\s+/g, '');
+            const s2 = document.getElementById('ans-sign2').value;
+            const cVal = parseInt(document.getElementById('ans-const').value) || 0;
+
+            const target = state.s3CurrentProblem;
+            
+            // Format check linear elements correctly
+            let targetB = target.b;
+            let userB = bVal;
+            if(userB === '0x') userB = '0';
+            
+            let isCorrect = false;
+            if(userB === targetB && s1 === target.s1 && cVal === target.c && s2 === target.s2) {
+                isCorrect = true;
+            }
+            // Fallback for absolute zero validation matching signs (+0 equals -0 structural points)
+            if(targetB === '0' && userB === '0' && cVal === target.c && s2 === target.s2) {
+                isCorrect = true;
+            }
+
+            if(isCorrect) {
+                state.s3SolvedCount++;
+                document.getElementById('s3-score').innerText = `${state.s3SolvedCount} / ${state.s3TotalRequired}`;
+                
+                if(state.s3SolvedCount >= state.s3TotalRequired) {
+                    endGame();
+                } else {
+                    nextStage3Problem();
+                }
+            } else {
+                const lane = document.querySelector('.game-lane');
+                lane.style.border = '2px solid var(--danger)';
+                setTimeout(() => lane.style.border = '2px solid #1e293b', 400);
+            }
+        }
+
+        function endGame() {
+            clearInterval(state.s3StopwatchInterval);
+            const finalTime = document.getElementById('s3-stopwatch').innerText;
+            changeStage('gameover');
+            document.getElementById('final-score').innerText = `Finished in: ${finalTime}`;
+        }
+
+        window.onload = () => {
+            initStage1Problem();
+        };
+    </script>
+</body>
+</html>

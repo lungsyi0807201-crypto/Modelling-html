@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Quadratic Factorization with Area Models</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --highlight-color: #ff9800; /* Orange highlight for connections */
+            
+            /* Color scheme for polynomial terms */
+            --x2-bg: #e3f2fd; /* Light blue */
+            --x2-border: #1e88e5;
+            --x-bg: #e8f5e9; /* Light green */
+            --x-border: #43a047;
+            --unit-bg: #fffde7; /* Light yellow */
+            --unit-border: #fbc02d;
+        }
+
+/******************************************************************************
+* 1. Basic Page Layout
+******************************************************************************/
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+/******************************************************************************
+* 2. Headers and Instructions
+******************************************************************************/
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .lesson-text {
+            line-height: 1.6;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+        }
+
+/******************************************************************************
+* 3. Interactive Controls
+******************************************************************************/
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+/******************************************************************************
+* 4. Dynamic Area Model Grid (Main Feature)
+******************************************************************************/
+        #area-model-container {
+            display: grid;
+            /* Core layout: Top Labels | Inner Grid | Equation */
+            grid-template-columns: auto auto auto; /* [row-label | grid | column-label] */
+            grid-template-rows: auto auto auto;    /* [row-label | grid | column-label] */
+            
+            gap: 0; /* Important: labels meet grid precisely */
+            width: fit-content;
+            margin: 0 auto;
+            position: relative;
+            padding: 20px; /* Space for labels */
+        }
+
+        /* Common styles for all labels and tiles */
+        .am-label, .am-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* 4.1 Inner Grid (The actual area model) */
+        #inner-grid {
+            grid-column: 2; /* Position in container */
+            grid-row: 2;
+            display: grid;
+            border: 2px solid #333;
+            /* Grid template is defined dynamically in JS */
+        }
+
+        .am-tile {
+            position: relative; /* For term label centering */
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .am-term {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.2em;
+            pointer-events: none; /* Let clicks pass through to tile */
+        }
+
+        /* 4.2 Labels (Side lengths) */
+        .am-label {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        /* Side labels (Left) */
+        #row-labels-left {
+            grid-column: 1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-right: 10px;
+        }
+
+        /* Top labels */
+        #column-labels-top {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            justify-content: flex-start;
+            padding-bottom: 10px;
+        }
+
+        /* Sizing: Match tiles to labels precisely. Units must be consistent. */
+        #row-labels-left .am-label { width: 40px; margin-right: 10px; text-align: right;}
+        #column-labels-top .am-label { height: 40px; margin-bottom: 10px; text-align: center;}
+
+/******************************************************************************
+* 5. Interactive Equation Display
+******************************************************************************/
+        #equation-display {
+            grid-column: 1 / span 3; /* Center below the model */
+            grid-row: 3;
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            background-color: #fafafa;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.4em;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        .eq-term, .eq-factor, .eq-operator {
+            display: inline-block;
+            margin: 0 3px;
+            transition: color 0.2s ease, font-weight 0.2s ease;
+        }
+
+        /* Hide empty equation elements on start */
+        #equation-display:empty {
+            display: none;
+        }
+
+/******************************************************************************
+* 6. Term Coloring (Matching the Image)
+******************************************************************************/
+        
+        /* 6.1 Inner Tiles */
+        .tile-x2 { background-color: var(--x2-bg); border-color: var(--x2-border); }
+        .tile-x  { background-color: var(--x-bg);  border-color: var(--x-border);  }
+        .tile-1  { background-color: var(--unit-bg); border-color: var(--unit-border); }
+
+        /* 6.2 Equation terms and factors on hover */
+        
+        /* General rule for active text terms in the equation */
+        .eq-active {
+            font-weight: bold;
+        }
+        
+        /* Specific color highlights for equation elements */
+        .eq-x2.hovered   { color: var(--x2-border); }
+        .eq-x.hovered    { color: var(--x-border);  }
+        .eq-unit.hovered { color: var(--unit-border); }
+        .eq-factor.hovered { color: var(--highlight-color); border-bottom: 2px solid var(--highlight-color); }
+        
+        /* Combined highlight rule for tiles on hover */
+        .tile-hovered {
+            background-color: var(--highlight-color) !important;
+            border-color: #e65100 !important;
+            box-shadow: 0 0 8px rgba(255,152,0,0.5);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        /* Highlight rules for dynamic labels */
+        .label-hovered {
+            background-color: var(--highlight-color);
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(255,152,0,0.3);
+            font-weight: bold;
+        }
+
+/******************************************************************************
+* 7. Footer (Pagination)
+******************************************************************************/
+        .footer {
+            margin-top: 40px;
+            text-align: right;
+            color: #888;
+            font-size: 0.9em;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Visualizing Quadratic Factorization</h1>
+
+        <div class="lesson-text">
+            <p><strong>Welcome, Class!</strong> Today, we're going to use an <strong>Area Model</strong> to visually break down quadratic polynomials. Quadratic expressions (like $2x^2 + 5x + 3$) are hard to visualize, but they are just calculations of area!</p>
+            <p>An area model treats a multiplication (factorization) as finding the total area of a rectangle. The two linear factors on the outside are the side lengths (width and height), and the polynomial on the inside is the total area.</p>
+            <p><strong>Try it out!</strong> Click the button to generate a new expression. Then, hover over any tile in the inner grid. Watch how it highlights the side lengths that made it, and the specific term it contributes to in the equation at the bottom.</p>
+        </div>
+
+        <div class="controls">
+            <button id="generateBtn">Generate New Random Example</button>
+        </div>
+
+        <div id="area-model-container">
+            <div id="row-labels-left"></div>
+            <div id="inner-grid"></div>
+            <div id="column-labels-top"></div>
+            <div id="equation-display"></div>
+        </div>
+
+        <div class="footer">
+            Page 59 - Mathematics Lesson
+        </div>
+    </div>
+
+    <script>
+        /******************************************************************************
+        * MATH TEACHER'S FRONT-END LOGIC
+        ******************************************************************************/
+        
+        const container = document.getElementById('area-model-container');
+        const grid = document.getElementById('inner-grid');
+        const rowLabels = document.getElementById('row-labels-left');
+        const colLabels = document.getElementById('column-labels-top');
+        const eqDisplay = document.getElementById('equation-display');
+        const generateBtn = document.getElementById('generateBtn');
+
+        // Configuration for visualization (sizes must be consistent with CSS units)
+        const sizeX = 80; // Size of x
+        const size1 = 20; // Size of unit 1
+
+        /**
+         * Clears all dynamic elements from the area model view.
+         */
+        function clearModel() {
+            grid.innerHTML = '';
+            rowLabels.innerHTML = '';
+            colLabels.innerHTML = '';
+            eqDisplay.innerHTML = '';
+            eqDisplay.style.display = 'none';
+        }
+
+        /**
+         * Helper to create a single label element (like 'x' or '1').
+         * @param {string} text - The label text (e.g., 'x', '1').
+         * @param {string} type - 'row' or 'col' to determine orientation/size.
+         * @returns {HTMLElement} The created label div.
+         */
+        function createLabel(text, type) {
+            const label = document.createElement('div');
+            label.className = `am-label label-${text}`;
+            label.textContent = text;
+            if (type === 'row') {
+                label.style.height = (text === 'x' ? sizeX : size1) + 'px';
+            } else if (type === 'col') {
+                label.style.width = (text === 'x' ? sizeX : size1) + 'px';
+            }
+            return label;
+        }
+
+        /**
+         * Helper to create a single inner tile.
+         * @param {number} width - Tile width.
+         * @param {number} height - Tile height.
+         * @param {string} type - Term type: 'x2', 'x', 'unit'.
+         * @param {number} rowIdx - Row index (for ID/matching).
+         * @param {number} colIdx - Column index (for ID/matching).
+         * @returns {HTMLElement} The created tile div.
+         */
+        function createTile(width, height, type, rowIdx, colIdx) {
+            const tile = document.createElement('div');
+            tile.className = `am-tile tile-${type}`;
+            tile.style.width = width + 'px';
+            tile.style.height = height + 'px';
+            tile.id = `tile-${rowIdx}-${colIdx}`; // Unique ID for interactivity
+
+            const termText = document.createElement('div');
+            termText.className = 'am-term';
+            if (type === 'x2') termText.innerHTML = 'x<sup>2</sup>';
+            else if (type === 'x') termText.textContent = 'x';
+            else termText.textContent = '1';
+            
+            tile.appendChild(termText);
+            return tile;
+        }
+
+        /**
+         * Main function to generate the model for a quadratic ax^2 + bx + c = (dx+e)(fx+g).
+         */
+        function generateModel(a, b, c, d, e, f, g) {
+            clearModel();
+
+            // 1. Set up the inner grid structure
+            // Dynamic Grid columns: d times sizeX, then e times size1
+            // Dynamic Grid rows: f times sizeX, then g times size1
+            grid.style.gridTemplateColumns = `repeat(${d}, ${sizeX}px) repeat(${e}, ${size1}px)`;
+            grid.style.gridTemplateRows = `repeat(${f}, ${sizeX}px) repeat(${g}, ${size1}px)`;
+
+            // 2. Create and place labels (Side Lengths)
+            // Top (Columns)
+            for (let i = 0; i < d; i++) colLabels.appendChild(createLabel('x', 'col'));
+            for (let i = 0; i < e; i++) colLabels.appendChild(createLabel('1', 'col'));
+
+            // Left (Rows)
+            for (let i = 0; i < f; i++) rowLabels.appendChild(createLabel('x', 'row'));
+            for (let i = 0; i < g; i++) rowLabels.appendChild(createLabel('1', 'row'));
+
+            // 3. Create and place the inner tiles, determining their term type
+            for (let row = 0; row < f + g; row++) {
+                for (let col = 0; col < d + e; col++) {
+                    let type, width, height;
+                    if (row < f && col < d) { // (x * x) region
+                        type = 'x2';
+                        width = sizeX; height = sizeX;
+                    } else if ((row < f && col >= d) || (row >= f && col < d)) { // (x * 1) or (1 * x) regions
+                        type = 'x';
+                        width = (col < d ? sizeX : size1);
+                        height = (row < f ? sizeX : size1);
+                    } else { // (1 * 1) region
+                        type = 'unit';
+                        width = size1; height = size1;
+                    }
+                    const tile = createTile(width, height, type, row, col);
+                    grid.appendChild(tile);
+                    
+                    // Attach interactive listeners to each tile
+                    addInteractivity(tile, row, col, type, d, e, f, g);
+                }
+            }
+
+            // 4. Update the Equation display with dynamic values
+            displayEquation(a, b, c, d, e, f, g);
+        }
+
+        /**
+         * Renders the equation with specific, taggable term types for interaction.
+         */
+        function displayEquation(a, b, c, d, e, f, g) {
+            let eqHtml = '<span class="eq-factor full-polynomial"> ';
+            if (a > 1) eqHtml += a;
+            eqHtml += '<span class="eq-term eq-x2">x<sup>2</sup></span> ';
+            eqHtml += `<span class="eq-operator"> + </span> <span class="eq-term eq-x">${b}x</span> `;
+            eqHtml += `<span class="eq-operator"> + </span> <span class="eq-term eq-unit">${c}</span> `;
+            eqHtml += ' </span><span class="eq-operator">=</span> ';
+            eqHtml += `<span class="eq-factor row-factor">(${f === 1 ? '' : f}x + ${g})</span>`;
+            eqHtml += `<span class="eq-factor col-factor">(${d === 1 ? '' : d}x + ${e})</span>`;
+            eqDisplay.innerHTML = eqHtml;
+            eqDisplay.style.display = 'block';
+        }
+
+        /**
+         * Core Interactivity Function: Connects tiles to labels and equation terms.
+         * @param {HTMLElement} tile - The specific inner grid tile.
+         * @param {number} row - Tile's row index.
+         * @param {number} col - Tile's column index.
+         * @param {string} termType - 'x2', 'x', 'unit'.
+         */
+        function addInteractivity(tile, row, col, termType, d, e, f, g) {
+            tile.addEventListener('mouseover', () => {
+                // 1. Highlight the tile itself
+                tile.classList.add('tile-hovered');
+
+                // 2. Highlight corresponding outside labels (side lengths)
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.add('label-hovered');
+                if (rowLabel) rowLabel.classList.add('label-hovered');
+
+                // 3. Highlight corresponding equation terms
+                // All tiles of this specific type should be highlighted in the main equation area
+                const eqX2 = eqDisplay.querySelector('.eq-x2');
+                const eqX = eqDisplay.querySelector('.eq-x');
+                const eqUnit = eqDisplay.querySelector('.eq-unit');
+
+                if (termType === 'x2' && eqX2) {
+                    eqX2.classList.add('hovered', 'eq-active');
+                } else if (termType === 'x' && eqX) {
+                    eqX.classList.add('hovered', 'eq-active');
+                } else if (termType === 'unit' && eqUnit) {
+                    eqUnit.classList.add('hovered', 'eq-active');
+                }
+            });
+
+            tile.addEventListener('mouseout', () => {
+                // Clear highlights on mouse out
+                tile.classList.remove('tile-hovered');
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.remove('label-hovered');
+                if (rowLabel) rowLabel.classList.remove('label-hovered');
+
+                eqDisplay.querySelectorAll('.eq-term, .eq-active, .eq-factor').forEach(el => {
+                    el.classList.remove('hovered', 'eq-active');
+                });
+            });
+        }
+
+        /**
+         * Generates and visualizes a random valid area model example.
+         * Example: ax^2 + bx + c = (dx+e)(fx+g)
+         * Constraints: Small positive integers for clarity in grid.
+         */
+        function generateRandomExample() {
+            // Pick random small integers for the factors (side lengths)
+            const d = Math.floor(Math.random() * 2) + 1; // Col x-coefficient (1 or 2)
+            const e = Math.floor(Math.random() * 3) + 1; // Col constant (1 to 3)
+            const f = Math.floor(Math.random() * 2) + 1; // Row x-coefficient (1 or 2)
+            const g = Math.floor(Math.random() * 3) + 1; // Row constant (1 to 3)
+
+            // Calculate the expanded form coefficients
+            const a = d * f;
+            const b = d * g + e * f;
+            const c = e * g;
+
+            // Optional Teacher constraint: Ensure a < 4, b < 10, c < 6 to keep grid tidy
+            if (a >= 4 || b >= 12 || c >= 8) {
+                // Reroll if it gets too large
+                return generateRandomExample();
+            }
+
+            generateModel(a, b, c, d, e, f, g);
+        }
+
+        // Initial setup on button click and page load
+        generateBtn.addEventListener('click', generateRandomExample);
+        generateRandomExample(); // Start with one example
+    </script>
+</body>
+</html>

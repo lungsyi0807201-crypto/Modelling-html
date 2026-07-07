@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Model Polynomial Multiplication Tool</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --border-color: #cbd5e1;
+            
+            /* Color coding by power */
+            --color-x2: #3b82f6; /* Blue for x^2 */
+            --color-x: #10b981;  /* Green for x */
+            --color-c: #f59e0b;  /* Amber for constants */
+            
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            color: #0f172a;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 25px;
+        }
+
+        /* Progress Tracker */
+        .steps-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .steps-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .step-dot {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        .step-dot.active {
+            border-color: var(--color-x2);
+            background: var(--color-x2);
+            color: white;
+        }
+        .step-dot.completed {
+            border-color: var(--success-color);
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* Setup Section */
+        .step-panel {
+            display: none;
+        }
+        .step-panel.active {
+            display: block;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .binomial-input {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f1f5f9;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        button {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #334155;
+        }
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Area Model Grid Layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr;
+            grid-template-rows: 50px 1fr 1fr;
+            gap: 10px;
+            max-width: 450px;
+            margin: 0 auto 30px auto;
+            position: relative;
+        }
+
+        .grid-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .grid-cell {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            background-color: #fafafa;
+        }
+
+        .grid-cell.unlocked {
+            border-style: solid;
+            color: white;
+        }
+
+        /* Color types */
+        .power-2 { background-color: var(--color-x2) !important; border-color: #2563eb; color: white; }
+        .power-1 { background-color: var(--color-x) !important; border-color: #059669; color: white; }
+        .power-0 { background-color: var(--color-c) !important; border-color: #d97706; color: white; }
+
+        .grid-cell input {
+            width: 80%;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .grid-cell button {
+            margin-top: 8px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
+        .cell-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        /* Step 4 Combine Layout */
+        .combine-container {
+            text-align: center;
+        }
+        
+        .expression-assembly {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .assemble-term {
+            padding: 6px 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        /* Merge Animation Effects */
+        .merging {
+            animation: mergePulse 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes mergePulse {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(0,0,0,0); }
+            100% { transform: scale(1.08); box-shadow: 0 0 12px #10b981; }
+        }
+
+        .final-input-container {
+            margin-top: 25px;
+            font-size: 1.3rem;
+        }
+        .final-input-container input {
+            font-size: 1.2rem;
+            padding: 8px;
+            width: 250px;
+            text-align: center;
+            margin: 0 10px;
+        }
+
+        .feedback {
+            text-align: center;
+            font-weight: 500;
+            margin-top: 15px;
+            min-height: 24px;
+        }
+        .feedback.success { color: var(--success-color); }
+        .feedback.error { color: var(--error-color); }
+
+        .instructions {
+            background-color: #eff6ff;
+            border-left: 4px solid var(--color-x2);
+            padding: 12px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Polynomial Multiplication Area Model</h1>
+    <p class="subtitle">Understand polynomial expansion visually through areas</p>
+
+    <div class="steps-indicator">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-dot" id="dot-3">3</div>
+    </div>
+
+    <div id="step-1" class="step-panel active">
+        <div class="instructions">
+            <strong>Step 1: Setup Your Problem.</strong> Enter custom coefficients for your binomials, or let the machine create a random setup for you. Try to keep them simple to start!
+        </div>
+        <div class="input-row">
+            <span>(</span>
+            <div class="binomial-input">
+                <input type="number" id="poly1-a" value="1"> <span>x</span>
+                <span>+</span>
+                <input type="number" id="poly1-b" value="3">
+            </div>
+            <span>)</span>
+            <span>&times;</span>
+            <span>(</span>
+            <div class="binomial-input">
+                <input type="number" id="poly2-c" value="1"> <span>x</span>
+                <span>+</span>
+                <input type="number" id="poly2-d" value="2">
+            </div>
+            <span>)</span>
+        </div>
+        <div class="actions">
+            <button type="button" class="btn-secondary" onclick="generateRandom()">Randomize</button>
+            <button type="button" onclick="startLesson()">Next: Visualize Area &rarr;</button>
+        </div>
+    </div>
+
+    <div id="step-2" class="step-panel">
+        <div class="instructions" id="grid-instruction">
+            <strong>Step 2 & 3: Solve the Area Puzzle.</strong> Click on each of the 4 blank grid blocks. Calculate the area of that sub-rectangle by multiplying its matching top and left side headers, then enter it.
+        </div>
+
+        <div class="grid-container">
+            <div></div>
+            <div class="grid-label" id="label-top-left" style="color:var(--color-x)">1x</div>
+            <div class="grid-label" id="label-top-right" style="color:var(--color-c)">+3</div>
+
+            <div class="grid-label" id="label-left-top" style="color:var(--color-x)">1x</div>
+            <div class="grid-cell" id="cell-0-0" onclick="focusCell('0-0')"></div>
+            <div class="grid-cell" id="cell-0-1" onclick="focusCell('0-1')"></div>
+
+            <div class="grid-label" id="label-left-bottom" style="color:var(--color-c)">+2</div>
+            <div class="grid-cell" id="cell-1-0" onclick="focusCell('1-0')"></div>
+            <div class="grid-cell" id="cell-1-1" onclick="focusCell('1-1')"></div>
+        </div>
+
+        <div id="grid-feedback" class="feedback"></div>
+
+        <div class="actions" id="grid-actions" style="display:none;">
+            <button type="button" onclick="goToCombineStep()">Next: Combine Like Terms &rarr;</button>
+        </div>
+    </div>
+
+    <div id="step-3" class="step-panel">
+        <div class="instructions">
+            <strong>Step 4: Combine Like Terms.</strong> We have added up all 4 areas. Notice that some terms share the same power of $x$ (color-matched). Combine them to state the final standard polynomial expression.
+        </div>
+
+        <div class="combine-container">
+            <h3>Sum of Partial Areas:</h3>
+            <div class="expression-assembly" id="assembly-container">
+                </div>
+
+            <div class="actions" style="margin-bottom: 20px;">
+                <button type="button" id="merge-trigger-btn" class="btn-secondary" onclick="animateMerge()">Animate Combining Terms</button>
+            </div>
+
+            <div class="final-input-container">
+                <label for="final-ans">Expanded Form:</label>
+                <input type="text" id="final-ans" placeholder="e.g., x^2 + 5x + 6">
+                <button type="button" onclick="checkFinalAnswer()">Verify</button>
+            </div>
+            <div id="final-feedback" class="feedback"></div>
+            
+            <div class="actions" id="reset-actions" style="display:none; margin-top:25px;">
+                <button type="button" onclick="resetTool()">Start New Problem</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State variables
+    let inputs = { a: 1, b: 3, c: 1, d: 2 };
+    let gridData = {
+        '0-0': { solved: false, expectedText: '', expectedVal: '', power: 2, labelX: '', labelY: '' },
+        '0-1': { solved: false, expectedText: '', expectedVal: '', power: 1, labelX: '', labelY: '' },
+        '1-0': { solved: false, expectedText: '', expectedVal: '', power: 1, labelX: '', labelY: '' },
+        '1-1': { solved: false, expectedText: '', expectedVal: '', power: 0, labelX: '', labelY: '' }
+    };
+    let activeCellId = null;
+
+    function generateRandom() {
+        document.getElementById('poly1-a').value = Math.floor(Math.random() * 4) + 1;
+        document.getElementById('poly1-b').value = Math.floor(Math.random() * 9) + 1;
+        document.getElementById('poly2-c').value = Math.floor(Math.random() * 4) + 1;
+        document.getElementById('poly2-d').value = Math.floor(Math.random() * 9) + 1;
+    }
+
+    function formatTerm(coeff, power, showPlus = false) {
+        if (coeff === 0) return '';
+        let sign = coeff > 0 ? (showPlus ? ' + ' : '') : ' - ';
+        let absCoeff = Math.abs(coeff);
+        
+        let coeffStr = absCoeff === 1 && power > 0 ? '' : absCoeff;
+        let xStr = power === 2 ? 'x²' : (power === 1 ? 'x' : '');
+        
+        return `${sign}${coeffStr}${xStr}`;
+    }
+
+    function startLesson() {
+        // Step 1 read data
+        inputs.a = parseInt(document.getElementById('poly1-a').value) || 0;
+        inputs.b = parseInt(document.getElementById('poly1-b').value) || 0;
+        inputs.c = parseInt(document.getElementById('poly2-c').value) || 0;
+        inputs.d = parseInt(document.getElementById('poly2-d').value) || 0;
+
+        // Set labels
+        document.getElementById('label-top-left').innerText = formatTerm(inputs.c, 1);
+        document.getElementById('label-top-right').innerText = (inputs.d >= 0 ? '+' : '') + inputs.d;
+        document.getElementById('label-left-top').innerText = formatTerm(inputs.a, 1);
+        document.getElementById('label-left-bottom').innerText = (inputs.b >= 0 ? '+' : '') + inputs.b;
+
+        // Configure answers
+        setupGridCell('0-0', inputs.a * inputs.c, 2, formatTerm(inputs.a, 1), formatTerm(inputs.c, 1));
+        setupGridCell('0-1', inputs.a * inputs.d, 1, formatTerm(inputs.a, 1), (inputs.d >= 0 ? '+' : '') + inputs.d);
+        setupGridCell('1-0', inputs.b * inputs.c, 1, (inputs.b >= 0 ? '+' : '') + inputs.b, formatTerm(inputs.c, 1));
+        setupGridCell('1-1', inputs.b * inputs.d, 0, (inputs.b >= 0 ? '+' : '') + inputs.b, (inputs.d >= 0 ? '+' : '') + inputs.d);
+
+        // Switch panel view
+        switchPanel(2);
+    }
+
+    function setupGridCell(id, coeff, power, labelX, labelY) {
+        let cleanAns = "";
+        if (power === 2) cleanAns = (coeff === 1 ? "" : (coeff === -1 ? "-" : coeff)) + "x^2";
+        else if (power === 1) cleanAns = (coeff === 1 ? "" : (coeff === -1 ? "-" : coeff)) + "x";
+        else cleanAns = coeff.toString();
+        
+        // standard cleanup variations processed flexibly in check mechanics
+        gridData[id] = {
+            solved: false,
+            coeff: coeff,
+            power: power,
+            labelX: labelX,
+            labelY: labelY
+        };
+
+        const cell = document.getElementById(`cell-${id}`);
+        cell.className = 'grid-cell'; // reset colors
+        cell.innerHTML = `<span style="color:#94a3b8; font-size:0.85rem">Click to solve<br>${labelX} &times; ${labelY}</span>`;
+    }
+
+    function focusCell(id) {
+        if (gridData[id].solved) return;
+        
+        // clear feedback
+        document.getElementById('grid-feedback').className = "feedback";
+        document.getElementById('grid-feedback').innerText = "";
+
+        // Render input element inside grid cell box
+        const cell = document.getElementById(`cell-${id}`);
+        cell.innerHTML = `
+            <span style="font-size:0.75rem; color:#64748b">${gridData[id].labelX} &times; ${gridData[id].labelY}</span>
+            <input type="text" id="input-${id}" placeholder="e.g. ${gridData[id].power==2?'3x^2':(gridData[id].power==1?'5x':'6')}" style="width:90%">
+            <button onclick="checkCellAnswer(event, '${id}')">Check</button>
+        `;
+        
+        let inputEl = document.getElementById(`input-${id}`);
+        inputEl.focus();
+        inputEl.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                checkCellAnswer(e, id);
+            }
+        });
+        
+        event.stopPropagation();
+    }
+
+    function checkCellAnswer(e, id) {
+        if(e) e.stopPropagation();
+        const userVal = document.getElementById(`input-${id}`).value.replace(/\s+/g, '').toLowerCase();
+        const coeff = gridData[id].coeff;
+        const power = gridData[id].power;
+
+        // Build valid string variants
+        let validAnswers = [];
+        if (power === 2) {
+            if (coeff === 1) { validAnswers.push("x^2", "1x^2", "x²", "1x²"); }
+            else if (coeff === -1) { validAnswers.push("-x^2", "-1x^2", "-x²", "-1x²"); }
+            else { validAnswers.push(`${coeff}x^2`, `${coeff}x²`); }
+        } else if (power === 1) {
+            if (coeff === 0) { validAnswers.push("0", "0x"); }
+            else if (coeff === 1) { validAnswers.push("x", "1x"); }
+            else if (coeff === -1) { validAnswers.push("-x", "-1x"); }
+            else { validAnswers.push(`${coeff}x`); }
+        } else {
+            validAnswers.push(coeff.toString());
+        }
+
+        const fb = document.getElementById('grid-feedback');
+        if (validAnswers.includes(userVal)) {
+            gridData[id].solved = true;
+            fb.className = "feedback success";
+            fb.innerText = "Correct partition segment!";
+            
+            // Lock cell visual transformation
+            const cell = document.getElementById(`cell-${id}`);
+            cell.className = `grid-cell unlocked power-${power}`;
+            cell.innerHTML = `<span class="cell-value">${formatTerm(coeff, power).replace(/^\s*\+\s*/, '')}</span>`;
+            
+            checkGridCompletion();
+        } else {
+            fb.className = "feedback error";
+            fb.innerText = "Incorrect answer. Multiply coefficients together and combine powers.";
+        }
+    }
+
+    function checkGridCompletion() {
+        let allDone = Object.values(gridData).every(cell => cell.solved);
+        if (allDone) {
+            document.getElementById('grid-feedback').className = "feedback success";
+            document.getElementById('grid-feedback').innerText = "Outstanding! The complete area partition structure is unlocked.";
+            document.getElementById('grid-actions').style.display = "flex";
+        }
+    }
+
+    function goToCombineStep() {
+        switchPanel(3);
+        
+        // Assemble original uncombined expression display layout
+        const container = document.getElementById('assembly-container');
+        container.innerHTML = '';
+
+        let index = 0;
+        for (let key in gridData) {
+            if(index > 0) {
+                let plusNode = document.createElement('span');
+                plusNode.innerText = " + ";
+                container.appendChild(plusNode);
+            }
+            
+            let item = gridData[key];
+            let span = document.createElement('span');
+            span.className = `assemble-term power-${item.power}`;
+            span.id = `asmb-${key}`;
+            span.innerText = formatTerm(item.coeff, item.power).replace(/^\s*\+\s*/, '');
+            container.appendChild(span);
+            index++;
+        }
+        document.getElementById('merge-trigger-btn').style.display = "inline-block";
+    }
+
+    function animateMerge() {
+        const cell01 = document.getElementById('asmb-0-1');
+        const cell10 = document.getElementById('asmb-1-0');
+        
+        // Add merging class triggers animation styles
+        cell01.classList.add('merging');
+        cell10.classList.add('merging');
+        
+        document.getElementById('merge-trigger-btn').style.display = "none";
+
+        setTimeout(() => {
+            cell01.classList.remove('merging');
+            cell10.classList.remove('merging');
+            
+            // Calculate sum of middle X elements
+            let middleSum = gridData['0-1'].coeff + gridData['1-0'].coeff;
+            
+            // Physically visually alter standard elements combining tracking models
+            cell01.innerText = formatTerm(middleSum, 1).replace(/^\s*\+\s*/, '');
+            
+            // Find and remove adjacent redundant elements safely
+            if (cell10.previousSibling) cell10.previousSibling.remove(); 
+            cell10.remove();
+        }, 1500);
+    }
+
+    function checkFinalAnswer() {
+        let userAns = document.getElementById('final-ans').value.replace(/\s+/g, '').toLowerCase();
+        
+        // Compute standard values dynamically
+        let x2Coeff = inputs.a * inputs.c;
+        let xCoeff = (inputs.a * inputs.d) + (inputs.b * inputs.c);
+        let constCoeff = inputs.b * inputs.d;
+
+        // Build simple parser matching patterns
+        let targetRegexStr = "^";
+        
+        if(x2Coeff === 1) targetRegexStr += "(1)?x(\\^2|²)";
+        else if(x2Coeff === -1) targetRegexStr += "-(1)?x(\\^2|²)";
+        else if(x2Coeff !== 0) targetRegexStr += `${x2Coeff}x(\\^2|²)`;
+
+        if(xCoeff > 0) targetRegexStr += `\\+${xCoeff === 1 ? '1?' : xCoeff}x`;
+        else if(xCoeff < 0) targetRegexStr += `${xCoeff === -1 ? '-1?' : xCoeff}x`;
+        
+        if(constCoeff > 0) targetRegexStr += `\\+${constCoeff}`;
+        else if(constCoeff < 0) targetRegexStr += `${constCoeff}`;
+        
+        targetRegexStr += "$";
+        
+        let reg = new RegExp(targetRegexStr);
+        const fb = document.getElementById('final-feedback');
+
+        if (reg.test(userAns) || (userAns === `${x2Coeff}x^2+${xCoeff}x+${constCoeff}`.replace(/\+-/g, "-"))) {
+            fb.className = "feedback success";
+            fb.innerHTML = "🎉 Congratulations! Perfect Answer. You master the algebraic area conversion!";
+            document.getElementById('reset-actions').style.display = "block";
+            document.getElementById('dot-3').className = "step-dot completed";
+        } else {
+            fb.className = "feedback error";
+            fb.innerText = "Almost there! Keep your format as: ax^2 + bx + c. Did you sum the 'x' values properly?";
+        }
+    }
+
+    function switchPanel(stepNum) {
+        document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.step-dot').forEach((d, idx) => {
+            if (idx + 1 < stepNum) d.className = "step-dot completed";
+            else if (idx + 1 === stepNum) d.className = "step-dot active";
+            else d.className = "step-dot";
+        });
+        document.getElementById(`step-${stepNum === 3 ? 3 : stepNum}`).classList.add('active');
+    }
+
+    function resetTool() {
+        switchPanel(1);
+        document.getElementById('final-ans').value = "";
+        document.getElementById('final-feedback').innerText = "";
+        document.getElementById('grid-feedback').innerText = "";
+        document.getElementById('grid-actions').style.display = "none";
+        document.getElementById('reset-actions').style.display = "none";
+    }
+</script>
+
+</body>
+</html>

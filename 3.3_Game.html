@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Infinite Conveyor - Algebra Factory</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Retro/Sci-fi style -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0d1117;
+        }
+        .mono-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* Custom animated stripes for conveyor belt */
+        @keyframes scrollBelt {
+            0% { background-position-x: 0px; }
+            100% { background-position-x: 40px; }
+        }
+        .conveyor-belt {
+            background-image: repeating-linear-gradient(
+                45deg,
+                #2d3748,
+                #2d3748 10px,
+                #1a202c 10px,
+                #1a202c 20px
+            );
+            background-size: 40px 40px;
+            animation: scrollBelt 1s linear infinite;
+        }
+        .conveyor-belt.paused {
+            animation-play-state: paused;
+        }
+        /* Shake animation for incorrect answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+        /* Laser scanning effect */
+        @keyframes laserScan {
+            0%, 100% { top: 0%; opacity: 0.3; }
+            50% { top: 100%; opacity: 0.8; }
+        }
+        .laser-line {
+            animation: laserScan 2s linear infinite;
+        }
+        /* Glowing effects */
+        .neon-glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        .neon-glow-amber {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+<body class="text-gray-100 flex flex-col min-h-screen justify-between overflow-x-hidden selection:bg-cyan-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2 rounded-lg text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wider text-cyan-400">ALGEBRA CONVEYOR</h1>
+                <p class="text-xs text-gray-400 tracking-widest uppercase">Automated Concept Training Unit</p>
+            </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="flex items-center space-x-2 bg-gray-950 p-2 rounded-lg border border-gray-800">
+            <span class="text-xs text-gray-400 mr-2">PROGRESS:</span>
+            <button onclick="goToStage(1)" id="btn-stg-1" class="px-3 py-1 rounded text-xs font-bold transition-all bg-cyan-600 text-white">Stage 1: Unknowns</button>
+            <button onclick="goToStage(2)" id="btn-stg-2" class="px-3 py-1 rounded text-xs font-bold transition-all bg-gray-800 text-gray-400 hover:bg-gray-700">Stage 2: Formula Power</button>
+            <button onclick="goToStage(3)" id="btn-stg-3" class="px-3 py-1 rounded text-xs font-bold transition-all bg-gray-800 text-gray-400 hover:bg-gray-700">Stage 3: Term Sorter</button>
+        </div>
+
+        <!-- Score Dashboard -->
+        <div class="flex items-center space-x-4">
+            <div class="bg-gray-950 px-3 py-1.5 rounded border border-cyan-800/50">
+                <div class="text-[10px] text-cyan-400 tracking-wider">SCORE</div>
+                <div id="game-score" class="text-xl font-bold mono-font text-white">0000</div>
+            </div>
+            <div class="bg-gray-950 px-3 py-1.5 rounded border border-emerald-800/50">
+                <div class="text-[10px] text-emerald-400 tracking-wider">ACCURACY</div>
+                <div id="game-accuracy" class="text-xl font-bold mono-font text-white">100%</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Workspace -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 max-w-7xl w-full mx-auto">
+
+        <!-- STAGE 1: UNDERSTANDING UNKNOWNS -->
+        <section id="stage-1" class="w-full flex flex-col items-center space-y-6">
+            <!-- Stage Description Card -->
+            <div class="bg-gray-900 border-l-4 border-cyan-500 p-4 rounded-r-lg max-w-3xl w-full">
+                <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+                    <span>Stage 1: Decoding the Mystery Cargo (Unknowns)</span>
+                </h2>
+                <p class="text-sm text-gray-300 mt-1">
+                    Crates marked with variable letters hold hidden cargo inside! The letters <strong class="text-yellow-400">$x$</strong> or <strong class="text-emerald-400">$y$</strong> simply stand in for an **unknown number of objects**. Press and hold the <strong class="text-cyan-400">X-RAY SCANNER</strong> to see how many gears are inside, then input the mystery value!
+                </p>
+            </div>
+
+            <!-- Scanner Workspace Area -->
+            <div class="w-full max-w-3xl bg-gray-950 rounded-xl border border-gray-800 p-6 flex flex-col items-center relative overflow-hidden">
+                <!-- Conveyor Belt Background Segment -->
+                <div class="w-full h-24 bg-gray-900 rounded-lg relative flex items-center justify-center border-y-4 border-gray-800 overflow-hidden mb-6">
+                    <div id="s1-belt" class="absolute inset-0 conveyor-belt opacity-40"></div>
+                    
+                    <!-- Center scanner zone -->
+                    <div class="absolute inset-y-0 w-32 border-x-2 border-cyan-500/50 bg-cyan-950/20 flex items-center justify-center z-10">
+                        <div class="absolute inset-0 laser-line bg-gradient-to-b from-transparent via-cyan-400/80 to-transparent h-1 w-full z-20"></div>
+                        <span class="text-[9px] uppercase tracking-widest text-cyan-400 font-bold absolute bottom-1">Scan Field</span>
+                    </div>
+
+                    <!-- The Mystery Box (centered on scanner) -->
+                    <div id="s1-mystery-box" class="w-20 h-20 bg-amber-600 rounded-lg border-2 border-amber-400 relative z-20 flex flex-col items-center justify-center shadow-lg cursor-pointer transform hover:scale-105 transition-all">
+                        <!-- Box Pattern -->
+                        <div class="absolute inset-2 border border-dashed border-amber-300/40 rounded flex items-center justify-center">
+                            <!-- Hidden contents (gears) - invisible until scanned -->
+                            <div id="s1-gears-container" class="grid grid-cols-3 gap-1 p-1 opacity-0 transition-opacity duration-200">
+                                <!-- Gear icons injected dynamically -->
+                            </div>
+                        </div>
+                        <!-- Outer Variable label -->
+                        <div id="s1-box-label" class="text-4xl font-bold text-amber-100 drop-shadow-md mono-font select-none">x</div>
+                        <span class="text-[9px] text-amber-200 uppercase tracking-widest font-bold absolute bottom-1 select-none">Cargo</span>
+                    </div>
+                </div>
+
+                <!-- Control Console Interface -->
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Scanner Button Trigger (Touch & Click Support) -->
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 flex flex-col justify-between items-center text-center">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider mb-2">Activation Pad</span>
+                        <button id="btn-xray" 
+                                class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-lg shadow-lg active:scale-95 transform transition-all select-none neon-glow-cyan flex flex-col items-center justify-center gap-1">
+                            <span class="text-lg tracking-wider">HOLD TO SCAN BOX</span>
+                            <span class="text-[10px] text-cyan-200 font-normal">Powers the X-Ray Imaging Array</span>
+                        </button>
+                        <p class="text-[11px] text-cyan-500 mt-2">Hold down mouse button (or touch and hold) to reveal contents</p>
+                    </div>
+
+                    <!-- Decryption input panel -->
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-800 flex flex-col justify-center">
+                        <label class="text-xs text-amber-400 uppercase tracking-wider mb-2 text-center md:text-left block">Decrypted Value Input</label>
+                        <div class="flex items-center space-x-2">
+                            <div class="bg-gray-950 px-4 py-3 rounded-lg border border-gray-800 text-2xl font-bold text-amber-400 mono-font w-16 text-center">
+                                <span id="s1-active-variable">x</span> =
+                            </div>
+                            <input type="number" id="s1-input" placeholder="?" 
+                                   class="flex-grow bg-gray-950 border border-gray-800 rounded-lg py-3 px-4 text-center text-2xl font-bold mono-font text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                                   onkeydown="if(event.key === 'Enter') checkStage1Answer()">
+                            <button onclick="checkStage1Answer()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3.5 rounded-lg transition-all text-sm tracking-wider">SUBMIT</button>
+                        </div>
+                        <div id="s1-feedback" class="text-center md:text-left text-xs mt-3 min-h-[16px] text-gray-400">Waiting for scanner data...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STAGE 2: WHY USE UNKNOWNS? (FORMULA BLUEPRINTS) -->
+        <section id="stage-2" class="w-full flex flex-col items-center space-y-6 hidden">
+            <!-- Stage Description Card -->
+            <div class="bg-gray-900 border-l-4 border-amber-500 p-4 rounded-r-lg max-w-3xl w-full">
+                <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <span>Stage 2: The Power of Formula Blueprints</span>
+                </h2>
+                <p class="text-sm text-gray-300 mt-1">
+                    The assembly line is speeding up! We can no longer count each crate one-by-one. Instead, we must write a **general formula** to describe the entire cargo train in one command! Use the blueprint nodes to solve the order requirements.
+                </p>
+            </div>
+
+            <div class="w-full max-w-3xl bg-gray-950 rounded-xl border border-gray-800 p-6 flex flex-col items-center">
+                <!-- Order requirements billboard -->
+                <div class="w-full bg-gray-900 rounded-lg p-4 mb-6 border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs text-amber-400 tracking-wider uppercase font-bold block">Current Shipping Manifest</span>
+                        <div id="s2-manifest-text" class="text-lg text-white mt-1">
+                            Count all gears on the belt where:
+                        </div>
+                        <div class="flex items-center space-x-6 mt-2">
+                            <span class="text-sm text-gray-300 flex items-center gap-2">
+                                <span class="w-5 h-5 bg-yellow-600 rounded flex items-center justify-center font-bold text-xs">x</span> 
+                                Each box <strong class="text-yellow-400">x</strong> contains <strong id="s2-x-val" class="mono-font text-white">4</strong> gears.
+                            </span>
+                            <span class="text-sm text-gray-300 flex items-center gap-2">
+                                <span class="w-5 h-5 bg-cyan-600 rounded flex items-center justify-center font-bold text-xs">y</span> 
+                                Each barrel <strong class="text-cyan-400">y</strong> contains <strong id="s2-y-val" class="mono-font text-white">6</strong> gears.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-950 px-4 py-2 rounded border border-gray-800 text-center">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest block">Cargo Train</span>
+                        <!-- Visualization of items on belt -->
+                        <div id="s2-belt-visual" class="flex gap-1.5 mt-2 justify-center">
+                            <!-- Injected dynamically: e.g. Box, Box, Barrel -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Conveyor simulation display -->
+                <div class="w-full h-20 bg-gray-900 rounded-lg relative flex items-center justify-center border-y-4 border-gray-800 overflow-hidden mb-6">
+                    <div id="s2-belt" class="absolute inset-0 conveyor-belt opacity-30"></div>
+                    <div id="s2-cargo-container" class="absolute inset-0 flex items-center justify-around px-8">
+                        <!-- Floating crates will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Interactive Blueprint Constructor -->
+                <div class="w-full bg-gray-900 p-4 rounded-lg border border-gray-800 flex flex-col items-center">
+                    <span class="text-xs text-gray-400 uppercase tracking-wider mb-2">Build the general algebraic expression for total gears:</span>
+                    
+                    <!-- Constructed Blueprint Display -->
+                    <div id="s2-expression-display" class="flex items-center space-x-2 bg-gray-950 px-6 py-4 rounded-lg border-2 border-dashed border-gray-800 text-3xl font-bold mono-font tracking-wide min-h-[72px] w-full justify-center text-cyan-400">
+                        <!-- Formula construction blocks go here -->
+                        <span class="text-gray-600 text-sm font-normal">Click options below to build formula...</span>
+                    </div>
+
+                    <!-- Builder Toolbox Options -->
+                    <div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4" id="s2-toolbox">
+                        <!-- Generated via JS to avoid code drift -->
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="w-full flex space-x-2 mt-4">
+                        <button onclick="clearStage2Expression()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 px-4 rounded-lg text-sm transition-all tracking-wider">
+                            RESET BLUEPRINT
+                        </button>
+                        <button onclick="checkStage2Answer()" class="w-2/3 bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg text-sm shadow-lg transform active:scale-95 transition-all tracking-wider">
+                            RUN BLUEPRINT TEST
+                        </button>
+                    </div>
+                    
+                    <!-- Dynamic Feedback Area -->
+                    <div id="s2-feedback" class="text-center text-xs mt-3 min-h-[16px] text-gray-400">Assemble a formula representing the total items on the line.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STAGE 3: LIKE TERMS VS. UNLIKE TERMS -->
+        <section id="stage-3" class="w-full flex flex-col items-center space-y-6 hidden">
+            <!-- Stage Description Card -->
+            <div class="bg-gray-900 border-l-4 border-emerald-500 p-4 rounded-r-lg max-w-3xl w-full">
+                <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <span>Stage 3: High-Speed Sorting (Like vs. Unlike Terms)</span>
+                </h2>
+                <p class="text-sm text-gray-300 mt-1">
+                    Incoming cargo is highly unstable! Items can only be combined if they are **Like Terms** (sharing the exact same variable setup and power exponents!). Move/route incoming items into the matching bins below.
+                </p>
+            </div>
+
+            <!-- Workspace Sorter Grid -->
+            <div class="w-full max-w-4xl bg-gray-950 rounded-xl border border-gray-800 p-4 flex flex-col items-center">
+                <!-- Conveyor Area with oncoming mixed packets -->
+                <div class="w-full bg-gray-900 rounded-lg p-3 border border-gray-800 flex flex-col items-center relative overflow-hidden mb-6">
+                    <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Incoming Stream Junction</div>
+                    
+                    <!-- Conveyor Simulation -->
+                    <div class="w-full h-24 bg-gray-950 rounded relative flex items-center justify-between px-6 border-y-2 border-gray-800 overflow-hidden">
+                        <div id="s3-belt" class="absolute inset-0 conveyor-belt opacity-20"></div>
+                        
+                        <!-- Queue of incoming cargo -->
+                        <div id="s3-incoming-cargo" class="w-full h-full flex items-center justify-start space-x-12 relative z-10 transition-transform duration-500">
+                            <!-- Spawning terms dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sorting target Bins (Grid) -->
+                <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-4" id="s3-target-bins">
+                    <!-- Bin A -->
+                    <div data-bin-term="a" class="s3-bin bg-gray-900 border-2 border-gray-800 hover:border-cyan-500/50 rounded-xl p-4 flex flex-col items-center justify-between transition-all min-h-[160px] cursor-pointer" onclick="routeCurrentCargo('a')">
+                        <div class="text-center">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider block">Bin Type</span>
+                            <span class="text-4xl font-extrabold text-cyan-400 mono-font">a</span>
+                        </div>
+                        <div class="w-full bg-gray-950 rounded p-2 text-center text-xs text-gray-400 border border-gray-800">
+                            Current: <span id="s3-bin-a-sum" class="font-bold text-white mono-font">0a</span>
+                        </div>
+                        <button class="w-full mt-2 bg-cyan-900/40 hover:bg-cyan-800/60 text-cyan-300 text-xs py-1 rounded border border-cyan-800/60 uppercase">Route Here</button>
+                    </div>
+
+                    <!-- Bin B -->
+                    <div data-bin-term="b" class="s3-bin bg-gray-900 border-2 border-gray-800 hover:border-emerald-500/50 rounded-xl p-4 flex flex-col items-center justify-between transition-all min-h-[160px] cursor-pointer" onclick="routeCurrentCargo('b')">
+                        <div class="text-center">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider block">Bin Type</span>
+                            <span class="text-4xl font-extrabold text-emerald-400 mono-font">b</span>
+                        </div>
+                        <div class="w-full bg-gray-950 rounded p-2 text-center text-xs text-gray-400 border border-gray-800">
+                            Current: <span id="s3-bin-b-sum" class="font-bold text-white mono-font">0b</span>
+                        </div>
+                        <button class="w-full mt-2 bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-300 text-xs py-1 rounded border border-emerald-800/60 uppercase">Route Here</button>
+                    </div>
+
+                    <!-- Bin A² -->
+                    <div data-bin-term="a2" class="s3-bin bg-gray-900 border-2 border-gray-800 hover:border-purple-500/50 rounded-xl p-4 flex flex-col items-center justify-between transition-all min-h-[160px] cursor-pointer" onclick="routeCurrentCargo('a2')">
+                        <div class="text-center">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider block">Bin Type</span>
+                            <span class="text-4xl font-extrabold text-purple-400 mono-font">a²</span>
+                        </div>
+                        <div class="w-full bg-gray-950 rounded p-2 text-center text-xs text-gray-400 border border-gray-800">
+                            Current: <span id="s3-bin-a2-sum" class="font-bold text-white mono-font">0a²</span>
+                        </div>
+                        <button class="w-full mt-2 bg-purple-900/40 hover:bg-purple-800/60 text-purple-300 text-xs py-1 rounded border border-purple-800/60 uppercase">Route Here</button>
+                    </div>
+
+                    <!-- Bin CONSTANTS (Numbers Only) -->
+                    <div data-bin-term="const" class="s3-bin bg-gray-900 border-2 border-gray-800 hover:border-amber-500/50 rounded-xl p-4 flex flex-col items-center justify-between transition-all min-h-[160px] cursor-pointer" onclick="routeCurrentCargo('const')">
+                        <div class="text-center">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider block">Bin Type</span>
+                            <span class="text-4xl font-extrabold text-amber-400 mono-font"># Constant</span>
+                        </div>
+                        <div class="w-full bg-gray-950 rounded p-2 text-center text-xs text-gray-400 border border-gray-800">
+                            Current: <span id="s3-bin-const-sum" class="font-bold text-white mono-font">0</span>
+                        </div>
+                        <button class="w-full mt-2 bg-amber-900/40 hover:bg-amber-800/60 text-amber-300 text-xs py-1 rounded border border-amber-800/60 uppercase">Route Here</button>
+                    </div>
+                </div>
+
+                <!-- Feedback Display & Scoreboard -->
+                <div class="w-full mt-6 bg-gray-900 p-4 rounded-lg border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded bg-gray-950 text-gray-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 tracking-wider block uppercase">Status Updates</span>
+                            <span id="s3-alert" class="text-sm font-semibold text-cyan-400">Incoming batch of cargo aligned. Click on a bin to route the lead package.</span>
+                        </div>
+                    </div>
+                    <button onclick="resetStage3Bins()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded text-xs tracking-wider uppercase border border-gray-700">
+                        Clear Bins
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- GAME OVER / SUCCESS MODAL -->
+        <section id="success-screen" class="w-full flex flex-col items-center space-y-6 hidden">
+            <div class="bg-gray-950 border border-cyan-500 p-8 rounded-2xl max-w-lg w-full text-center relative overflow-hidden neon-glow-cyan">
+                <!-- Glowing Success Header -->
+                <div class="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-400">
+                    <svg class="w-10 h-10 text-cyan-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                
+                <h2 class="text-3xl font-bold text-white tracking-wider">STAGE COMPLETED!</h2>
+                <p class="text-gray-400 text-sm mt-2">You have successfully mastered the primary modules of automated algebraic logistics.</p>
+
+                <div class="my-6 p-4 bg-gray-900 rounded-lg border border-gray-800 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Final Score:</span>
+                        <span id="success-score" class="font-bold text-cyan-400 mono-font">0000</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Accuracy Rating:</span>
+                        <span id="success-accuracy" class="font-bold text-emerald-400 mono-font">100%</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col space-y-2">
+                    <button id="btn-next-step" onclick="advanceToNextStage()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform active:scale-95 transition-all text-sm tracking-wider uppercase">
+                        Initialize Next Phase
+                    </button>
+                    <button onclick="restartStage()" class="w-full bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white font-bold py-3 px-6 rounded-lg text-sm transition-all tracking-wider uppercase border border-gray-800">
+                        Replay Level
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-950 border-t border-gray-900 px-6 py-4 text-center">
+        <p class="text-xs text-gray-500">&copy; 2026 Interactive Algebra Logistics Inc. designed for Form 1 / Secondary 1 Mathematics syllabus.</p>
+    </footer>
+
+    <!-- Game Logic Engine -->
+    <script>
+        // Core State Management
+        let currentStage = 1;
+        let score = 0;
+        let attempts = 0;
+        let successes = 0;
+
+        // Stage 1 State
+        let s1Value = 0;
+        let s1Variable = 'x';
+        let s1Scanned = false;
+
+        // Stage 2 State
+        let s2XVal = 0;
+        let s2YVal = 0;
+        let s2Expression = [];
+        let s2CorrectSum = 0;
+        let s2BoxCount = 0;
+        let s2BarrelCount = 0;
+
+        // Stage 3 State
+        let s3IncomingTerms = [];
+        let s3Scores = {
+            a: 0,
+            b: 0,
+            a2: 0,
+            const: 0
+        };
+        let s3TotalProcessed = 0;
+        const s3TargetGoal = 10; // Sort 10 items correctly to win
+
+        // Audio Effects (Synthesized using Web Audio API so no file assets needed)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'scan') {
+                    // Constant electronic hum
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(350, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'incorrect') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); 
+                    osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2); 
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'merge') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                }
+            } catch (e) {
+                console.log("Audio not allowed yet by user interaction");
+            }
+        }
+
+        // Shared HUD updates
+        function updateHUD() {
+            document.getElementById('game-score').innerText = String(score).padStart(4, '0');
+            const accuracy = attempts > 0 ? Math.round((successes / attempts) * 100) : 100;
+            document.getElementById('game-accuracy').innerText = `${accuracy}%`;
+        }
+
+        function triggerScoreIncrease(points) {
+            score += points;
+            successes++;
+            attempts++;
+            updateHUD();
+            playSound('correct');
+        }
+
+        function triggerScoreFailure() {
+            attempts++;
+            updateHUD();
+            playSound('incorrect');
+        }
+
+        // NAVIGATION CONTROL
+        function goToStage(stageNum) {
+            currentStage = stageNum;
+            
+            // Toggle screen content
+            document.getElementById('stage-1').classList.add('hidden');
+            document.getElementById('stage-2').classList.add('hidden');
+            document.getElementById('stage-3').classList.add('hidden');
+            document.getElementById('success-screen').classList.add('hidden');
+
+            document.getElementById(`stage-${stageNum}`).classList.remove('hidden');
+
+            // Reset navigation menu styling
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`btn-stg-${i}`);
+                if (i === stageNum) {
+                    btn.classList.remove('bg-gray-800', 'text-gray-400');
+                    btn.classList.add('bg-cyan-600', 'text-white');
+                } else {
+                    btn.classList.add('bg-gray-800', 'text-gray-400');
+                    btn.classList.remove('bg-cyan-600', 'text-white');
+                }
+            }
+
+            // Init specific stages
+            if (stageNum === 1) initStage1();
+            if (stageNum === 2) initStage2();
+            if (stageNum === 3) initStage3();
+        }
+
+        // ==========================================
+        // STAGE 1 LOGIC: UNDERSTANDING UNKNOWNS
+        // ==========================================
+        function initStage1() {
+            s1Scanned = false;
+            // Generate standard range for kids: 2 to 9
+            s1Value = Math.floor(Math.random() * 8) + 2; 
+            s1Variable = ['x', 'y', 'z', 'n'][Math.floor(Math.random() * 4)];
+            
+            // Reset UI
+            document.getElementById('s1-active-variable').innerText = s1Variable;
+            document.getElementById('s1-box-label').innerText = s1Variable;
+            document.getElementById('s1-input').value = '';
+            document.getElementById('s1-gears-container').classList.add('opacity-0');
+            document.getElementById('s1-box-label').classList.remove('opacity-0');
+            document.getElementById('s1-feedback').innerText = "Hold down the X-RAY button to see what the unknown variable contains.";
+            document.getElementById('s1-feedback').className = "text-center md:text-left text-xs mt-3 text-gray-400";
+            
+            // Create Gears inside Box (represent unknown quantity dynamically)
+            const gearsContainer = document.getElementById('s1-gears-container');
+            gearsContainer.innerHTML = '';
+            for (let i = 0; i < s1Value; i++) {
+                gearsContainer.innerHTML += `
+                    <div class="w-4 h-4 text-cyan-400 animate-spin" style="animation-duration: ${2 + Math.random() * 3}s">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                        </svg>
+                    </div>
+                `;
+            }
+        }
+
+        // X-Ray hold action event handlers (Works on Desktop & Touch)
+        const btnXray = document.getElementById('btn-xray');
+        const containerGears = document.getElementById('s1-gears-container');
+        const boxLabel = document.getElementById('s1-box-label');
+
+        function startScan() {
+            containerGears.classList.remove('opacity-0');
+            boxLabel.classList.add('opacity-0');
+            s1Scanned = true;
+            playSound('scan');
+            document.getElementById('s1-feedback').innerText = "Scanning... Count the glowing system gears!";
+            document.getElementById('s1-feedback').className = "text-center md:text-left text-xs mt-3 text-cyan-400 font-bold";
+        }
+
+        function endScan() {
+            containerGears.classList.add('opacity-0');
+            boxLabel.classList.remove('opacity-0');
+        }
+
+        btnXray.addEventListener('mousedown', startScan);
+        btnXray.addEventListener('mouseup', endScan);
+        btnXray.addEventListener('mouseleave', endScan);
+
+        btnXray.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startScan();
+        });
+        btnXray.addEventListener('touchend', endScan);
+
+        function checkStage1Answer() {
+            const inputVal = parseInt(document.getElementById('s1-input').value);
+            const feedback = document.getElementById('s1-feedback');
+            const mysteryBox = document.getElementById('s1-mystery-box');
+
+            if (isNaN(inputVal)) {
+                feedback.innerText = "Please enter a numeric estimate first!";
+                feedback.className = "text-center md:text-left text-xs mt-3 text-amber-500 font-bold";
+                return;
+            }
+
+            if (inputVal === s1Value) {
+                // Correct!
+                triggerScoreIncrease(100);
+                feedback.innerText = `System Correct! Variable ${s1Variable} evaluates to ${s1Value} units.`;
+                feedback.className = "text-center md:text-left text-xs mt-3 text-emerald-400 font-bold";
+                
+                // Show celebration visual before progressing
+                boxLabel.innerText = s1Value;
+                mysteryBox.classList.add('bg-emerald-600', 'border-emerald-400');
+                
+                setTimeout(() => {
+                    mysteryBox.classList.remove('bg-emerald-600', 'border-emerald-400');
+                    showStageSuccessModal(2);
+                }, 1500);
+            } else {
+                // Incorrect
+                triggerScoreFailure();
+                feedback.innerText = `Alert: Calibration failure. Scanning again might help verify the total quantity.`;
+                feedback.className = "text-center md:text-left text-xs mt-3 text-red-500 font-bold";
+                mysteryBox.classList.add('animate-shake');
+                setTimeout(() => mysteryBox.classList.remove('animate-shake'), 400);
+            }
+        }
+
+
+        // ==========================================
+        // STAGE 2 LOGIC: WHY USE UNKNOWNS?
+        // ==========================================
+        function initStage2() {
+            s2Expression = [];
+            // Random values for variables
+            s2XVal = Math.floor(Math.random() * 5) + 3; // 3 to 7
+            s2YVal = Math.floor(Math.random() * 4) + 8; // 8 to 11
+            
+            // Random counts on line
+            s2BoxCount = Math.floor(Math.random() * 3) + 2; // 2 to 4 boxes (x)
+            s2BarrelCount = Math.floor(Math.random() * 3) + 1; // 1 to 3 barrels (y)
+            
+            s2CorrectSum = (s2BoxCount * s2XVal) + (s2BarrelCount * s2YVal);
+
+            // Update manifest specifications
+            document.getElementById('s2-x-val').innerText = s2XVal;
+            document.getElementById('s2-y-val').innerText = s2YVal;
+            
+            // Build Belt Items Visual Display
+            const cargoContainer = document.getElementById('s2-cargo-container');
+            const beltVisual = document.getElementById('s2-belt-visual');
+            cargoContainer.innerHTML = '';
+            beltVisual.innerHTML = '';
+
+            // Generate crates on belt
+            for (let i = 0; i < s2BoxCount; i++) {
+                cargoContainer.innerHTML += `
+                    <div class="w-12 h-12 bg-amber-600 rounded border border-amber-400 flex items-center justify-center font-bold text-white shadow-md select-none transform hover:scale-105 transition-all text-sm">x</div>
+                `;
+                beltVisual.innerHTML += `
+                    <span class="w-5 h-5 bg-amber-600 rounded flex items-center justify-center font-bold text-[10px] text-white">x</span>
+                `;
+            }
+            for (let i = 0; i < s2BarrelCount; i++) {
+                cargoContainer.innerHTML += `
+                    <div class="w-12 h-12 bg-cyan-700 rounded-full border border-cyan-400 flex items-center justify-center font-bold text-white shadow-md select-none transform hover:scale-105 transition-all text-sm">y</div>
+                `;
+                beltVisual.innerHTML += `
+                    <span class="w-5 h-5 bg-cyan-700 rounded-full flex items-center justify-center font-bold text-[10px] text-white">y</span>
+                `;
+            }
+
+            renderStage2Toolbox();
+            updateStage2ExpressionDisplay();
+            
+            document.getElementById('s2-feedback').innerText = "Tap options from the toolbox to formulate a command that handles this cargo stream.";
+            document.getElementById('s2-feedback').className = "text-center text-xs mt-3 text-gray-400";
+        }
+
+        // Dynamically populate options based on current counts
+        function renderStage2Toolbox() {
+            const toolbox = document.getElementById('s2-toolbox');
+            
+            // Distractor options as well as correct nodes
+            const options = [
+                { text: `${s2BoxCount}x`, val: { type: 'term', coef: s2BoxCount, var: 'x' } },
+                { text: `${s2BarrelCount}y`, val: { type: 'term', coef: s2BarrelCount, var: 'y' } },
+                { text: `+`, val: { type: 'operator', symbol: '+' } },
+                { text: `${s2BoxCount}y`, val: { type: 'term', coef: s2BoxCount, var: 'y' } },
+                { text: `${s2BarrelCount}x`, val: { type: 'term', coef: s2BarrelCount, var: 'x' } },
+                { text: `${s2BoxCount + s2BarrelCount}x`, val: { type: 'term', coef: s2BoxCount + s2BarrelCount, var: 'x' } },
+                { text: `${s2XVal}x`, val: { type: 'term', coef: s2XVal, var: 'x' } },
+                { text: `${s2YVal}y`, val: { type: 'term', coef: s2YVal, var: 'y' } }
+            ];
+
+            // Shuffle array quickly
+            options.sort(() => Math.random() - 0.5);
+
+            toolbox.innerHTML = '';
+            options.forEach((opt, idx) => {
+                const isCorrectComp = (opt.text === `${s2BoxCount}x` || opt.text === `${s2BarrelCount}y` || opt.text === '+');
+                const glowClass = isCorrectComp ? 'hover:border-cyan-500' : 'hover:border-red-500';
+                
+                toolbox.innerHTML += `
+                    <button onclick="addTokenToStage2(${JSON.stringify(opt.val).replace(/"/g, '&quot;')})" 
+                            class="bg-gray-900 border border-gray-800 rounded px-3 py-2 text-sm font-bold tracking-wide text-gray-200 transition-all active:scale-95 flex items-center justify-center ${glowClass}">
+                        ${opt.text}
+                    </button>
+                `;
+            });
+        }
+
+        function addTokenToStage2(tokenVal) {
+            // Check for valid syntax limits
+            if (s2Expression.length >= 5) return;
+            s2Expression.push(tokenVal);
+            updateStage2ExpressionDisplay();
+        }
+
+        function clearStage2Expression() {
+            s2Expression = [];
+            updateStage2ExpressionDisplay();
+        }
+
+        function updateStage2ExpressionDisplay() {
+            const display = document.getElementById('s2-expression-display');
+            if (s2Expression.length === 0) {
+                display.innerHTML = `<span class="text-gray-600 text-sm font-normal">Select blueprint parameters...</span>`;
+                return;
+            }
+
+            display.innerHTML = '';
+            s2Expression.forEach((token, index) => {
+                let text = '';
+                let colorClass = 'bg-gray-800 text-gray-300';
+                
+                if (token.type === 'term') {
+                    text = `${token.coef}${token.var}`;
+                    colorClass = token.var === 'x' ? 'bg-amber-600/30 text-amber-400 border border-amber-600' : 'bg-cyan-600/30 text-cyan-400 border border-cyan-600';
+                } else {
+                    text = token.symbol;
+                    colorClass = 'bg-gray-800 text-gray-200 border border-gray-700';
+                }
+
+                display.innerHTML += `
+                    <span class="px-3 py-1 rounded text-lg ${colorClass} select-none cursor-pointer hover:bg-red-500/20" onclick="removeTokenFromStage2(${index})">
+                        ${text}
+                    </span>
+                `;
+            });
+        }
+
+        function removeTokenFromStage2(index) {
+            s2Expression.splice(index, 1);
+            updateStage2ExpressionDisplay();
+        }
+
+        function checkStage2Answer() {
+            const feedback = document.getElementById('s2-feedback');
+            
+            if (s2Expression.length === 0) {
+                feedback.innerText = "Error: Formula contains no instructions.";
+                feedback.className = "text-center text-xs mt-3 text-amber-500 font-bold";
+                return;
+            }
+
+            // Syntactic Evaluation of Custom Expressions
+            // Accept either: "3x + 2y" or "2y + 3x"
+            let valid = false;
+            if (s2Expression.length === 3) {
+                const t1 = s2Expression[0];
+                const op = s2Expression[1];
+                const t2 = s2Expression[2];
+
+                if (op.type === 'operator' && op.symbol === '+') {
+                    const optionA = (t1.coef === s2BoxCount && t1.var === 'x' && t2.coef === s2BarrelCount && t2.var === 'y');
+                    const optionB = (t1.coef === s2BarrelCount && t1.var === 'y' && t2.coef === s2BoxCount && t2.var === 'x');
+                    if (optionA || optionB) {
+                        valid = true;
+                    }
+                }
+            }
+
+            if (valid) {
+                triggerScoreIncrease(200);
+                feedback.innerHTML = `Success! Blueprint verified! Total gears: $${s2BoxCount}(${s2XVal}) + ${s2BarrelCount}(${s2YVal}) = ${s2CorrectSum}$`;
+                feedback.className = "text-center text-xs mt-3 text-emerald-400 font-bold";
+                
+                // Animate conveyor
+                document.getElementById('s2-belt').classList.remove('paused');
+                
+                setTimeout(() => {
+                    showStageSuccessModal(3);
+                }, 2000);
+            } else {
+                triggerScoreFailure();
+                feedback.innerText = `Invalid Blueprint Formula! Remember: Count how many 'x' containers and 'y' containers you have.`;
+                feedback.className = "text-center text-xs mt-3 text-red-500 font-bold animate-shake";
+                setTimeout(() => feedback.classList.remove('animate-shake'), 400);
+            }
+        }
+
+        // ==========================================
+        // STAGE 3 LOGIC: LIKE TERMS VS. UNLIKE TERMS
+        // ==========================================
+        function initStage3() {
+            s3TotalProcessed = 0;
+            s3Scores = { a: 0, b: 0, a2: 0, const: 0 };
+            s3IncomingTerms = [];
+
+            // Populate current values in bins
+            updateStage3BinUI();
+
+            // Populate sequence of 12 items to process
+            const samplePool = [
+                { text: "3a", coef: 3, family: "a" },
+                { text: "-2a", coef: -2, family: "a" },
+                { text: "5a", coef: 5, family: "a" },
+                { text: "2b", coef: 2, family: "b" },
+                { text: "-4b", coef: -4, family: "b" },
+                { text: "b", coef: 1, family: "b" },
+                { text: "a²", coef: 1, family: "a2" },
+                { text: "3a²", coef: 3, family: "a2" },
+                { text: "-a²", coef: -1, family: "a2" },
+                { text: "12", coef: 12, family: "const" },
+                { text: "-5", coef: -5, family: "const" },
+                { text: "8", coef: 8, family: "const" }
+            ];
+
+            // Shuffle sequence
+            s3IncomingTerms = samplePool.sort(() => Math.random() - 0.5);
+            renderStage3IncomingBelt();
+            
+            document.getElementById('s3-alert').innerText = "Incoming algebraic components! Identify the leading item's family and route it to the correct bin.";
+            document.getElementById('s3-alert').className = "text-sm font-semibold text-cyan-400";
+        }
+
+        function renderStage3IncomingBelt() {
+            const container = document.getElementById('s3-incoming-cargo');
+            container.innerHTML = '';
+            
+            if (s3IncomingTerms.length === 0) {
+                container.innerHTML = `<span class="text-gray-500 text-xs w-full text-center">Batch Processing Completed</span>`;
+                return;
+            }
+
+            s3IncomingTerms.forEach((item, index) => {
+                let badgeColor = "bg-gray-800 border-gray-600 text-white";
+                if (item.family === 'a') badgeColor = "bg-cyan-900 border-cyan-400 text-cyan-200 shadow-md";
+                if (item.family === 'b') badgeColor = "bg-emerald-900 border-emerald-400 text-emerald-200 shadow-md";
+                if (item.family === 'a2') badgeColor = "bg-purple-900 border-purple-400 text-purple-200 shadow-md";
+                if (item.family === 'const') badgeColor = "bg-amber-900 border-amber-400 text-amber-200 shadow-md";
+
+                // Highlight the very first lead package
+                const isLead = index === 0;
+                const leadClass = isLead ? 'scale-110 ring-4 ring-yellow-400 z-30' : 'opacity-70 scale-95';
+
+                container.innerHTML += `
+                    <div class="relative flex flex-col items-center flex-shrink-0 transition-all ${leadClass}">
+                        ${isLead ? '<span class="absolute -top-6 text-[10px] text-yellow-400 font-extrabold uppercase tracking-widest animate-pulse">ROUTE ME</span>' : ''}
+                        <div class="w-14 h-14 rounded-lg border-2 flex items-center justify-center font-extrabold text-lg mono-font ${badgeColor}">
+                            ${item.text}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function routeCurrentCargo(targetBin) {
+            if (s3IncomingTerms.length === 0) return;
+            
+            const activeItem = s3IncomingTerms[0];
+            const alertBox = document.getElementById('s3-alert');
+
+            if (activeItem.family === targetBin) {
+                // Correctly matches! Combine coefficients
+                s3Scores[targetBin] += activeItem.coef;
+                s3TotalProcessed++;
+                triggerScoreIncrease(50);
+                playSound('merge');
+                
+                alertBox.innerText = `Accurate Route! Placed ${activeItem.text} into the appropriate collector.`;
+                alertBox.className = "text-sm font-semibold text-emerald-400";
+                
+                // Remove routed package and shift belt
+                s3IncomingTerms.shift();
+                
+                updateStage3BinUI();
+                renderStage3IncomingBelt();
+
+                // Check win condition
+                if (s3TotalProcessed >= s3TargetGoal) {
+                    setTimeout(() => {
+                        showStageSuccessModal(4);
+                    }, 1200);
+                }
+            } else {
+                // Mismatch family
+                triggerScoreFailure();
+                alertBox.innerText = `Invalid Action! Package "${activeItem.text}" does NOT share like properties with the selected target bin.`;
+                alertBox.className = "text-sm font-semibold text-red-400 animate-shake";
+                setTimeout(() => alertBox.classList.remove('animate-shake'), 400);
+
+                // Highlight the correct bin with an alert styling briefly
+                const correctBinElement = document.querySelector(`[data-bin-term="${activeItem.family}"]`);
+                if (correctBinElement) {
+                    correctBinElement.classList.add('border-red-500', 'bg-red-950/20');
+                    setTimeout(() => {
+                        correctBinElement.classList.remove('border-red-500', 'bg-red-950/20');
+                    }, 1000);
+                }
+            }
+        }
+
+        function updateStage3BinUI() {
+            // Formats: a, b, a2, const
+            document.getElementById('s3-bin-a-sum').innerText = `${s3Scores.a}a`;
+            document.getElementById('s3-bin-b-sum').innerText = `${s3Scores.b}b`;
+            document.getElementById('s3-bin-a2-sum').innerText = `${s3Scores.a2}a²`;
+            document.getElementById('s3-bin-const-sum').innerText = `${s3Scores.const}`;
+        }
+
+        function resetStage3Bins() {
+            s3Scores = { a: 0, b: 0, a2: 0, const: 0 };
+            updateStage3BinUI();
+        }
+
+        // ==========================================
+        // DYNAMIC SCREEN MODAL FOR LEVEL SUCCESS
+        // ==========================================
+        function showStageSuccessModal(nextStageTarget) {
+            // Hide current stages
+            document.getElementById('stage-1').classList.add('hidden');
+            document.getElementById('stage-2').classList.add('hidden');
+            document.getElementById('stage-3').classList.add('hidden');
+
+            const successScreen = document.getElementById('success-screen');
+            successScreen.classList.remove('hidden');
+
+            document.getElementById('success-score').innerText = String(score).padStart(4, '0');
+            const accuracy = attempts > 0 ? Math.round((successes / attempts) * 100) : 100;
+            document.getElementById('success-accuracy').innerText = `${accuracy}%`;
+
+            const btnNext = document.getElementById('btn-next-step');
+            
+            if (nextStageTarget === 2) {
+                btnNext.innerText = "INITIALIZE STAGE 2";
+                btnNext.onclick = () => goToStage(2);
+            } else if (nextStageTarget === 3) {
+                btnNext.innerText = "INITIALIZE STAGE 3";
+                btnNext.onclick = () => goToStage(3);
+            } else {
+                btnNext.innerText = "ALL LOGISTICS MASTERED!";
+                btnNext.onclick = () => {
+                    alert("Awesome work! You have finished all phases of the Algebra Conveyor!");
+                    goToStage(1);
+                };
+            }
+        }
+
+        function restartStage() {
+            goToStage(currentStage);
+        }
+
+        // Initialize App
+        window.onload = () => {
+            goToStage(1);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Algebraic Identities Playground!</title>
+    <style>
+        /* --- Cartoon & Playful Theme Styles --- */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #eef9ff;
+            --panel-bg: #ffffff;
+            --text-main: #2c3e50;
+            --primary: #ff6b6b;
+            --secondary: #4ecdc4;
+            --accent1: #ffe66d;
+            --accent2: #95afc0;
+            --border-radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#dff1fc 20%, transparent 20%),
+                              radial-gradient(#dff1fc 20%, transparent 20%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            color: #ff4757;
+            text-shadow: 3px 3px 0px #fff, 5px 5px 0px #ffccd5;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* --- Navigation Tabs --- */
+        .tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1rem;
+            padding: 12px 25px;
+            border: 3px solid var(--text-main);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            background: white;
+            box-shadow: 0 6px 0 var(--text-main);
+            transition: all 0.1s ease;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 var(--text-main);
+        }
+
+        .tab-btn:active, .tab-btn.active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 var(--text-main);
+        }
+
+        .tab-btn[data-id="sum"] { background-color: #ff9ff3; }
+        .tab-btn[data-id="diff"] { background-color: #feca57; }
+        .tab-btn[data-id="sq-diff"] { background-color: #54a0ff; }
+
+        /* --- Main App Layout --- */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            max-width: 1100px;
+            width: 100%;
+            background: var(--panel-bg);
+            border: 4px solid var(--text-main);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 12px 12px 0px rgba(0,0,0,0.08);
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* --- Canvas Visualizer Panel --- */
+        .visualizer {
+            background: #f7f9fc;
+            border: 3px dashed #cbd5e1;
+            border-radius: var(--border-radius);
+            min-height: 450px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- Geometric Shapes Containers --- */
+        .algebra-box {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Comic Styled Blocks */
+        .block {
+            position: absolute;
+            border: 3px solid var(--text-main);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            box-shadow: inset -4px -4px 0px rgba(0,0,0,0.15);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+        }
+
+        .block:hover {
+            filter: brightness(1.05);
+        }
+
+        .block-label {
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* Colors for different sub-regions */
+        .color-a2 { background-color: #ff6b6b; }
+        .color-ab { background-color: #4ecdc4; }
+        .color-b2 { background-color: #ffe66d; }
+        .color-ghost { 
+            background-color: transparent; 
+            border: 3px dashed #ff4757; 
+            box-shadow: none;
+        }
+
+        /* --- Sidebar Control Panel --- */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .formula-card {
+            background: #fff3cd;
+            border: 3px solid var(--text-main);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 var(--text-main);
+        }
+
+        .formula-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: #d63031;
+            margin: 5px 0;
+        }
+
+        .instruction-box {
+            background: #f1f2f6;
+            border: 3px solid var(--text-main);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .instruction-box h3 {
+            margin-top: 0;
+            font-family: 'Fredoka One', cursive;
+            color: var(--text-main);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1rem;
+            padding: 12px;
+            border: 3px solid var(--text-main);
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--text-main);
+            transition: all 0.1s;
+        }
+
+        .action-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 var(--text-main);
+        }
+
+        #prevBtn { background-color: #ffeaa7; }
+        #nextBtn { background-color: #1dd1a1; color: white; }
+
+        /* Dimmed / Overlay guides for structural clarity */
+        .dimension-guide {
+            position: absolute;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #57606f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎨 Algebraic Identities Playground!</h1>
+    
+    <div class="tabs">
+        <button class="tab-btn active" data-id="sum">(a + b)²</button>
+        <button class="tab-btn" data-id="diff">(a - b)²</button>
+        <button class="tab-btn" data-id="sq-diff">a² - b²</button>
+    </div>
+
+    <div class="container">
+        <div class="visualizer" id="visualizer">
+            </div>
+
+        <div class="controls">
+            <div>
+                <div class="formula-card">
+                    <span style="font-weight: bold; color: #7f8c8d;">Current Identity:</span>
+                    <div class="formula-text" id="formulaText">(a+b)² ≡ a² + 2ab + b²</div>
+                </div>
+                
+                <div class="instruction-box">
+                    <h3 id="stepTitle">Step 1: The Big Picture</h3>
+                    <p id="stepDesc">Let's build a huge square where each side has a total length of (a + b).</p>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="action-btn" id="prevBtn">⬅️ Back</button>
+                <button class="action-btn" id="nextBtn">Next ➡️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Parameters
+        const A = 220; // Length of dimension 'a' in pixels
+        const B = 80;  // Length of dimension 'b' in pixels
+
+        // Application State State
+        let currentIdentity = 'sum';
+        let currentStep = 0;
+
+        // Visual Configurations & Explanations Workflow Mapping
+        const identityData = {
+            sum: {
+                formula: "(a + b)² ≡ a² + 2ab + b²",
+                steps: [
+                    {
+                        title: "1. The Big Picture",
+                        desc: "Imagine a big square with side lengths equal to <b>(a + b)</b>. Its total area is <b>(a + b)²</b>.",
+                        setup: () => renderSumStep(1)
+                    },
+                    {
+                        title: "2. Splitting it up",
+                        desc: "Let's slice it into separate pieces! We get a large red square with an area of <b>a²</b>.",
+                        setup: () => renderSumStep(2)
+                    },
+                    {
+                        title: "3. Adding the rectangles",
+                        desc: "We also discover two green rectangles, each having an area of <b>a × b (ab)</b>.",
+                        setup: () => renderSumStep(3)
+                    },
+                    {
+                        title: "4. The Perfect Match!",
+                        desc: "Finally, the tiny yellow square in the corner has an area of <b>b²</b>. Thus, <b>(a+b)² = a² + 2ab + b²</b>!",
+                        setup: () => renderSumStep(4)
+                    }
+                ]
+            },
+            diff: {
+                formula: "(a - b)² ≡ a² - 2ab + b²",
+                steps: [
+                    {
+                        title: "1. Start with the Big Block a²",
+                        desc: "We begin with a big solid red square of side <b>a</b>, meaning its total area is <b>a²</b>.",
+                        setup: () => renderDiffStep(1)
+                    },
+                    {
+                        title: "2. Shaving away 'b' columns",
+                        desc: "We want to find the area of the <b>(a-b)²</b> block. Let's slice away a column of area <b>ab</b> from the right side.",
+                        setup: () => renderDiffStep(2)
+                    },
+                    {
+                        title: "3. Stripping away 'b' rows",
+                        desc: "Next, we subtract a bottom row of area <b>ab</b>. But look closely! The bottom-right corner <b>b²</b> got subtracted TWICE!",
+                        setup: () => renderDiffStep(3)
+                    },
+                    {
+                        title: "4. Compensating the overlap",
+                        desc: "To fix subtracting <b>b²</b> twice, we add one <b>b²</b> back. What remains is exactly the yellow target area: <b>(a-b)² = a² - 2ab + b²</b>!",
+                        setup: () => renderDiffStep(4)
+                    }
+                ]
+            },
+            'sq-diff': {
+                formula: "a² - b² ≡ (a + b)(a - b)",
+                steps: [
+                    {
+                        title: "1. Targeted Subtraction",
+                        desc: "Start with a big square <b>a²</b>, and cut out a small yellow corner <b>b²</b>. The remaining shape represents <b>a² - b²</b>.",
+                        setup: () => renderSqDiffStep(1)
+                    },
+                    {
+                        title: "2. Isolating the pieces",
+                        desc: "Let's isolate the remaining section into two separate blocks: a large block and a side strip.",
+                        setup: () => renderSqDiffStep(2)
+                    },
+                    {
+                        title: "3. Rotating the puzzle strip",
+                        desc: "Watch this magic trick! Let's detach the side strip on the right, rotate it, and prepare to move it.",
+                        setup: () => renderSqDiffStep(3)
+                    },
+                    {
+                        title: "4. Snap into a single Rectangle",
+                        desc: "Glue it right below! We get a single brand-new rectangle with sides <b>(a+b)</b> and <b>(a-b)</b>. Its area is <b>(a+b)(a-b)</b>!",
+                        setup: () => renderSqDiffStep(4)
+                    }
+                ]
+            }
+        };
+
+        // --- Core UI Engine Initialization ---
+        const visualizer = document.getElementById('visualizer');
+        const formulaText = document.getElementById('formulaText');
+        const stepTitle = document.getElementById('stepTitle');
+        const stepDesc = document.getElementById('stepDesc');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updateUI() {
+            const identity = identityData[currentIdentity];
+            formulaText.innerText = identity.formula;
+            
+            const step = identity.steps[currentStep];
+            stepTitle.innerText = step.title;
+            stepDesc.innerHTML = step.desc;
+
+            // Trigger Animation Layout Setup
+            step.setup();
+
+            // Handle Button Disable States
+            prevBtn.disabled = currentStep === 0;
+            nextBtn.disabled = currentStep === identity.steps.length - 1;
+            prevBtn.style.opacity = prevBtn.disabled ? "0.5" : "1";
+            nextBtn.style.opacity = nextBtn.disabled ? "0.5" : "1";
+        }
+
+        // --- Render Implementations for Animations ---
+
+        function renderSumStep(step) {
+            visualizer.innerHTML = `<div class="algebra-box" style="width:${A+B}px; height:${A+B}px;"></div>`;
+            const box = visualizer.querySelector('.algebra-box');
+
+            // Block A2
+            const a2 = createBlock(0, 0, A, A, 'color-a2', 'a²');
+            // Block AB1
+            const ab1 = createBlock(A, 0, B, A, 'color-ab', 'ab');
+            // Block AB2
+            const ab2 = createBlock(0, A, A, B, 'color-ab', 'ab');
+            // Block B2
+            const b2 = createBlock(A, A, B, B, 'color-b2', 'b²');
+
+            if (step === 1) {
+                // Merged single state preview
+                a2.style.borderRadius = "12px 0 0 0";
+                ab1.style.borderRadius = "0 12px 0 0";
+                ab2.style.borderRadius = "0 0 0 12px";
+                b2.style.borderRadius = "0 0 12px 0";
+                a2.innerHTML = ab1.innerHTML = ab2.innerHTML = b2.innerHTML = "";
+                const totalLabel = document.createElement('div');
+                totalLabel.className = "block-label";
+                totalLabel.innerText = "(a + b)²";
+                totalLabel.style.fontFamily = "'Fredoka One', cursive";
+                totalLabel.style.fontSize = "1.8rem";
+                a2.appendChild(totalLabel);
+            } else if (step === 2) {
+                ab1.style.transform = `translateX(20px)`; ab1.style.opacity = "0.3";
+                ab2.style.transform = `translateY(20px)`; ab2.style.opacity = "0.3";
+                b2.style.transform = `translate(20px, 20px)`; b2.style.opacity = "0.3";
+            } else if (step === 3) {
+                b2.style.transform = `translate(20px, 20px)`; b2.style.opacity = "0.3";
+            }
+
+            box.appendChild(a2);
+            box.appendChild(ab1);
+            box.appendChild(ab2);
+            box.appendChild(b2);
+        }
+
+        function renderDiffStep(step) {
+            visualizer.innerHTML = `<div class="algebra-box" style="width:${A}px; height:${A}px;"></div>`;
+            const box = visualizer.querySelector('.algebra-box');
+
+            // Target Remaining Area is (a-b) * (a-b)
+            const targetSize = A - B;
+
+            const mainA2 = createBlock(0, 0, targetSize, targetSize, 'color-b2', '(a-b)²');
+            const rightStrip = createBlock(targetSize, 0, B, targetSize, 'color-ab', '');
+            const bottomStrip = createBlock(0, targetSize, targetSize, B, 'color-ab', '');
+            const cornerB2 = createBlock(targetSize, targetSize, B, B, 'color-a2', 'b²');
+
+            if (step === 1) {
+                // Show as complete unified block a^2
+                box.innerHTML = "";
+                const baseA2 = createBlock(0, 0, A, A, 'color-a2', 'a²');
+                box.appendChild(baseA2);
+            } else if (step === 2) {
+                // Shaving off right block ab column
+                rightStrip.className = "block color-ab";
+                rightStrip.innerHTML = "ab";
+                cornerB2.className = "block color-ab";
+                box.appendChild(mainA2);
+                box.appendChild(bottomStrip);
+                box.appendChild(rightStrip);
+                box.appendChild(cornerB2);
+                
+                rightStrip.style.transform = "translateX(15px)";
+                cornerB2.style.transform = "translateX(15px)";
+            } else if (step === 3) {
+                // Subtracting bottom ab row, highlighting double subtracted corner
+                rightStrip.innerHTML = "";
+                bottomStrip.innerHTML = "ab";
+                bottomStrip.style.transform = "translateY(15px)";
+                cornerB2.innerHTML = "Double -b²!";
+                cornerB2.style.fontSize = "0.8rem";
+                cornerB2.style.backgroundColor = "#ff7675";
+                cornerB2.style.transform = "translate(15px, 15px)";
+                
+                box.appendChild(mainA2);
+                box.appendChild(rightStrip);
+                box.appendChild(bottomStrip);
+                box.appendChild(cornerB2);
+            } else if (step === 4) {
+                // Normal final state layout
+                box.appendChild(mainA2);
+                box.appendChild(rightStrip);
+                box.appendChild(bottomStrip);
+                box.appendChild(cornerB2);
+                rightStrip.innerHTML = "ab";
+                bottomStrip.innerHTML = "ab";
+                
+                // Explode them cleanly out to highlight components separation
+                rightStrip.style.transform = "translateX(35px)";
+                bottomStrip.style.transform = "translateY(35px)";
+                cornerB2.style.transform = "translate(35px, 35px)";
+            }
+        }
+
+        function renderSqDiffStep(step) {
+            visualizer.innerHTML = `<div class="algebra-box" style="width:${A}px; height:${A}px;"></div>`;
+            const box = visualizer.querySelector('.algebra-box');
+
+            const targetSize = A - B;
+
+            const coreBlock = createBlock(0, 0, targetSize, targetSize, 'color-a2', '');
+            const bottomBar = createBlock(0, targetSize, targetSize, B, 'color-a2', '');
+            const sideBar = createBlock(targetSize, 0, B, targetSize, 'color-ab', '');
+            const removedCorner = createBlock(targetSize, targetSize, B, B, 'color-ghost', 'b² cut out');
+
+            removedCorner.style.fontSize = "0.8rem";
+
+            if (step === 1) {
+                coreBlock.style.backgroundColor = "#ff6b6b";
+                bottomBar.style.backgroundColor = "#ff6b6b";
+                sideBar.style.backgroundColor = "#ff6b6b";
+                coreBlock.innerHTML = "a² - b²";
+                box.appendChild(coreBlock);
+                box.appendChild(bottomBar);
+                box.appendChild(sideBar);
+                box.appendChild(removedCorner);
+            } else if (step === 2) {
+                coreBlock.innerHTML = "Block 1";
+                sideBar.innerHTML = "Block 2";
+                bottomBar.innerHTML = "Block 1";
+                // Explode outward cleanly
+                sideBar.style.transform = `translateX(20px)`;
+                box.appendChild(coreBlock);
+                box.appendChild(bottomBar);
+                box.appendChild(sideBar);
+            } else if (step === 3) {
+                coreBlock.innerHTML = "Block 1";
+                bottomBar.innerHTML = "Block 1";
+                sideBar.innerHTML = "Block 2";
+                
+                // Perform structural rotation layout changes
+                sideBar.style.transformOrigin = "top left";
+                sideBar.style.transform = `translate(${targetSize}px, 0px) rotate(90deg) translateY(-${B}px) translate(40px, -20px)`;
+                
+                box.appendChild(coreBlock);
+                box.appendChild(bottomBar);
+                box.appendChild(sideBar);
+            } else if (step === 4) {
+                // Perfectly re-anchored to build single dynamic rectangle grid tracking setup
+                box.innerHTML = "";
+                // Transform total workspace representation mapping layout view directly
+                const finalRect = document.createElement('div');
+                finalRect.className = "algebra-box";
+                finalRect.style.width = `${A + B}px`;
+                finalRect.style.height = `${targetSize}px`;
+                
+                const comp1 = createBlock(0, 0, targetSize, targetSize, 'color-a2', '(a-b)');
+                const comp2 = createBlock(targetSize, 0, B, targetSize, 'color-ab', '(a-b)');
+                
+                finalRect.appendChild(comp1);
+                finalRect.appendChild(comp2);
+                box.appendChild(finalRect);
+
+                comp1.innerHTML = "Block 1";
+                comp2.innerHTML = "Block 2";
+
+                // Add text guide metrics updates dynamically
+                const guideWidth = document.createElement('div');
+                guideWidth.className = "dimension-guide";
+                guideWidth.innerHTML = "Total Length: (a + b)";
+                guideWidth.style.top = "-30px";
+                guideWidth.style.left = "35%";
+                finalRect.appendChild(guideWidth);
+
+                const guideHeight = document.createElement('div');
+                guideHeight.className = "dimension-guide";
+                guideHeight.innerHTML = "Height: (a - b)";
+                guideHeight.style.right = "-110px";
+                guideHeight.style.top = "45%";
+                finalRect.appendChild(guideHeight);
+            }
+        }
+
+        // --- Helper Factory Components ---
+        function createBlock(x, y, w, h, bgClass, labelText) {
+            const block = document.createElement('div');
+            block.className = `block ${bgClass}`;
+            block.style.width = `${w}px`;
+            block.style.height = `${h}px`;
+            block.style.left = `${x}px`;
+            block.style.top = `${y}px`;
+            
+            if (labelText) {
+                block.innerHTML = `<span>${labelText}</span>`;
+            }
+            return block;
+        }
+
+        // --- Event Listeners Mapping Flow ---
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelector('.tab-btn.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentIdentity = e.target.getAttribute('data-id');
+                currentStep = 0;
+                updateUI();
+            });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < identityData[currentIdentity].steps.length - 1) {
+                currentStep++;
+                updateUI();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateUI();
+            }
+        });
+
+        // Initialize Runtime Application
+        updateUI();
+    </script>
+</body>
+</html>

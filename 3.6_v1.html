@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Formulas: Discovering Shortcuts</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .game-container {
+            background-color: var(--surface);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Progress Tracker */
+        .stages-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .stages-nav::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #334155;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .stage-indicator {
+            background-color: #334155;
+            color: var(--text-muted);
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+            border: 2px solid #334155;
+        }
+
+        .stage-indicator.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);
+        }
+
+        .stage-indicator.completed {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography & UI Elements */
+        .instruction-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: monospace;
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--warning);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* STAGE 1: Grid Interactivity */
+        .grid-workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .expression-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .algebra-grid-container {
+            display: grid;
+            grid-template-columns: 40px 1fr 1fr;
+            grid-template-rows: 40px 1fr 1fr;
+            gap: 8px;
+            width: 350px;
+            height: 350px;
+            margin: 1rem auto;
+        }
+
+        .grid-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .grid-cell {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 2px dashed #475569;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .grid-cell:hover:not(.filled) {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-color: var(--secondary);
+        }
+
+        .grid-cell.filled {
+            border-style: solid;
+            cursor: default;
+        }
+
+        /* Dynamic colors for cell types */
+        .cell-x2 { background-color: rgba(79, 70, 229, 0.2); border-color: var(--primary); color: #a5b4fc; }
+        .cell-pos-x { background-color: rgba(16, 185, 129, 0.2); border-color: var(--success); color: #6ee7b7; }
+        .cell-neg-x { background-color: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+        .cell-const { background-color: rgba(245, 158, 11, 0.2); border-color: var(--warning); color: #fde047; }
+
+        .cell-prompt {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .combination-area {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .expression-builder {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            min-height: 2rem;
+            letter-spacing: 1px;
+        }
+
+        /* STAGE 2: Pattern Discovery */
+        .history-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .history-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .history-card h4 {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 4px;
+            margin: 1rem auto;
+            width: 140px;
+            height: 140px;
+        }
+
+        .mini-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .highlight-match {
+            animation: pulse-gold 2s infinite ease-in-out;
+            border: 2px solid var(--warning) !important;
+        }
+
+        .highlight-cancel {
+            animation: pulse-red-blue 2s infinite ease-in-out;
+            border: 2px solid #ec4899 !important;
+            text-decoration: line-through;
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { background-color: rgba(245, 158, 11, 0.25); }
+            50% { background-color: rgba(245, 158, 11, 0.5); }
+        }
+
+        @keyframes pulse-red-blue {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.25); }
+            50% { background-color: rgba(6, 182, 212, 0.4); }
+        }
+
+        .observations-box {
+            background-color: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .observations-box h3 {
+            color: #c7d2fe;
+            margin-bottom: 0.75rem;
+        }
+
+        .observations-box ul {
+            list-style-type: none;
+        }
+
+        .observations-box li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .observations-box li::before {
+            content: '➔';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+        }
+
+        /* STAGE 3: Shortcut Challenge */
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--secondary);
+        }
+
+        .game-lane {
+            background: #0b0f19;
+            height: 250px;
+            border-radius: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #1e293b;
+            margin-bottom: 1.5rem;
+        }
+
+        .falling-problem {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            top: 0;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .answer-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .math-input {
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+            padding: 0.5rem;
+            width: 80px;
+            text-align: center;
+            font-size: 1.3rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+
+        .math-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+        }
+
+        .sign-select {
+            background: #0f172a;
+            border: 2px solid #334155;
+            color: white;
+            padding: 0.5rem;
+            font-size: 1.3rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        /* Results Screen */
+        .summary-card {
+            text-align: center;
+            padding: 2rem;
+        }
+        .summary-score {
+            font-size: 3rem;
+            color: var(--success);
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Multiplication Formulas: Discovering Shortcuts</h1>
+        <p class="subtitle">Why memorize formulas when you can use grids? Let's race and find out!</p>
+    </header>
+
+    <div class="game-container">
+        <div class="stages-nav">
+            <div class="stage-indicator active" id="ind-1">Stage 1: Grid Labor</div>
+            <div class="stage-indicator" id="ind-2">Stage 2: Pattern Discovery</div>
+            <div class="stage-indicator" id="ind-3">Stage 3: Turbo Challenge</div>
+        </div>
+
+        <div id="screen-stage1" class="screen active">
+            <div class="instruction-box">
+                <strong>Welcome to the Grid Construction Site!</strong><br>
+                To expand the polynomial expression below, click each blank cell of the 2×2 grid to manually compute and distribute the products. Once all cells are filled, click them in order to combine your terms step by step!
+            </div>
+            
+            <div class="grid-workspace">
+                <div class="expression-title" id="s1-target-expr">(x + 3)(x + 3)</div>
+                
+                <div class="timer-display">⏱️ Labor Time: <span id="s1-stopwatch">0.00</span>s</div>
+
+                <div class="algebra-grid-container" id="s1-grid">
+                    </div>
+
+                <div class="combination-area" id="s1-combiner" style="display: none;">
+                    <p style="margin-bottom: 0.5rem; color: var(--text-muted);">Click the filled cells inside the grid to sum them up into an algebraic expression!</p>
+                    <div class="expression-builder" id="s1-expr-builder"></div>
+                    <button class="btn" id="btn-s1-combine" disabled>Combine Like Terms</button>
+                </div>
+
+                <button class="btn" id="btn-next-s1-problem" style="display:none;">Next Problem</button>
+            </div>
+        </div>
+
+        <div id="screen-stage2" class="screen">
+            <div class="instruction-box">
+                <strong>Analysis Room: Look closer at your heavy lifting!</strong><br>
+                Look at the completed distribution grids side by side. Is there a pattern that would let you skip drawing the entire grid every single time?
+            </div>
+
+            <div class="history-showcase" id="s2-showcase">
+                </div>
+
+            <div class="observations-box">
+                <h3>💡 Hidden Algebraic Structures Unlocked:</h3>
+                <ul>
+                    <li><strong>Perfect Squares $(x+a)^2$ & $(x-a)^2$:</strong> Notice the two diagonal cross-product cells? They are completely identical! They will always <strong>double up</strong> ($2ax$ or $-2ax$).</li>
+                    <li><strong>Difference of Squares $(x+a)(x-a)$:</strong> Notice those cross-product terms here? One is positive and one is negative. They completely <strong>cancel each other out</strong> ($0x$)!</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button class="btn" id="btn-start-stage3">I See the Shortcut! Start Turbo Challenge</button>
+            </div>
+        </div>
+
+        <div id="screen-stage3" class="screen">
+            <div class="instruction-box">
+                <strong>⚠️ TURBO SPEED MODE ACTIVE!</strong><br>
+                Expressions are falling! Drawing grids now is way too slow to keep up. Use the identity shortcuts you discovered to instantly compute the answer coefficients!
+            </div>
+
+            <div class="challenge-header">
+                <div class="stat-box">
+                    <div>Time Remaining</div>
+                    <div class="stat-val" id="s3-timer" style="color: var(--danger);">30s</div>
+                </div>
+                <div class="stat-box">
+                    <div>Score Tracker</div>
+                    <div class="stat-val" id="s3-score">0</div>
+                </div>
+            </div>
+
+            <div class="game-lane" id="game-lane">
+                <div class="falling-problem" id="falling-prob"></div>
+            </div>
+
+            <div class="input-container">
+                <p>Fill in the simplified expanded structural coefficients:</p>
+                <div class="answer-wrapper">
+                    <span style="font-family: monospace;">x²</span>
+                    <select class="sign-select" id="ans-sign1">
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                    </select>
+                    <input type="number" class="math-input" id="ans-coef" placeholder="b">
+                    <span style="font-family: monospace;">x</span>
+                    <select class="sign-select" id="ans-sign2">
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                    </select>
+                    <input type="number" class="math-input" id="ans-const" placeholder="c">
+                </div>
+                <button class="btn" id="btn-submit-answer" style="background-color: var(--success);">Deploy Shortcut Answer!</button>
+            </div>
+        </div>
+
+        <div id="screen-gameover" class="screen">
+            <div class="summary-card">
+                <h2>Challenge Completed!</h2>
+                <p style="margin-top: 1rem; color: var(--text-muted);">Your rapid calculations successfully solved the falling formulas without drawing structural grids!</p>
+                <div class="summary-score" id="final-score">0 Problems Solved</div>
+                <div class="instruction-box" style="text-align: left; max-width: 600px; margin: 1.5rem auto;">
+                    <strong>Teacher's Epilogue:</strong><br>
+                    Drawing area grids is an exceptional foundation for understanding distribution law. However, as algebraists, recognizing <strong>Multiplication Formulas</strong> allows us to bypass the tedious mechanical steps, processing complex expansions in our heads within seconds!
+                </div>
+                <button class="btn" onclick="location.reload()">Restart Experience</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Core Engine
+        const state = {
+            stage: 1,
+            s1ProblemIdx: 0,
+            s1Problems: [
+                { type: 'sqsum', factor1: ['x', 3], factor2: ['x', 3], expr: '(x + 3)(x + 3)' },
+                { type: 'sqdiff', factor1: ['x', -4], factor2: ['x', -4], expr: '(x - 4)(x - 4)' },
+                { type: 'diffsq', factor1: ['x', 5], factor2: ['x', -5], expr: '(x + 5)(x - 5)' }
+            ],
+            s1StopwatchInterval: null,
+            s1StartTime: null,
+            s1GridClicks: 0,
+            s1SelectedCells: [],
+            s3Score: 0,
+            s3TimerInterval: null,
+            s3TimeLeft: 30,
+            s3CurrentProblem: null,
+            s3FallInterval: null,
+            s3CurrentTop: 0
+        };
+
+        // DOM Element Caches
+        const screens = {
+            1: document.getElementById('screen-stage1'),
+            2: document.getElementById('screen-stage2'),
+            3: document.getElementById('screen-stage3'),
+            'gameover': document.getElementById('screen-gameover')
+        };
+        const indicators = {
+            1: document.getElementById('ind-1'),
+            2: document.getElementById('ind-2'),
+            3: document.getElementById('ind-3')
+        };
+
+        function changeStage(targetStage) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            if(screens[targetStage]) screens[targetStage].classList.add('active');
+            
+            Object.keys(indicators).forEach(k => {
+                indicators[k].classList.remove('active', 'completed');
+                if(k < targetStage) indicators[k].classList.add('completed');
+                if(k == targetStage) indicators[k].classList.add('active');
+            });
+            state.stage = targetStage;
+        }
+
+        // --- STAGE 1 LOGIC ---
+        function initStage1Problem() {
+            const prob = state.s1Problems[state.s1ProblemIdx];
+            document.getElementById('s1-target-expr').innerText = prob.expr;
+            const gridContainer = document.getElementById('s1-grid');
+            gridContainer.innerHTML = '';
+            
+            // Layout Framework
+            gridContainer.appendChild(createLabel(''));
+            gridContainer.appendChild(createLabel(prob.factor1[0]));
+            gridContainer.appendChild(createLabel(formatTerm(prob.factor1[1])));
+            gridContainer.appendChild(createLabel(prob.factor2[0]));
+            
+            // Matrix Interactivity Setup
+            const cells = [
+                { id: 'cell-0-0', f1: prob.factor1[0], f2: prob.factor2[0], type: 'x2', ans: 'x²' },
+                { id: 'cell-0-1', f1: prob.factor1[1], f2: prob.factor2[0], type: prob.factor1[1] > 0 ? 'pos-x' : 'neg-x', ans: formatTerm(prob.factor1[1])+'x' },
+                { id: 'cell-1-0', f1: prob.factor1[0], f2: prob.factor2[1], type: prob.factor2[1] > 0 ? 'pos-x' : 'neg-x', ans: formatTerm(prob.factor2[1])+'x' },
+                { id: 'cell-1-1', f1: prob.factor1[1], f2: prob.factor2[1], type: (prob.factor1[1]*prob.factor2[1]) > 0 ? 'const' : 'const', ans: formatTerm(prob.factor1[1]*prob.factor2[1], true) }
+            ];
+
+            // Render Row 1 Intermediaries
+            gridContainer.appendChild(createInteractiveCell(cells[0]));
+            gridContainer.appendChild(createInteractiveCell(cells[1]));
+            // Row 2 Intermediaries
+            gridContainer.appendChild(createLabel(formatTerm(prob.factor2[1])));
+            gridContainer.appendChild(createInteractiveCell(cells[2]));
+            gridContainer.appendChild(createInteractiveCell(cells[3]));
+
+            // Reset Subsystems
+            document.getElementById('s1-combiner').style.display = 'none';
+            document.getElementById('s1-expr-builder').innerText = '';
+            state.s1GridClicks = 0;
+            state.s1SelectedCells = [];
+            document.getElementById('btn-s1-combine').disabled = true;
+
+            if(!state.s1StopwatchInterval) {
+                state.s1StartTime = Date.now();
+                state.s1StopwatchInterval = setInterval(() => {
+                    const elapsed = (Date.now() - state.s1StartTime) / 1000;
+                    document.getElementById('s1-stopwatch').innerText = elapsed.toFixed(2);
+                }, 40);
+            }
+        }
+
+        function createLabel(text) {
+            const div = document.createElement('div');
+            div.className = 'grid-label';
+            div.innerText = text;
+            return div;
+        }
+
+        function formatTerm(num, rawConst = false) {
+            if(typeof num === 'string') return num;
+            if(rawConst) return num > 0 ? `+${num}` : `${num}`;
+            if(num === 1) return '+';
+            if(num === -1) return '-';
+            return num > 0 ? `+${num}` : `${num}`;
+        }
+
+        function createInteractiveCell(cellData) {
+            const div = document.createElement('div');
+            div.className = 'grid-cell';
+            div.id = cellData.id;
+            
+            const promptSpan = document.createElement('span');
+            promptSpan.className = 'cell-prompt';
+            promptSpan.innerText = 'Click to multiply';
+            div.appendChild(promptSpan);
+
+            div.onclick = () => {
+                if(div.classList.contains('filled')) {
+                    // Logic tracking expansion addition ordering compilation
+                    if(state.s1GridClicks >= 4 && !state.s1SelectedCells.includes(cellData.id)) {
+                        state.s1SelectedCells.push(cellData.id);
+                        div.style.opacity = '0.5';
+                        const exprBuilder = document.getElementById('s1-expr-builder');
+                        exprBuilder.innerText += (exprBuilder.innerText === '' ? '' : ' + ') + cellData.ans.replace('+', '');
+                        
+                        if(state.s1SelectedCells.length === 4) {
+                            document.getElementById('btn-s1-combine').disabled = false;
+                        }
+                    }
+                    return;
+                }
+                
+                div.innerHTML = `<span>${cellData.ans}</span>`;
+                div.classList.add('filled', `cell-${cellData.type}`);
+                state.s1GridClicks++;
+
+                if(state.s1GridClicks === 4) {
+                    document.getElementById('s1-combiner').style.display = 'block';
+                }
+            };
+            return div;
+        }
+
+        document.getElementById('btn-s1-combine').onclick = () => {
+            clearInterval(state.s1StopwatchInterval);
+            state.s1StopwatchInterval = null;
+            
+            const prob = state.s1Problems[state.s1ProblemIdx];
+            let collapsedText = "";
+            if(prob.type === 'sqsum') collapsedText = "x² + 6x + 9";
+            if(prob.type === 'sqdiff') collapsedText = "x² - 8x + 16";
+            if(prob.type === 'diffsq') collapsedText = "x² - 25";
+
+            document.getElementById('s1-expr-builder').innerText = `Simplified Result: ${collapsedText}`;
+            document.getElementById('btn-s1-combine').style.display = 'none';
+            
+            const nextBtn = document.getElementById('btn-next-s1-problem');
+            nextBtn.style.display = 'inline-block';
+            if(state.s1ProblemIdx === state.s1Problems.length - 1) {
+                nextBtn.innerText = "Proceed to Pattern Discovery Studio";
+            }
+        };
+
+        document.getElementById('btn-next-s1-problem').onclick = () => {
+            document.getElementById('btn-next-s1-problem').style.display = 'none';
+            document.getElementById('btn-s1-combine').style.display = 'inline-block';
+            
+            if(state.s1ProblemIdx < state.s1Problems.length - 1) {
+                state.s1ProblemIdx++;
+                initStage1Problem();
+            } else {
+                initStage2();
+            }
+        };
+
+        // --- STAGE 2 LOGIC ---
+        function initStage2() {
+            changeStage(2);
+            const showcase = document.getElementById('s2-showcase');
+            showcase.innerHTML = '';
+
+            // Inject the data visualization grids highlighting dynamic shifts
+            const dataCards = [
+                { title: '(x + 3)² Perfect Square', match: true, cancel: false, cells: ['x²', '+3x', '+3x', '+9'] },
+                { title: '(x - 4)² Perfect Square', match: true, cancel: false, cells: ['x²', '-4x', '-4x', '+16'] },
+                { title: '(x + 5)(x - 5) Diff of Squares', match: false, cancel: true, cells: ['x²', '+5x', '-5x', '-25'] }
+            ];
+
+            dataCards.forEach(dc => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `<h4>${dc.title}</h4>`;
+                
+                const miniGrid = document.createElement('div');
+                miniGrid.className = 'mini-grid';
+                
+                dc.cells.forEach((cTxt, idx) => {
+                    const cDiv = document.createElement('div');
+                    cDiv.className = 'mini-cell';
+                    cDiv.innerText = cTxt;
+                    
+                    // Assign systemic color highlights
+                    if(idx === 0) cDiv.classList.add('cell-x2');
+                    else if(idx === 3) cDiv.classList.add('cell-const');
+                    else {
+                        if(dc.match) {
+                            cDiv.classList.add('cell-pos-x', 'highlight-match');
+                            if(dc.title.includes('-')) { cDiv.classList.remove('cell-pos-x'); cDiv.classList.add('cell-neg-x'); }
+                        }
+                        if(dc.cancel) {
+                            cDiv.classList.add(idx === 1 ? 'cell-pos-x' : 'cell-neg-x', 'highlight-cancel');
+                        }
+                    }
+                    miniGrid.appendChild(cDiv);
+                });
+                
+                card.appendChild(miniGrid);
+                showcase.appendChild(card);
+            });
+        }
+
+        document.getElementById('btn-start-stage3').onclick = () => {
+            changeStage(3);
+            initStage3Game();
+        };
+
+        // --- STAGE 3 LOGIC ---
+        const s3Pool = [
+            { q: '(x + 2)²', b: 4, c: 4, s1: '+', s2: '+' },
+            { q: '(x - 3)²', b: -6, c: 9, s1: '-', s2: '+' },
+            { q: '(x + 6)(x - 6)', b: 0, c: -36, s1: '+', s2: '-' },
+            { q: '(x - 5)²', b: -10, c: 25, s1: '-', s2: '+' },
+            { q: '(x + 7)²', b: 14, c: 49, s1: '+', s2: '+' },
+            { q: '(x + 4)(x - 4)', b: 0, c: -16, s1: '+', s2: '-' },
+            { q: '(x - 1)²', b: -2, c: 1, s1: '-', s2: '+' },
+            { q: '(x + 9)(x - 9)', b: 0, c: -81, s1: '+', s2: '-' }
+        ];
+
+        function initStage3Game() {
+            state.s3Score = 0;
+            state.s3TimeLeft = 30;
+            document.getElementById('s3-score').innerText = state.s3Score;
+            document.getElementById('s3-timer').innerText = state.s3TimeLeft + 's';
+            
+            nextStage3Problem();
+
+            state.s3TimerInterval = setInterval(() => {
+                state.s3TimeLeft--;
+                document.getElementById('s3-timer').innerText = state.s3TimeLeft + 's';
+                if(state.s3TimeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function nextStage3Problem() {
+            if(state.s3FallInterval) clearInterval(state.s3FallInterval);
+            
+            const rand = s3Pool[Math.floor(Math.random() * s3Pool.length)];
+            state.s3CurrentProblem = rand;
+            
+            const element = document.getElementById('falling-prob');
+            element.innerText = rand.q;
+            state.s3CurrentTop = 0;
+            element.style.top = state.s3CurrentTop + 'px';
+
+            // Clear inputs
+            document.getElementById('ans-coef').value = '';
+            document.getElementById('ans-const').value = '';
+            document.getElementById('ans-sign1').value = '+';
+            document.getElementById('ans-sign2').value = '+';
+
+            // Falling animation ticks
+            state.s3FallInterval = setInterval(() => {
+                state.s3CurrentTop += 2; // Speed parameter
+                element.style.top = state.s3CurrentTop + 'px';
+
+                if(state.s3CurrentTop > 200) {
+                    // Reached critical boundary zone without input crashing
+                    nextStage3Problem(); 
+                }
+            }, 30);
+        }
+
+        document.getElementById('btn-submit-answer').onclick = checkStage3Answer;
+
+        // Allow entering key shortcuts
+        document.querySelectorAll('.math-input').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') checkStage3Answer();
+            });
+        });
+
+        function checkStage3Answer() {
+            const s1 = document.getElementById('ans-sign1').value;
+            const b = parseInt(document.getElementById('ans-coef').value) || 0;
+            const s2 = document.getElementById('ans-sign2').value;
+            const c = parseInt(document.getElementById('ans-const').value) || 0;
+
+            const computedB = s1 === '-' ? -b : b;
+            const computedC = s2 === '-' ? -c : c;
+
+            const target = state.s3CurrentProblem;
+
+            if(computedB === target.b && computedC === target.c) {
+                state.s3Score++;
+                document.getElementById('s3-score').innerText = state.s3Score;
+                nextStage3Problem();
+            } else {
+                // Flash mistake alert indicator
+                document.getElementById('game-lane').style.borderColor = 'var(--danger)';
+                setTimeout(() => {
+                    document.getElementById('game-lane').style.borderColor = '#1e293b';
+                }, 300);
+            }
+        }
+
+        function endGame() {
+            clearInterval(state.s3TimerInterval);
+            clearInterval(state.s3FallInterval);
+            changeStage('gameover');
+            document.getElementById('final-score').innerText = `${state.s3Score} Identity Problems Mastered!`;
+        }
+
+        // Boot-up trigger execution
+        window.onload = () => {
+            initStage1Problem();
+        };
+    </script>
+</body>
+</html>

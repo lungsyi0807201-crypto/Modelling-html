@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Tiles Assembly Simulator (Fixed Layout)</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --primary-color: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            text-align: center;
+        }
+
+        #expression-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #16a085;
+            margin-bottom: 20px;
+            min-height: 1.5em;
+            text-align: center;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        canvas {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+
+        .controls-panel {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container label {
+            font-weight: bold;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Algebra Tiles Assembly Simulator</h1>
+        <div id="expression-title">Generating expression...</div>
+
+        <canvas id="stage" width="600" height="600"></canvas>
+
+        <div class="controls-panel">
+            <div class="slider-container">
+                <label for="assemblySlider">Assemble Grid:</label>
+                <input type="range" id="assemblySlider" min="0" max="1" step="0.01" value="0">
+            </div>
+            <button id="resetBtn">Generate New Expression</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('assemblySlider');
+        const resetBtn = document.getElementById('resetBtn');
+        const titleEl = document.getElementById('expression-title');
+
+        const SCALE = 40; 
+        const W_X2 = 3 * SCALE, H_X2 = 3 * SCALE;
+        const W_X  = 1 * SCALE, H_X  = 3 * SCALE;
+        const W_UNIT = 1 * SCALE, H_UNIT = 1 * SCALE;
+
+        let tiles = [];
+        let modelData = {};
+
+        function generateExpression() {
+            // (dx + e)(fx + g)
+            const d = Math.random() < 0.5 ? 1 : 2;
+            const f = d === 2 ? 1 : (Math.random() < 0.5 ? 1 : 2); 
+            const e = Math.floor(Math.random() * 2) + 1;
+            const g = Math.floor(Math.random() * 2) + 1;
+
+            const a = d * f;
+            const b = d * g + e * f;
+            const c = e * g;
+
+            const gridW = d * W_X2 + e * W_UNIT;
+            const gridH = f * H_X2 + g * W_UNIT;
+
+            // Center the final assembly target block array on the canvas
+            const offsetX = (canvas.width - gridW) / 2;
+            const offsetY = (canvas.height - gridH) / 2 + 20;
+
+            tiles = [];
+
+            // 1. Blue x² Blocks (Bottom Left quadrant)
+            for (let row = 0; row < f; row++) {
+                for (let col = 0; col < d; col++) {
+                    tiles.push({
+                        label: 'x²', bg: '#e3f2fd', border: '#1e88e5', w: W_X2, h: H_X2,
+                        tx: offsetX + col * W_X2,
+                        ty: offsetY + gridH - (row + 1) * H_X2
+                    });
+                }
+            }
+
+            // 2. Green Horizontal x Blocks (Top Left quadrant)
+            for (let row = 0; row < g; row++) {
+                for (let col = 0; col < d; col++) {
+                    tiles.push({
+                        label: 'x', bg: '#e8f5e9', border: '#43a047', w: W_X2, h: H_UNIT,
+                        tx: offsetX + col * W_X2,
+                        ty: offsetY + gridH - f * H_X2 - (row + 1) * H_UNIT
+                    });
+                }
+            }
+
+            // 3. Green Vertical x Blocks (Bottom Right quadrant)
+            for (let row = 0; row < f; row++) {
+                for (let col = 0; col < e; col++) {
+                    tiles.push({
+                        label: 'x', bg: '#e8f5e9', border: '#43a047', w: W_UNIT, h: H_X2,
+                        tx: offsetX + d * W_X2 + col * W_UNIT,
+                        ty: offsetY + gridH - (row + 1) * H_X2
+                    });
+                }
+            }
+
+            // 4. Yellow Unit Blocks (Top Right quadrant)
+            for (let row = 0; row < g; row++) {
+                for (let col = 0; col < e; col++) {
+                    tiles.push({
+                        label: '1', bg: '#fffde7', border: '#fbc02d', w: W_UNIT, h: H_UNIT,
+                        tx: offsetX + d * W_X2 + col * W_UNIT,
+                        ty: offsetY + gridH - f * H_X2 - (row + 1) * H_UNIT
+                    });
+                }
+            }
+
+            // Assign scattered random positions
+            tiles.forEach(t => {
+                t.ix = Math.random() * (canvas.width - 150) + 50;
+                t.iy = Math.random() * (canvas.height - 200) + 100;
+                t.irot = (Math.random() * 80 - 40) * Math.PI / 180;
+            });
+
+            modelData = { a, b, c, d, e, f, g, offsetX, offsetY, gridW, gridH };
+            slider.value = 0;
+            draw(0);
+        }
+
+        function draw(progress) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (progress >= 1.0) {
+                titleEl.innerHTML = `${modelData.a}x² + ${modelData.b}x + ${modelData.c} &nbsp;=&nbsp; (${modelData.f}x + ${modelData.g})(${modelData.d}x + ${modelData.e})`;
+            } else {
+                titleEl.innerHTML = `Assembling: ${modelData.a}x² + ${modelData.b}x + ${modelData.c}`;
+            }
+
+            // Render all blocks safely using LERP transitions
+            tiles.forEach(t => {
+                const cx = t.ix + (t.tx - t.ix) * progress;
+                const cy = t.iy + (t.ty - t.iy) * progress;
+                const crot = t.irot * (1 - progress);
+
+                ctx.save();
+                ctx.translate(cx + t.w / 2, cy + t.h / 2);
+                ctx.rotate(crot);
+
+                ctx.fillStyle = t.bg;
+                ctx.strokeStyle = t.border;
+                ctx.lineWidth = 1.5;
+                
+                ctx.beginPath();
+                ctx.rect(-t.w / 2, -t.h / 2, t.w, t.h);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = "bold 13px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(t.label, 0, 0);
+
+                ctx.restore();
+            });
+
+            // Cleanly render dimension factors *outside* the box perimeter
+            if (progress >= 1.0) {
+                ctx.fillStyle = "#2c3e50";
+                ctx.font = "bold 15px sans-serif";
+                
+                // Top width factor label
+                ctx.textAlign = "center";
+                ctx.fillText(`${modelData.d}x + ${modelData.e}`, modelData.offsetX + modelData.gridW / 2, modelData.offsetY - 15);
+
+                // Left height factor label
+                ctx.save();
+                ctx.translate(modelData.offsetX - 20, modelData.offsetY + modelData.gridH / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.textAlign = "center";
+                ctx.fillText(`${modelData.f}x + ${modelData.g}`, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        slider.addEventListener('input', (e) => draw(parseFloat(e.target.value)));
+        resetBtn.addEventListener('click', generateExpression);
+
+        generateExpression();
+    </script>
+</body>
+</html>

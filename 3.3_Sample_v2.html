@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Like Terms Match Up!</title>
+    <style>
+        /* CSS Variables for Playful Cartoon Theme */
+        :root {
+            --bg-canvas: #f0eef9;
+            --sidebar-bg: #ffffff;
+            --primary-purple: #7d5fff;
+            --primary-purple-dark: #5b36f5;
+            --primary-purple-light: #ece9ff;
+            --text-dark: #2d3436;
+            --text-light: #708090;
+            --correct-green: #2ecc71;
+            --wrong-red: #ff7675;
+            
+            /* Card Theme Palette (Pastel & Chunky Cartoon Style) */
+            --theme-x-bg: #E8E5FF; --theme-x-border: #7d5fff;
+            --theme-const-bg: #FFF9E5; --theme-const-border: #f1c40f;
+            --theme-x2-bg: #E5F9FF; --theme-x2-border: #00cec9;
+            --theme-xy-bg: #E5FFE9; --theme-xy-border: #2ecc71;
+            --theme-x2y-bg: #FFEBEF; --theme-x2y-border: #ff7675;
+            --theme-xy2-bg: #E6F7FF; --theme-xy2-border: #0984e3;
+            --theme-a2b3-bg: #FFF0E6; --theme-a2b3-border: #e67e22;
+            --theme-abc-bg: #F9F0FF; --theme-abc-border: #9b59b6;
+            --theme-y-bg: #FFF0F6; --theme-y-border: #e84393;
+            --theme-hard-bg: #f5f6fa; --theme-hard-border: #b2bec3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', 'Quicksand', 'Nunito', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(var(--primary-purple-light) 1.5px, transparent 1.5px), 
+                              radial-gradient(var(--primary-purple-light) 1.5px, #f0eef9 1.5px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 1280px;
+            background: var(--sidebar-bg);
+            border-radius: 32px;
+            box-shadow: 0 20px 0px rgba(125, 95, 255, 0.15), 0 10px 40px rgba(0,0,0,0.08);
+            border: 4px solid var(--text-dark);
+            overflow: hidden;
+            min-height: 85vh;
+        }
+
+        /* Sidebar / Information controls */
+        .sidebar {
+            flex: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #fdfdff 100%);
+            padding: 35px;
+            border-right: 4px solid var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 320px;
+        }
+
+        .header-section {
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--primary-purple);
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-shadow: 3px 3px 0px var(--text-dark);
+            -webkit-text-stroke: 1.5px var(--text-dark);
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Cartoon Mascot Box */
+        .mascot-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fcfaff;
+            border: 3px solid var(--text-dark);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 4px 4px 0px var(--text-dark);
+        }
+
+        .mascot-bubble {
+            background: white;
+            border: 3px solid var(--text-dark);
+            border-radius: 15px;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            position: relative;
+            margin-bottom: 15px;
+            text-align: center;
+            width: 100%;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+        }
+
+        .mascot-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -13px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+            z-index: 10;
+        }
+
+        .mascot-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -17px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 12px 0;
+            border-style: solid;
+            border-color: var(--text-dark) transparent;
+            display: block;
+            width: 0;
+            z-index: 9;
+        }
+
+        /* Dynamic SVG Robot Mascot */
+        .mascot-svg {
+            width: 100px;
+            height: 100px;
+            transform-origin: center bottom;
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 24px;
+            text-align: center;
+            border: 3px solid var(--text-dark);
+            box-shadow: 4px 4px 0px var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 800;
+            opacity: 0.9;
+        }
+
+        .score-val {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        /* Gamemode Controller / Settings Panel */
+        .settings-panel {
+            background: #faf9ff;
+            border: 3px solid var(--text-dark);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 4px 4px 0px var(--text-dark);
+        }
+
+        .settings-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px dashed #e2e0eb;
+            padding-bottom: 5px;
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* Cartoon Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+            border: 2px solid var(--text-dark);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            border: 2px solid var(--text-dark);
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-purple);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Buttons styling */
+        .btn {
+            width: 100%;
+            border: 3px solid var(--text-dark);
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            outline: none;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-restart {
+            background: #ffeaa7;
+            color: var(--text-dark);
+            box-shadow: 4px 4px 0px var(--text-dark);
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px var(--text-dark);
+            background: #ffd32a;
+        }
+
+        .btn-restart:active {
+            transform: translateY(2px);
+            box-shadow: 2px 2px 0px var(--text-dark);
+        }
+
+        /* Grid Layout */
+        .grid-container {
+            flex: 2.2;
+            padding: 35px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-gap: 15px;
+            align-content: center;
+            background-color: #faf9fe;
+            position: relative;
+        }
+
+        /* 3D Cartoon Cards Styling */
+        .card {
+            background-color: var(--theme-x-bg);
+            border: 3px solid var(--text-dark);
+            border-radius: 18px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            cursor: pointer;
+            box-shadow: 0 6px 0px var(--text-dark);
+            transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+            user-select: none;
+            position: relative;
+            text-align: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        /* Add dynamic playful doodles in background using CSS shapes */
+        .card::before {
+            content: "✦";
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            font-size: 0.75rem;
+            opacity: 0.25;
+            color: var(--text-dark);
+        }
+
+        .card::after {
+            content: "●";
+            position: absolute;
+            bottom: 6px;
+            left: 10px;
+            font-size: 0.6rem;
+            opacity: 0.15;
+            color: var(--text-dark);
+        }
+
+        /* Handle math tags inside cards beautifully */
+        .card sub, .card sup {
+            font-size: 0.65em;
+            line-height: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0px var(--text-dark);
+        }
+
+        /* Selected State */
+        .card.selected {
+            background-color: #f1f0ff !important;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px var(--text-dark);
+            outline: 4px dashed var(--primary-purple);
+        }
+
+        /* Match disappearance animation */
+        .card.matched {
+            animation: popOut 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            pointer-events: none;
+        }
+
+        /* Error Animation */
+        .card.error {
+            animation: cartoonShake 0.4s ease-in-out;
+            background-color: #ffeef0 !important;
+            border-color: var(--wrong-red);
+            color: var(--wrong-red);
+        }
+
+        /* Cute Particle Starburst FX on Matches */
+        .burst {
+            position: absolute;
+            pointer-events: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--correct-green);
+            animation: particleAnimation 0.6s ease-out forwards;
+        }
+
+        /* Animations list */
+        @keyframes cartoonShake {
+            0%, 100% { transform: rotate(0deg) translateY(0); }
+            20% { transform: rotate(-5deg) translateY(-2px); }
+            40% { transform: rotate(5deg) translateY(2px); }
+            60% { transform: rotate(-3deg) translateY(-1px); }
+            80% { transform: rotate(3deg) translateY(1px); }
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.8; background-color: var(--correct-green); }
+            100% { transform: scale(0); opacity: 0; visibility: hidden; }
+        }
+
+        @keyframes particleAnimation {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--x, 50px), var(--y, 50px)) scale(0); opacity: 0; }
+        }
+
+        @keyframes bounceMascot {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.02); }
+        }
+
+        /* Mascot States Animations */
+        .mascot-svg.happy {
+            animation: bounceMascot 0.4s ease infinite;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                border-radius: 24px;
+            }
+            .sidebar {
+                border-right: none;
+                border-bottom: 4px solid var(--text-dark);
+                padding: 25px;
+            }
+            .grid-container {
+                grid-template-columns: repeat(6, 1fr);
+                padding: 25px;
+            }
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 10px;
+            }
+            .grid-container {
+                grid-template-columns: repeat(4, 1fr);
+                grid-gap: 10px;
+                padding: 15px;
+            }
+            .card {
+                font-size: 1.1rem;
+                border-radius: 12px;
+                box-shadow: 0 4px 0px var(--text-dark);
+            }
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 0px var(--text-dark);
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Playful Sidebar -->
+        <div class="sidebar">
+            <div class="header-section">
+                <h1>Like Terms Match!</h1>
+                <p class="subtitle">Match the matching algebraic terms!</p>
+                
+                <!-- Animated Mascot Frame -->
+                <div class="mascot-box">
+                    <div class="mascot-bubble" id="mascot-speech">Hi! Let's match some like terms together!</div>
+                    
+                    <!-- Dynamic SVG Cartoon Robot Mascot -->
+                    <svg class="mascot-svg" id="mascot" viewBox="0 0 100 100">
+                        <!-- Head Frame -->
+                        <rect x="25" y="25" width="50" height="40" rx="12" fill="#7d5fff" stroke="#2d3436" stroke-width="3"/>
+                        <rect x="30" y="30" width="40" height="30" rx="8" fill="#ece9ff" stroke="#2d3436" stroke-width="2.5"/>
+                        <!-- Ears/Antenna -->
+                        <circle cx="50" cy="15" r="5" fill="#ffd32a" stroke="#2d3436" stroke-width="2"/>
+                        <line x1="50" y1="20" x2="50" y2="25" stroke="#2d3436" stroke-width="3"/>
+                        <rect x="18" y="40" width="7" height="10" rx="2" fill="#2d3436"/>
+                        <rect x="75" y="40" width="7" height="10" rx="2" fill="#2d3436"/>
+                        
+                        <!-- Dynamic Eyes Group -->
+                        <g id="mascot-eyes">
+                            <!-- Normal Eyes -->
+                            <circle cx="42" cy="42" r="5" fill="#2d3436"/>
+                            <circle cx="58" cy="42" r="5" fill="#2d3436"/>
+                            <circle cx="44" cy="40" r="1.5" fill="#ffffff"/>
+                            <circle cx="60" cy="40" r="1.5" fill="#ffffff"/>
+                        </g>
+                        
+                        <!-- Dynamic Mouth Group -->
+                        <g id="mascot-mouth">
+                            <!-- Happy Mouth curve -->
+                            <path d="M 44 52 Q 50 58 56 52" fill="none" stroke="#2d3436" stroke-width="3" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- Body & Arms -->
+                        <path d="M 35 65 L 25 80 L 30 83 L 38 70 Z" fill="#7d5fff" stroke="#2d3436" stroke-width="2"/>
+                        <path d="M 65 65 L 75 80 L 70 83 L 62 70 Z" fill="#7d5fff" stroke="#2d3436" stroke-width="2"/>
+                        <rect x="35" y="65" width="30" height="15" rx="5" fill="#7d5fff" stroke="#2d3436" stroke-width="3"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Gamemode & Setup Controllers -->
+            <div class="settings-panel">
+                <div class="settings-title">Game Options</div>
+                <div class="toggle-container">
+                    <span>Helpful Colors</span>
+                    <label class="switch">
+                        <input type="checkbox" id="hints-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Score / Feedback Tracker -->
+            <div>
+                <div class="scoreboard">
+                    <div class="score-row">
+                        <div class="score-item">
+                            <span class="score-label">Score</span>
+                            <span class="score-val" id="score">0</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Streak</span>
+                            <span class="score-val" id="streak">0</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-restart" id="restart-btn">New Board 🔄</button>
+            </div>
+        </div>
+
+        <!-- 6x6 Playable Grid -->
+        <div class="grid-container" id="grid">
+            <!-- 36 items will be generated by the execution layer script -->
+        </div>
+    </div>
+
+    <script>
+        // Highly curated, clean mathematical Terms Object List
+        // Contains 9 groups with 4 unique items per group = 36 items total.
+        const algebraicTerms = [
+            // Group 'x' - Simple terms
+            { html: '5x', group: 'x', colorClass: 'theme-x' },
+            { html: '-2x', group: 'x', colorClass: 'theme-x' },
+            { html: 'x', group: 'x', colorClass: 'theme-x' },
+            { html: '0.7x', group: 'x', colorClass: 'theme-x' },
+            
+            // Group 'constants' - Pure numbers
+            { html: '12', group: 'constants', colorClass: 'theme-const' },
+            { html: '-3', group: 'constants', colorClass: 'theme-const' },
+            { html: '&pi;', group: 'constants', colorClass: 'theme-const' },
+            { html: '4&frac12;', group: 'constants', colorClass: 'theme-const' },
+            
+            // Group 'x2' - Quadratic power terms
+            { html: 'x<sup>2</sup>', group: 'x2', colorClass: 'theme-x2' },
+            { html: '-7x<sup>2</sup>', group: 'x2', colorClass: 'theme-x2' },
+            { html: '4x<sup>2</sup>', group: 'x2', colorClass: 'theme-x2' },
+            { html: '&frac23;x<sup>2</sup>', group: 'x2', colorClass: 'theme-x2' },
+            
+            // Group 'xy' - Double variable combination
+            { html: '3xy', group: 'xy', colorClass: 'theme-xy' },
+            { html: '-yx', group: 'xy', colorClass: 'theme-xy' },
+            { html: '9xy', group: 'xy', colorClass: 'theme-xy' },
+            { html: '14yx', group: 'xy', colorClass: 'theme-xy' },
+            
+            // Group 'x2y' - Variable exponent configuration A
+            { html: 'x<sup>2</sup>y', group: 'x2y', colorClass: 'theme-x2y' },
+            { html: '5yx<sup>2</sup>', group: 'x2y', colorClass: 'theme-x2y' },
+            { html: '-x<sup>2</sup>y', group: 'x2y', colorClass: 'theme-x2y' },
+            { html: '2.5x<sup>2</sup>y', group: 'x2y', colorClass: 'theme-x2y' },
+            
+            // Group 'xy2' - Variable exponent configuration B (trap)
+            { html: 'xy<sup>2</sup>', group: 'xy2', colorClass: 'theme-xy2' },
+            { html: '-3xy<sup>2</sup>', group: 'xy2', colorClass: 'theme-xy2' },
+            { html: '8y<sup>2</sup>x', group: 'xy2', colorClass: 'theme-xy2' },
+            { html: '0.5xy<sup>2</sup>', group: 'xy2', colorClass: 'theme-xy2' },
+            
+            // Group 'a2b3' - High power parameters
+            { html: 'a<sup>2</sup>b<sup>3</sup>', group: 'a2b3', colorClass: 'theme-a2b3' },
+            { html: '6b<sup>3</sup>a<sup>2</sup>', group: 'a2b3', colorClass: 'theme-a2b3' },
+            { html: '-2a<sup>2</sup>b<sup>3</sup>', group: 'a2b3', colorClass: 'theme-a2b3' },
+            { html: 'a<sup>2</sup>b<sup>3</sup>/4', group: 'a2b3', colorClass: 'theme-a2b3' },
+            
+            // Group 'abc' - Triple variable set
+            { html: 'abc', group: 'abc', colorClass: 'theme-abc' },
+            { html: '-5cba', group: 'abc', colorClass: 'theme-abc' },
+            { html: '2bac', group: 'abc', colorClass: 'theme-abc' },
+            { html: '0.1acb', group: 'abc', colorClass: 'theme-abc' },
+
+            // Group 'y' - Standard vertical alignment factor
+            { html: '8y', group: 'y', colorClass: 'theme-y' },
+            { html: '-y', group: 'y', colorClass: 'theme-y' },
+            { html: '3y', group: 'y', colorClass: 'theme-y' },
+            { html: '11y', group: 'y', colorClass: 'theme-y' }
+        ];
+
+        // Active State Vectors
+        let score = 0;
+        let streak = 0;
+        let selectedCards = [];
+        let isProcessing = false;
+        let matchedPairsCount = 0;
+        const totalPairs = 18; // 36 / 2
+
+        // Mascot dialog phrases collection
+        const phrases = {
+            start: ["Can you spot two like terms?", "Let's find some identical matches!", "Remember: variable letters and power shapes must match!"],
+            correct: ["Awesome job! That's correct!", "Spot on! You understand algebra perfectly!", "Wow! Double match success!", "Keep it up, math whiz!"],
+            incorrect: ["Oops! Check the variable powers again!", "Careful! Those are close, but not quite!", "Not quite! Look closely at the exponents!", "Almost! Remember order doesn't matter, but powers do!"],
+            streak: ["You're on fire! 🔥", "Amazing streak! Keep going!", "Unstoppable! Pure genius!"],
+            win: ["Perfect! You mastered Like Terms! 🎉", "Excellent game! You finished in style!", "Incredible! Play again to set a new record!"]
+        };
+
+        // DOM Handle Queries
+        const gridElement = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const streakElement = document.getElementById('streak');
+        const speechBubble = document.getElementById('mascot-speech');
+        const mascotSvg = document.getElementById('mascot');
+        const mascotEyes = document.getElementById('mascot-eyes');
+        const mascotMouth = document.getElementById('mascot-mouth');
+        const hintsToggle = document.getElementById('hints-toggle');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Dynamic Mascot Faces Modifiers
+        function setMascotExpression(state) {
+            mascotSvg.className.baseVal = "mascot-svg " + state;
+            
+            if (state === 'happy') {
+                // Sparkle starry/happy eyes and open mouth
+                mascotEyes.innerHTML = `
+                    <polygon points="42,34 45,40 51,42 45,44 42,50 39,44 33,42 39,40" fill="#ffd32a" stroke="#2d3436" stroke-width="1.5"/>
+                    <polygon points="58,34 61,40 67,42 61,44 58,50 55,44 49,42 55,40" fill="#ffd32a" stroke="#2d3436" stroke-width="1.5"/>
+                `;
+                mascotMouth.innerHTML = `<path d="M 42 52 Q 50 62 58 52 Z" fill="#ff7675" stroke="#2d3436" stroke-width="2.5"/>`;
+            } else if (state === 'sad') {
+                // Dizzy/cross eyes and open wavy mouth
+                mascotEyes.innerHTML = `
+                    <path d="M 37 37 L 47 47 M 47 37 L 37 47" stroke="#2d3436" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M 53 37 L 63 47 M 63 37 L 53 47" stroke="#2d3436" stroke-width="3" stroke-linecap="round"/>
+                `;
+                mascotMouth.innerHTML = `<path d="M 42 55 Q 46 51 50 55 Q 54 59 58 55" fill="none" stroke="#2d3436" stroke-width="3" stroke-linecap="round"/>`;
+            } else {
+                // Standard smiling neutral face
+                mascotEyes.innerHTML = `
+                    <circle cx="42" cy="42" r="5" fill="#2d3436"/>
+                    <circle cx="58" cy="42" r="5" fill="#2d3436"/>
+                    <circle cx="44" cy="40" r="1.5" fill="#ffffff"/>
+                    <circle cx="60" cy="40" r="1.5" fill="#ffffff"/>
+                `;
+                mascotMouth.innerHTML = `<path d="M 44 52 Q 50 58 56 52" fill="none" stroke="#2d3436" stroke-width="3" stroke-linecap="round"/>`;
+            }
+        }
+
+        // Display cute dialogue
+        function saySomething(category) {
+            const index = Math.floor(Math.random() * phrases[category].length);
+            speechBubble.textContent = phrases[category][index];
+        }
+
+        // Fisher-Yates array randomizer algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Initialize Board Execution Method
+        function initGame() {
+            gridElement.innerHTML = '';
+            selectedCards = [];
+            isProcessing = false;
+            matchedPairsCount = 0;
+            score = 0;
+            streak = 0;
+            scoreElement.textContent = score;
+            streakElement.textContent = streak;
+            
+            setMascotExpression('idle');
+            saySomething('start');
+
+            const boardData = [...algebraicTerms];
+            shuffleArray(boardData);
+
+            boardData.forEach((term, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.innerHTML = term.html;
+                card.dataset.group = term.group;
+                card.dataset.index = index;
+                card.dataset.colorClass = term.colorClass;
+
+                // Update coloring context depending on hints toggle state
+                applyCardColorTheme(card);
+
+                card.addEventListener('click', () => onCardClicked(card));
+                gridElement.appendChild(card);
+            });
+        }
+
+        // Dynamic Card theme coloring allocator
+        function applyCardColorTheme(card) {
+            const hasColors = hintsToggle.checked;
+            const colorClass = card.dataset.colorClass;
+
+            if (hasColors) {
+                // Clear any manual variable overrides
+                card.style.backgroundColor = `var(--${colorClass}-bg)`;
+                card.style.borderColor = `var(--${colorClass}-border)`;
+                card.style.boxShadow = `0 6px 0px var(--text-dark)`;
+            } else {
+                card.style.backgroundColor = 'var(--theme-hard-bg)';
+                card.style.borderColor = 'var(--theme-hard-border)';
+                card.style.boxShadow = `0 6px 0px var(--text-dark)`;
+            }
+        }
+
+        // Toggle triggers event modification loop
+        hintsToggle.addEventListener('change', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => applyCardColorTheme(card));
+        });
+
+        // Trigger particle animation effect visually on board
+        function createMatchParticles(targetElement) {
+            const rect = targetElement.getBoundingClientRect();
+            const parentRect = gridElement.getBoundingClientRect();
+            const posX = rect.left - parentRect.left + (rect.width / 2);
+            const posY = rect.top - parentRect.top + (rect.height / 2);
+
+            for (let i = 0; i < 8; i++) {
+                const burst = document.createElement('div');
+                burst.classList.add('burst');
+                
+                // Vector offsets
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 40 + Math.random() * 40;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+
+                burst.style.left = `${posX}px`;
+                burst.style.top = `${posY}px`;
+                burst.style.setProperty('--x', `${x}px`);
+                burst.style.setProperty('--y', `${y}px`);
+                
+                // Randomise colors
+                const colors = ['#2ecc71', '#ffd32a', '#7d5fff', '#00cec9', '#e84393'];
+                burst.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+                gridElement.appendChild(burst);
+                setTimeout(() => burst.remove(), 600);
+            }
+        }
+
+        // Click Handler Action Loop
+        function onCardClicked(card) {
+            if (isProcessing) return;
+            if (card.classList.contains('selected')) return;
+            if (card.classList.contains('matched')) return;
+
+            card.classList.add('selected');
+            selectedCards.push(card);
+
+            if (selectedCards.length === 2) {
+                isProcessing = true;
+                evaluatePairMatch();
+            }
+        }
+
+        // Algebra rules verification layer
+        function evaluatePairMatch() {
+            const [cardA, cardB] = selectedCards;
+            const isMatch = cardA.dataset.group === cardB.dataset.group;
+
+            if (isMatch) {
+                // Success Path
+                setTimeout(() => {
+                    cardA.classList.remove('selected');
+                    cardB.classList.remove('selected');
+                    cardA.classList.add('matched');
+                    cardB.classList.add('matched');
+
+                    createMatchParticles(cardA);
+                    createMatchParticles(cardB);
+
+                    score += 100;
+                    streak++;
+                    scoreElement.textContent = score;
+                    streakElement.textContent = streak;
+
+                    matchedPairsCount++;
+                    
+                    if (streak >= 3) {
+                        saySomething('streak');
+                    } else {
+                        saySomething('correct');
+                    }
+                    
+                    setMascotExpression('happy');
+
+                    selectedCards = [];
+                    isProcessing = false;
+
+                    // Victory State Check
+                    if (matchedPairsCount === totalPairs) {
+                        setTimeout(() => {
+                            saySomething('win');
+                            setMascotExpression('happy');
+                        }, 500);
+                    }
+                }, 400);
+
+            } else {
+                // Failure Path
+                setTimeout(() => {
+                    cardA.classList.add('error');
+                    cardB.classList.add('error');
+                    setMascotExpression('sad');
+                    saySomething('incorrect');
+                }, 200);
+
+                setTimeout(() => {
+                    cardA.classList.remove('selected', 'error');
+                    cardB.classList.remove('selected', 'error');
+                    
+                    score = Math.max(0, score - 10); // Keep score positive for kids' encouragement
+                    streak = 0;
+                    scoreElement.textContent = score;
+                    streakElement.textContent = streak;
+
+                    selectedCards = [];
+                    isProcessing = false;
+                }, 800);
+            }
+        }
+
+        // Interaction Action assignments
+        restartBtn.addEventListener('click', initGame);
+
+        // Run game instantly
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

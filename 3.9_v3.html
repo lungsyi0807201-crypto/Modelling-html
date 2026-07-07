@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Quadratic Factorization Area Model</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --highlight-color: #ff9800;
+            
+            /* Color scheme for polynomial terms */
+            --x2-bg: #e3f2fd;
+            --x2-border: #1e88e5;
+            --x-bg: #e8f5e9;
+            --x-border: #43a047;
+            --unit-bg: #fffde7;
+            --unit-border: #fbc02d;
+        }
+
+/******************************************************************************
+* 1. Basic Page Layout & Structure
+******************************************************************************/
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .lesson-text {
+            line-height: 1.6;
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            background-color: #fff;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #generateBtn { background-color: #3498db; }
+        #generateBtn:hover { background-color: #2980b9; }
+
+        #animateBtn { background-color: #2ecc71; }
+        #animateBtn:hover { background-color: #27ae60; }
+        #animateBtn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+/******************************************************************************
+* 2. Dynamic Area Model Grid & Animation Rules
+******************************************************************************/
+        #area-model-container {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto auto auto;
+            gap: 0;
+            width: fit-content;
+            margin: 0 auto;
+            position: relative;
+            padding: 20px;
+        }
+
+        .am-label, .am-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        #inner-grid {
+            grid-column: 2;
+            grid-row: 2;
+            display: grid;
+            border: 2px solid #333;
+            background-color: #fff;
+            position: relative;
+            transition: border-color 0.5s ease;
+        }
+
+        /* Classes triggered over timeline steps to simulate visual explosion/grouping */
+        #inner-grid.split-stage {
+            border-color: transparent; /* Dissolve outer boundary during grouping step */
+        }
+
+        .am-tile {
+            position: relative;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transform-origin: center center;
+        }
+
+        .am-term {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.1em;
+            pointer-events: none;
+        }
+
+        .am-label {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-style: italic;
+            opacity: 1;
+            transition: opacity 0.4s, transform 0.5s;
+        }
+
+        #row-labels-left {
+            grid-column: 1; grid-row: 2;
+            display: flex; flex-direction: column; justify-content: flex-start;
+            padding-right: 15px;
+        }
+
+        #column-labels-top {
+            grid-column: 2; grid-row: 1;
+            display: flex; justify-content: flex-start;
+            padding-bottom: 15px;
+        }
+
+        #row-labels-left .am-label { width: 40px; text-align: right;}
+        #column-labels-top .am-label { height: 40px; text-align: center;}
+
+        /* Hide labels initially during step 1 factorization visualization */
+        .labels-hidden {
+            opacity: 0 !important;
+            transform: scale(0.7);
+        }
+
+/******************************************************************************
+* 3. Animation Timing Transformations (Separating the 4 Key Quadrants)
+******************************************************************************/
+        /* Shift top-left quadrant upwards-left slightly */
+        .animate-q-x2 { transform: translate(-10px, -10px); box-shadow: 0 4px 10px rgba(30,136,229,0.3); }
+        /* Shift top-right (x terms) up-right */
+        .animate-q-top-x { transform: translate(10px, -10px); box-shadow: 0 4px 10px rgba(67,160,71,0.3); }
+        /* Shift bottom-left (x terms) down-left */
+        .animate-q-bot-x { transform: translate(-10px, 10px); box-shadow: 0 4px 10px rgba(67,160,71,0.3); }
+        /* Shift bottom-right constants down-right */
+        .animate-q-unit { transform: translate(10px, 10px); box-shadow: 0 4px 10px rgba(251,192,45,0.3); }
+
+/******************************************************************************
+* 4. Equation Display & Step Explanations
+******************************************************************************/
+        #equation-display {
+            grid-column: 1 / span 3; grid-row: 3;
+            margin-top: 25px; padding: 20px;
+            border: 1px solid var(--border-color);
+            background-color: #fafafa; border-radius: 8px;
+            text-align: center; font-size: 1.4em;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        .eq-term, .eq-factor, .eq-operator {
+            display: inline-block; margin: 0 3px;
+            transition: all 0.3s ease;
+        }
+
+        .process-section {
+            margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 20px; width: 100%;
+        }
+
+        .process-title { color: #2c3e50; font-size: 1.2em; margin-bottom: 15px; font-weight: bold; }
+
+        .step-box {
+            background: #fff; border: 1px solid var(--border-color);
+            border-left: 4px solid #95a5a6; padding: 15px; margin-bottom: 12px;
+            border-radius: 4px; font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-size: 1.1em; transition: all 0.4s ease;
+        }
+
+        .step-box.active-step {
+            border-left-color: var(--highlight-color);
+            background-color: #fffbf5;
+            transform: translateX(5px);
+        }
+
+        .step-num {
+            font-weight: bold; color: #7f8c8d; margin-right: 10px;
+            font-family: sans-serif; font-size: 0.85em; text-transform: uppercase;
+        }
+
+/******************************************************************************
+* 5. Color Highlighting Rules
+******************************************************************************/
+        .tile-x2 { background-color: var(--x2-bg); border-color: var(--x2-border); }
+        .tile-x  { background-color: var(--x-bg);  border-color: var(--x-border);  }
+        .tile-1  { background-color: var(--unit-bg); border-color: var(--unit-border); }
+
+        .eq-active { font-weight: bold; color: var(--highlight-color); }
+        .eq-x2.hovered   { color: var(--x2-border); font-weight: bold;}
+        .eq-x.hovered    { color: var(--x-border); font-weight: bold;}
+        .eq-unit.hovered { color: var(--unit-border); font-weight: bold;}
+        .eq-factor.hovered { color: #e65100; font-weight: bold; background: #fff3e0; }
+        
+        .tile-hovered {
+            background-color: var(--highlight-color) !important;
+            border-color: #e65100 !important;
+            box-shadow: 0 0 8px rgba(255,152,0,0.5);
+            transform: scale(1.04);
+            z-index: 10;
+        }
+
+        .label-hovered { background-color: var(--highlight-color); color: white; border-radius: 4px; }
+        .proc-highlight { padding: 2px 5px; border-radius: 3px; font-weight: bold; }
+        .ph-x2 { background-color: var(--x2-bg); border: 1px solid var(--x2-border); }
+        .ph-x1 { background-color: #e8f5e9; border: 1px solid var(--x-border); }
+        .ph-unit { background-color: var(--unit-bg); border: 1px solid var(--unit-border); }
+
+        .footer { margin-top: 30px; text-align: right; color: #888; font-size: 0.9em; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Visualizing Quadratic Factorization</h1>
+
+        <div class="lesson-text">
+            <p><strong>Interactive Lesson:</strong> Click <strong>"Animate Factorization Process"</strong> to watch the grid step-by-step split apart, group its components, and reveal the hidden outside dimensions!</p>
+        </div>
+
+        <div class="controls">
+            <button id="generateBtn">New Random Expression</button>
+            <button id="animateBtn">Animate Factorization Process</button>
+        </div>
+
+        <div id="area-model-container">
+            <div id="row-labels-left"></div>
+            <div id="inner-grid"></div>
+            <div id="column-labels-top"></div>
+            <div id="equation-display"></div>
+        </div>
+
+        <div class="process-section">
+            <div class="process-title">Step-by-Step Factoring Timeline:</div>
+            <div id="steps-container"></div>
+        </div>
+
+        <div class="footer">Page 59 - Mathematics Lesson</div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('inner-grid');
+        const rowLabels = document.getElementById('row-labels-left');
+        const colLabels = document.getElementById('column-labels-top');
+        const eqDisplay = document.getElementById('equation-display');
+        const stepsContainer = document.getElementById('steps-container');
+        const generateBtn = document.getElementById('generateBtn');
+        const animateBtn = document.getElementById('animateBtn');
+
+        const sizeX = 80; 
+        const size1 = 20; 
+        let currentData = {}; // Stores properties of currently generated expression
+        let animationTimers = [];
+
+        function clearModel() {
+            // Cancel active animations if any
+            animationTimers.forEach(clearTimeout);
+            animationTimers = [];
+            animateBtn.disabled = false;
+
+            grid.innerHTML = '';
+            rowLabels.innerHTML = '';
+            colLabels.innerHTML = '';
+            eqDisplay.innerHTML = '';
+            stepsContainer.innerHTML = '';
+            grid.className = '';
+        }
+
+        function createLabel(text, type) {
+            const label = document.createElement('div');
+            label.className = `am-label label-${text}`;
+            label.textContent = text;
+            if (type === 'row') label.style.height = (text === 'x' ? sizeX : size1) + 'px';
+            else if (type === 'col') label.style.width = (text === 'x' ? sizeX : size1) + 'px';
+            return label;
+        }
+
+        function createTile(width, height, type, rowIdx, colIdx) {
+            const tile = document.createElement('div');
+            tile.className = `am-tile tile-${type}`;
+            tile.style.width = width + 'px';
+            tile.style.height = height + 'px';
+            tile.id = `tile-${rowIdx}-${colIdx}`;
+
+            const termText = document.createElement('div');
+            termText.className = 'am-term';
+            if (type === 'x2') termText.innerHTML = 'x<sup>2</sup>';
+            else if (type === 'x') termText.textContent = 'x';
+            else termText.textContent = '1';
+            
+            tile.appendChild(termText);
+            return tile;
+        }
+
+        function generateModel(a, b, c, d, e, f, g) {
+            clearModel();
+            currentData = { a, b, c, d, e, f, g };
+
+            grid.style.gridTemplateColumns = `repeat(${d}, ${sizeX}px) repeat(${e}, ${size1}px)`;
+            grid.style.gridTemplateRows = `repeat(${f}, ${sizeX}px) repeat(${g}, ${size1}px)`;
+
+            // Inject outside labels
+            for (let i = 0; i < d; i++) colLabels.appendChild(createLabel('x', 'col'));
+            for (let i = 0; i < e; i++) colLabels.appendChild(createLabel('1', 'col'));
+            for (let i = 0; i < f; i++) rowLabels.appendChild(createLabel('x', 'row'));
+            for (let i = 0; i < g; i++) rowLabels.appendChild(createLabel('1', 'row'));
+
+            // Build grid blocks
+            for (let row = 0; row < f + g; row++) {
+                for (let col = 0; col < d + e; col++) {
+                    let type, width, height, quadrantClass;
+                    if (row < f && col < d) { 
+                        type = 'x2'; width = sizeX; height = sizeX; quadrantClass = 'q-x2';
+                    } else if (row < f && col >= d) { 
+                        type = 'x'; width = size1; height = sizeX; quadrantClass = 'q-top-x';
+                    } else if (row >= f && col < d) {
+                        type = 'x'; width = sizeX; height = size1; quadrantClass = 'q-bot-x';
+                    } else { 
+                        type = 'unit'; width = size1; height = size1; quadrantClass = 'q-unit';
+                    }
+                    const tile = createTile(width, height, type, row, col);
+                    tile.classList.add(quadrantClass);
+                    grid.appendChild(tile);
+                    
+                    addInteractivity(tile, row, col, type);
+                }
+            }
+
+            displayEquation(a, b, c, d, e, f, g, 'full');
+            buildStaticSteps(a, b, c, d, e, f, g);
+        }
+
+        function displayEquation(a, b, c, d, e, f, g, stage) {
+            const topXSplit = d * g;
+            const sideXSplit = e * f;
+            let html = '';
+
+            if (stage === 'full') {
+                html += `<span class="eq-factor full-poly">${a === 1 ? '' : a}<span class="eq-term eq-x2">x²</span> + <span class="eq-term eq-x">${b}x</span> + <span class="eq-term eq-unit">${c}</span></span>`;
+                html += ` <span class="eq-operator">=</span> `;
+                html += `<span class="eq-factor final-factors">(${f === 1 ? '' : f}x + ${g})(${d === 1 ? '' : d}x + ${e})</span>`;
+            } else if (stage === 'split') {
+                html += `<span class="eq-factor">${a === 1 ? '' : a}<span class="eq-term eq-x2">x²</span> + <span class="eq-term eq-x" style="color:var(--x-border)">${topXSplit}x + ${sideXSplit}x</span> + <span class="eq-term eq-unit">${c}</span></span>`;
+                html += ` <span class="eq-operator">=</span> ?`;
+            } else if (stage === 'grouped') {
+                html += `<span class="eq-factor" style="color: #2980b9">${f}x(${d}x + ${g})</span> + <span class="eq-factor" style="color: #8e44ad">${e}(${d}x + ${g})</span>`;
+            }
+            eqDisplay.innerHTML = html;
+        }
+
+        function buildStaticSteps(a, b, c, d, e, f, g) {
+            const topX = d * g; const botX = e * f;
+            stepsContainer.innerHTML = `
+                <div class="step-box" id="step1"><span class="step-num">Step 1</span>Observe the total polynomial area parts: ${a}x² (Blue), ${b}x (Green), and ${c} (Yellow).</div>
+                <div class="step-box" id="step2"><span class="step-num">Step 2</span>Split the middle ${b}x section into independent grid quadrants: ${topX}x and ${botX}x.</div>
+                <div class="step-box" id="step3"><span class="step-num">Step 3</span>Group rows together and pull out horizontal structural dimensions.</div>
+                <div class="step-box" id="step4"><span class="step-num">Step 4</span>Extract the outside factors directly from the boundaries: (${f}x + ${g}) & (${d}x + ${e}).</div>
+            `;
+        }
+
+        /**
+         * Timeline Animation Controller Sequence
+         */
+        function runFactorizationAnimation() {
+            const { a, b, c, d, e, f, g } = currentData;
+            animateBtn.disabled = true;
+
+            // Reset view components
+            document.querySelectorAll('.step-box').forEach(sb => sb.className = 'step-box');
+            document.querySelectorAll('.am-label').forEach(lbl => lbl.classList.add('labels-hidden'));
+            grid.classList.remove('split-stage');
+            document.querySelectorAll('.am-tile').forEach(t => {
+                t.className = t.className.split(' ').filter(c => !c.startsWith('animate-')).join(' ');
+            });
+
+            displayEquation(a, b, c, d, e, f, g, 'full');
+
+            // --- STAGE 1: Total Initial Polynomial Area ---
+            document.getElementById('step1').classList.add('active-step');
+            
+            // --- STAGE 2: Split Middle Term (T = 2.5s) ---
+            animationTimers.push(setTimeout(() => {
+                document.getElementById('step1').classList.remove('active-step');
+                document.getElementById('step2').classList.add('active-step');
+                
+                grid.classList.add('split-stage'); // Dissolve rectangle border
+                displayEquation(a, b, c, d, e, f, g, 'split');
+
+                // Animate separate block quadrants outward
+                document.querySelectorAll('.q-x2').forEach(t => t.classList.add('animate-q-x2'));
+                document.querySelectorAll('.q-top-x').forEach(t => t.classList.add('animate-q-top-x'));
+                document.querySelectorAll('.q-bot-x').forEach(t => t.classList.add('animate-q-bot-x'));
+                document.querySelectorAll('.q-unit').forEach(t => t.classList.add('animate-q-unit'));
+            }, 2500));
+
+            // --- STAGE 3: Show Row Grouping Factors (T = 5.5s) ---
+            animationTimers.push(setTimeout(() => {
+                document.getElementById('step2').classList.remove('active-step');
+                document.getElementById('step3').classList.add('active-step');
+                displayEquation(a, b, c, d, e, f, g, 'grouped');
+                
+                // Slide out the horizontal row length labels on the left side
+                document.querySelectorAll('#row-labels-left .am-label').forEach(lbl => lbl.classList.remove('labels-hidden'));
+            }, 5500));
+
+            // --- STAGE 4: Pull Out Final Factorization Dimensions (T = 8.5s) ---
+            animationTimers.push(setTimeout(() => {
+                document.getElementById('step3').classList.remove('active-step');
+                document.getElementById('step4').classList.add('active-step');
+                displayEquation(a, b, c, d, e, f, g, 'full');
+                
+                // Slide out column profile labels on the top edge
+                document.querySelectorAll('#column-labels-top .am-label').forEach(lbl => lbl.classList.remove('labels-hidden'));
+                
+                // Flash highlight on final completed equation output factors
+                const finalFactorText = eqDisplay.querySelector('.final-factors');
+                if(finalFactorText) finalFactorText.classList.add('hovered');
+                
+                animateBtn.disabled = false;
+            }, 8500));
+        }
+
+        function addInteractivity(tile, row, col, termType) {
+            tile.addEventListener('mouseover', () => {
+                // Ignore hover effects while automatic sequence runs
+                if (animateBtn.disabled) return; 
+
+                tile.classList.add('tile-hovered');
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.add('label-hovered');
+                if (rowLabel) rowLabel.classList.add('label-hovered');
+
+                const eqX2 = eqDisplay.querySelector('.eq-x2');
+                const eqX = eqDisplay.querySelector('.eq-x');
+                const eqUnit = eqDisplay.querySelector('.eq-unit');
+
+                if (termType === 'x2' && eqX2) eqX2.classList.add('hovered');
+                else if (termType === 'x' && eqX) eqX.classList.add('hovered');
+                else if (termType === 'unit' && eqUnit) eqUnit.classList.add('hovered');
+            });
+
+            tile.addEventListener('mouseout', () => {
+                tile.classList.remove('tile-hovered');
+                const colLabel = colLabels.children[col];
+                const rowLabel = rowLabels.children[row];
+                if (colLabel) colLabel.classList.remove('label-hovered');
+                if (rowLabel) rowLabel.classList.remove('label-hovered');
+
+                eqDisplay.querySelectorAll('.eq-term, .eq-factor').forEach(el => el.classList.remove('hovered'));
+            });
+        }
+
+        function generateRandomExample() {
+            const d = Math.floor(Math.random() * 2) + 1; 
+            const e = Math.floor(Math.random() * 2) + 1; 
+            const f = Math.floor(Math.random() * 2) + 1; 
+            const g = Math.floor(Math.random() * 3) + 1; 
+
+            const a = d * f; const b = d * g + e * f; const c = e * g;
+
+            if (a >= 4 || b >= 10 || c >= 7) return generateRandomExample();
+            generateModel(a, b, c, d, e, f, g);
+        }
+
+        generateBtn.addEventListener('click', generateRandomExample);
+        animateBtn.addEventListener('click', runFactorizationAnimation);
+        
+        // Initial setup
+        generateRandomExample();
+    </script>
+</body>
+</html>

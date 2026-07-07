@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Like Terms Matching Game</title>
+    <style>
+        :root {
+            --bg-color: #f5f3f7;
+            --primary-purple: #6c5ce7;
+            --light-purple: #a29bfe;
+            --dark-purple: #4834d4;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --correct-green: #00b894;
+            --wrong-red: #d63031;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 1200px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+            min-height: 80vh;
+        }
+
+        /* Sidebar / Info Layout */
+        .sidebar {
+            flex: 1;
+            background: linear-gradient(135deg, #ffffff, #f9f8fc);
+            padding: 40px;
+            border-right: 2px solid #f0edf5;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        h1 {
+            color: var(--primary-purple);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .instructions {
+            background: #f1f0f7;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--primary-purple);
+        }
+
+        .instructions h3 {
+            margin-bottom: 8px;
+            color: var(--dark-purple);
+            font-size: 1.05rem;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+        }
+
+        .instructions li {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: var(--text-dark);
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .instructions li::before {
+            content: "•";
+            color: var(--primary-purple);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .scoreboard {
+            background: var(--primary-purple);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.2);
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .score-val {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .game-status {
+            font-size: 0.95rem;
+            min-height: 1.2rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .btn-restart {
+            width: 100%;
+            background: white;
+            color: var(--primary-purple);
+            border: 2px solid white;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .btn-restart:hover {
+            background: transparent;
+            color: white;
+        }
+
+        /* Grid Layout */
+        .grid-container {
+            flex: 2.2;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-gap: 15px;
+            align-content: center;
+            background-color: #faf9fc;
+        }
+
+        /* Card Styling */
+        .card {
+            background-color: var(--card-bg);
+            border: 2px solid #e2e0eb;
+            border-radius: 12px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            user-select: none;
+            position: relative;
+            text-align: center;
+            padding: 5px;
+        }
+
+        /* Card Subscripts/Superscripts safety adjustment */
+        .card sub, .card sup {
+            font-size: 0.65em;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(108, 92, 231, 0.1);
+            border-color: var(--light-purple);
+        }
+
+        .card.selected {
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+            background-color: #f3f0ff;
+            transform: translateY(-2px);
+        }
+
+        .card.matched {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, visibility 0.4s;
+        }
+
+        /* Error Animation */
+        .card.error {
+            animation: shake 0.4s ease-in-out;
+            border-color: var(--wrong-red);
+            background-color: #ffeef0;
+            color: var(--wrong-red);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                border-right: none;
+                border-bottom: 2px solid #f0edf5;
+                padding: 30px;
+            }
+            .grid-container {
+                grid-template-columns: repeat(6, 1fr);
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .grid-container {
+                grid-template-columns: repeat(4, 1fr);
+                grid-gap: 10px;
+            }
+            .card {
+                font-size: 1.1rem;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="sidebar">
+            <div>
+                <h1>Like Terms Match</h1>
+                <p class="subtitle">A teacher-designed algebra puzzle to test your recognition of like terms.</p>
+                
+                <div class="instructions">
+                    <h3>How to Play:</h3>
+                    <ul>
+                        <li>Click two cards that contain <strong>like terms</strong>.</li>
+                        <li>Like terms must have the <strong>exact same variables</strong> and matching exponents.</li>
+                        <li>Watch out for variable order traps (e.g., $ab$ and $ba$ are like terms!).</li>
+                        <li>Watch out for power traps (e.g., $x^2$ and $x$ are NOT like terms!).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="scoreboard">
+                <div class="score-label">Current Score</div>
+                <div class="score-val" id="score">0</div>
+                <div class="game-status" id="status-msg">Find a pair to begin!</div>
+                <button class="btn-restart" id="restart-btn">Restart Game</button>
+            </div>
+        </div>
+
+        <div class="grid-container" id="grid">
+            </div>
+    </div>
+
+    <script>
+        // Question Bank System
+        // Each entry belongs to a specific group ID. Two items match if they share the identical group ID string.
+        const questionPool = [
+            // Group 'x': Simple linear variable
+            { html: '5x', group: 'x' }, { html: '-2x', group: 'x' }, { html: 'x', group: 'x' }, { html: '0.7x', group: 'x' },
+            
+            // Group 'constants': Pure numerical values without variable parts
+            { html: '12', group: 'constants' }, { html: '-3', group: 'constants' }, { html: '&#960;', group: 'constants' }, { html: '4&frac12;', group: 'constants' },
+            
+            // Group 'x2': Quadratic power terms
+            { html: 'x<sup>2</sup>', group: 'x2' }, { html: '-7x<sup>2</sup>', group: 'x2' }, { html: '4x<sup>2</sup>', group: 'x2' }, { html: '&frac23;x<sup>2</sup>', group: 'x2' },
+            
+            // Group 'xy': Two unique variables. Variable arrangement order does not alter matching properties.
+            { html: '3xy', group: 'xy' }, { html: '-yx', group: 'xy' }, { html: '9xy', group: 'xy' }, { html: '14yx', group: 'xy' },
+            
+            // Group 'x2y': Distinct exponent distribution trap
+            { html: 'x<sup>2</sup>y', group: 'x2y' }, { html: '5yx<sup>2</sup>', group: 'x2y' }, { html: '-x<sup>2</sup>y', group: 'x2y' }, { html: '2.5x<sup>2</sup>y', group: 'x2y' },
+            
+            // Group 'xy2': Alternative exponent distribution trap matching partner
+            { html: 'xy<sup>2</sup>', group: 'xy2' }, { html: '-3xy<sup>2</sup>', group: 'xy2' }, { html: '8y<sup>2</sup>x', group: 'xy2' }, { html: '0.5xy<sup>2</sup>', group: 'xy2' },
+            
+            // Group 'a2b3': Advanced structural power combinations
+            { html: 'a<sup>2</sup>b<sup>3</sup>', group: 'a2b3' }, { html: '6b<sup>3</sup>a<sup>2</sup>', group: 'a2b3' }, { html: '-2a<sup>2</sup>b<sup>3</sup>', group: 'a2b3' }, { html: 'a<sup>2</sup>b<sup>3</sup>/4', group: 'a2b3' },
+            
+            // Group 'abc': Triple linear distribution variable profile
+            { html: 'abc', group: 'abc' }, { html: '-5cba', group: 'abc' }, { html: '2bac', group: 'abc' }, { html: '0.1acb', group: 'abc' },
+
+            // Group 'y': Alternative structural simple profile
+            { html: '8y', group: 'y' }, { html: '-y', group: 'y' }, { html: '3y', group: 'y' }, { html: '11y', group: 'y' }
+        ];
+
+        // State Tracking Data Variables
+        let score = 0;
+        let selectedCards = [];
+        let isProcessing = false;
+        let matchedPairsCount = 0;
+        const totalPairsNeeded = 18; // 36 total elements yields exactly 18 functional validation configurations
+
+        const gridElement = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const statusElement = document.getElementById('status-msg');
+        const restartButton = document.getElementById('restart-btn');
+
+        // Main Program Initialization Procedure Loop execution setup
+        function initGame() {
+            // Reset core system tracker states completely
+            gridElement.innerHTML = '';
+            score = 0;
+            matchedPairsCount = 0;
+            selectedCards = [];
+            isProcessing = false;
+            scoreElement.textContent = score;
+            statusElement.textContent = "Find a pair to begin!";
+            statusElement.style.color = "white";
+
+            // Deep clone structural collection context array map and perform randomized element arrangement sequence mixing algorithm
+            const gameCardsData = [...questionPool];
+            shuffleArray(gameCardsData);
+
+            // Construct DOM representation interface matrices array
+            gameCardsData.forEach((cardData, internalIndex) => {
+                const cardNode = document.createElement('div');
+                cardNode.classList.add('card');
+                cardNode.innerHTML = cardData.html;
+                cardNode.dataset.group = cardData.group;
+                cardNode.dataset.id = internalIndex;
+                
+                cardNode.addEventListener('click', () => onCardClicked(cardNode));
+                gridElement.appendChild(cardNode);
+            });
+        }
+
+        // Implementation of the Knuth-Fisher-Yates Array Randomization Shuffling Sequence logic framework
+        function shuffleArray(targetArray) {
+            for (let primaryIdx = targetArray.length - 1; primaryIdx > 0; primaryIdx--) {
+                const targetPivotIdx = Math.floor(Math.random() * (primaryIdx + 1));
+                [targetArray[primaryIdx], targetArray[targetPivotIdx]] = [targetArray[targetPivotIdx], targetArray[primaryIdx]];
+            }
+        }
+
+        // User Selection Trigger Logic Action Matrix
+        function onCardClicked(clickedCard) {
+            // Guard conditions checking structural interface context states before passing internal evaluation flags
+            if (isProcessing) return;
+            if (clickedCard.classList.contains('selected')) return;
+            if (clickedCard.classList.contains('matched')) return;
+
+            // Highlight chosen item node frame visually
+            clickedCard.classList.add('selected');
+            selectedCards.push(clickedCard);
+
+            // Conditional block evaluating state array size requirements
+            if (selectedCards.length === 2) {
+                isProcessing = true;
+                evaluateMatchPair();
+            }
+        }
+
+        // Identity Validation Logic Execution Layer
+        function evaluateMatchPair() {
+            const [firstCard, secondCard] = selectedCards;
+            const isMatchFound = firstCard.dataset.group === secondCard.dataset.group;
+
+            if (isMatchFound) {
+                // Positively reinforced validation structural block Execution pathway execution step
+                setTimeout(() => {
+                    firstCard.classList.remove('selected');
+                    secondCard.classList.remove('selected');
+                    firstCard.classList.add('matched');
+                    secondCard.classList.add('matched');
+                    
+                    adjustScore(100);
+                    statusElement.textContent = `Correct! Like Terms matched! (+100)`;
+                    
+                    matchedPairsCount++;
+                    selectedCards = [];
+                    isProcessing = false;
+
+                    // Terminal verification assessment check parameter loop criteria logic block
+                    if (matchedPairsCount === totalPairsNeeded) {
+                        statusElement.textContent = `Excellent job! Game complete! Total Score: ${score}`;
+                    }
+                }, 300);
+            } else {
+                // Negatively penalised verification processing error animation structural branch pathway loop sequence
+                setTimeout(() => {
+                    firstCard.classList.add('error');
+                    secondCard.classList.add('error');
+                    statusElement.textContent = `Not like terms! (-10)`;
+                }, 200);
+
+                // Revert error states and clean flags
+                setTimeout(() => {
+                    firstCard.classList.remove('selected', 'error');
+                    secondCard.classList.remove('selected', 'error');
+                    
+                    adjustScore(-10);
+                    selectedCards = [];
+                    isProcessing = false;
+                }, 800);
+            }
+        }
+
+        // Internal score updates tracker method mutation action module
+        function adjustScore(calculatedDeltaModifier) {
+            score += calculatedDeltaModifier;
+            scoreElement.textContent = score;
+        }
+
+        // Context Event Listeners Initialization Assignment
+        restartButton.addEventListener('click', initGame);
+
+        // Core global scope context program runtime self activation initiation command script line
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
