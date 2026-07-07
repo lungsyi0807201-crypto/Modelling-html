@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cavalieri's Principle: Volume of a Sphere</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 25px;
+            max-width: 600px;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .canvas-label {
+            font-weight: 600;
+            margin-top: 15px;
+            color: #34495e;
+        }
+        .canvas-sublabel {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: #edf2f7;
+            padding: 15px 25px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+        input[type=range] {
+            flex-grow: 1;
+            accent-color: #3498db;
+        }
+        .math-eq {
+            font-family: 'Cambria', 'Times New Roman', serif;
+            font-style: italic;
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Cavalieri’s Principle Visualizer</h1>
+    <p>Move the slider to change the height <span class="math-eq">h</span> of the cutting plane. Notice how the cross-sectional areas (shaded in blue) remain identical at every level.</p>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="sphereCanvas" width="280" height="320"></canvas>
+            <div class="canvas-label">Solid A: The Sphere</div>
+            <div class="canvas-sublabel">Cross-section: Circle</div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="cylinderCanvas" width="280" height="320"></canvas>
+            <div class="canvas-label">Solid B: Carved Cylinder</div>
+            <div class="canvas-sublabel">Cross-section: Washer (Annulus)</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="slider-wrapper">
+            <label for="heightSlider" style="font-weight: bold;">Height (<span class="math-eq">h</span>):</label>
+            <input type="range" id="heightSlider" min="-100" max="100" value="40" step="1">
+            <span id="heightValue" style="min-width: 40px; font-family: monospace; text-align: right;">40</span>
+        </div>
+        <div id="areaFormula" style="font-size: 0.9em; color: #2c3e50; margin-top: 5px; font-weight: 500;">
+            Area = <span class="math-eq">&pi;(r&sup2; - h&sup2;)</span>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('heightSlider');
+        const heightValue = document.getElementById('heightValue');
+        
+        const canvasSphere = document.getElementById('sphereCanvas');
+        const ctxSphere = canvasSphere.getContext('2d');
+        
+        const canvasCylinder = document.getElementById('cylinderCanvas');
+        const ctxCylinder = canvasCylinder.getContext('2d');
+
+        const centerX = 140;
+        const centerY = 160;
+        const R = 100; // Radius mapping
+
+        function drawSphere(h) {
+            ctxSphere.clearRect(0, 0, canvasSphere.width, canvasSphere.height);
+            
+            // Draw axis line
+            ctxSphere.beginPath();
+            ctxSphere.setLineDash([5, 5]);
+            ctxSphere.moveTo(centerX, 20);
+            ctxSphere.lineTo(centerX, 300);
+            ctxSphere.strokeStyle = '#bdc3c7';
+            ctxSphere.stroke();
+            ctxSphere.setLineDash([]);
+
+            // Draw Sphere Outline (3D orthographic look)
+            ctxSphere.beginPath();
+            ctxSphere.arc(centerX, centerY, R, 0, 2 * Math.PI);
+            ctxSphere.strokeStyle = '#2c3e50';
+            ctxSphere.lineWidth = 2;
+            ctxSphere.stroke();
+            
+            // Draw implicit center equator
+            ctxSphere.beginPath();
+            ctxSphere.ellipse(centerX, centerY, R, 25, 0, 0, 2 * Math.PI);
+            ctxSphere.strokeStyle = '#e2e8f0';
+            ctxSphere.stroke();
+
+            // Calculate current plane geometry
+            const planeY = centerY - h;
+            const r_slice = Math.sqrt(Math.max(0, R*R - h*h));
+
+            // Draw Cross-section plane projection line
+            ctxSphere.beginPath();
+            ctxSphere.moveTo(centerX - R - 20, planeY);
+            ctxSphere.lineTo(centerX + R + 20, planeY);
+            ctxSphere.strokeStyle = '#e74c3c';
+            ctxSphere.lineWidth = 1.5;
+            ctxSphere.stroke();
+
+            // Draw Shaded Cross-sectional Oval (3D projection perspective)
+            ctxSphere.beginPath();
+            ctxSphere.ellipse(centerX, planeY, r_slice, r_slice * 0.25, 0, 0, 2 * Math.PI);
+            ctxSphere.fillStyle = 'rgba(52, 152, 219, 0.6)';
+            ctxSphere.fill();
+            ctxSphere.strokeStyle = '#2980b9';
+            ctxSphere.lineWidth = 2;
+            ctxSphere.stroke();
+
+            // Label dimensions
+            if (h > 0) {
+                // center to plane line (h)
+                ctxSphere.beginPath();
+                ctxSphere.moveTo(centerX, centerY);
+                ctxSphere.lineTo(centerX, planeY);
+                ctxSphere.strokeStyle = '#34495e';
+                ctxSphere.lineWidth = 2;
+                ctxSphere.stroke();
+                
+                ctxSphere.fillStyle = '#34495e';
+                ctxSphere.font = '14px Cambria';
+                ctxSphere.fillText('h', centerX + 8, centerY - h/2 + 5);
+                
+                // slice radius line
+                ctxSphere.beginPath();
+                ctxSphere.moveTo(centerX, planeY);
+                ctxSphere.lineTo(centerX + r_slice, planeY);
+                ctxSphere.strokeStyle = '#2980b9';
+                ctxSphere.stroke();
+            }
+        }
+
+        function drawCylinder(h) {
+            ctxCylinder.clearRect(0, 0, canvasCylinder.width, canvasCylinder.height);
+
+            const topY = centerY - R;
+            const bottomY = centerY + R;
+            const planeY = centerY - h;
+            const r_cone = Math.abs(h);
+
+            // Draw Cone internal boundaries (the "carved" walls)
+            ctxCylinder.beginPath();
+            ctxCylinder.moveTo(centerX - R, topY);
+            ctxCylinder.lineTo(centerX, centerY);
+            ctxCylinder.lineTo(centerX + R, topY);
+            ctxCylinder.moveTo(centerX - R, bottomY);
+            ctxCylinder.lineTo(centerX, centerY);
+            ctxCylinder.lineTo(centerX + R, bottomY);
+            ctxCylinder.strokeStyle = '#95a5a6';
+            ctxCylinder.setLineDash([3, 3]);
+            ctxCylinder.stroke();
+            ctxCylinder.setLineDash([]);
+
+            // Draw Cylinder Main Outlines
+            ctxCylinder.beginPath();
+            ctxCylinder.moveTo(centerX - R, topY);
+            ctxCylinder.lineTo(centerX - R, bottomY);
+            ctxCylinder.moveTo(centerX + R, topY);
+            ctxCylinder.lineTo(centerX + R, bottomY);
+            ctxCylinder.strokeStyle = '#2c3e50';
+            ctxCylinder.lineWidth = 2;
+            ctxCylinder.stroke();
+
+            // Top and Bottom Ellipses
+            ctxCylinder.beginPath();
+            ctxCylinder.ellipse(centerX, topY, R, 25, 0, 0, 2 * Math.PI);
+            ctxCylinder.ellipse(centerX, bottomY, R, 25, 0, 0, 2 * Math.PI);
+            ctxCylinder.strokeStyle = '#2c3e50';
+            ctxCylinder.stroke();
+
+            // Intersecting Red Slice Plane Line
+            ctxCylinder.beginPath();
+            ctxCylinder.moveTo(centerX - R - 20, planeY);
+            ctxCylinder.lineTo(centerX + R + 20, planeY);
+            ctxCylinder.strokeStyle = '#e74c3c';
+            ctxCylinder.lineWidth = 1.5;
+            ctxCylinder.stroke();
+
+            // Drawing the Washer Cross Section (Outer Oval minus Inner Cone Oval)
+            // Path rule 'evenodd' easily builds an annular washer ring
+            ctxCylinder.beginPath();
+            ctxCylinder.ellipse(centerX, planeY, R, R * 0.25, 0, 0, 2 * Math.PI);
+            ctxCylinder.ellipse(centerX, planeY, r_cone, r_cone * 0.25, 0, 0, 2 * Math.PI);
+            ctxCylinder.fillStyle = 'rgba(52, 152, 219, 0.6)';
+            ctxCylinder.fill('evenodd');
+            
+            // Stroke outer bounds of washer
+            ctxCylinder.beginPath();
+            ctxCylinder.ellipse(centerX, planeY, R, R * 0.25, 0, 0, 2 * Math.PI);
+            ctxCylinder.strokeStyle = '#2980b9';
+            ctxCylinder.lineWidth = 1.5;
+            ctxCylinder.stroke();
+
+            // Stroke inner bounds of washer
+            ctxCylinder.beginPath();
+            ctxCylinder.ellipse(centerX, planeY, r_cone, r_cone * 0.25, 0, 0, 2 * Math.PI);
+            ctxCylinder.strokeStyle = '#e74c3c';
+            ctxCylinder.lineWidth = 1.5;
+            ctxCylinder.stroke();
+        }
+
+        function updatePlots() {
+            const h = parseInt(slider.value, 10);
+            heightValue.textContent = h;
+            drawSphere(h);
+            drawCylinder(h);
+        }
+
+        slider.addEventListener('input', updatePlots);
+        
+        // Initial Draw loop call
+        updatePlots();
+    </script>
+</body>
+</html>
