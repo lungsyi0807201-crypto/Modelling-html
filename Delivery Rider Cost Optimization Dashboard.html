@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Rider Cost Optimization Dashboard</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f5f7fa;
+      padding: 30px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .dashboard-title {
+      text-align: center;
+      color: #2d3748;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 30px;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Control Panel */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #4a5568;
+      font-size: 15px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #2b6cb0;
+    }
+
+    .value {
+      color: #2b6cb0;
+      font-weight: bold;
+    }
+
+    /* Results Panel */
+    .result-box {
+      background: #ebf8ff;
+      padding: 18px;
+      border-radius: 10px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .result-box h3 {
+      margin-bottom: 12px;
+      color: #2c5282;
+    }
+
+    .result-text {
+      font-size: 16px;
+      margin: 6px 0;
+    }
+
+    .optimal-speed {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2f855a;
+    }
+
+    .speed-limit-alert {
+      color: #e53e3e;
+      font-weight: bold;
+    }
+
+    /* SVG Chart Area */
+    .chart-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    svg {
+      background: #fafbfc;
+      border-radius: 8px;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: #2d3748;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="dashboard-title">Delivery Rider Cost Optimization Dashboard</h1>
+
+  <div class="container">
+    <!-- Left: Slider Controls -->
+    <div class="control-panel">
+      <h3>Adjust Model Parameters</h3>
+
+      <!-- k1 slider -->
+      <div class="slider-group">
+        <label>Cost Coefficient \(k_1\): <span class="value" id="k1-val">0.5</span></label>
+        <input type="range" id="k1" min="0.1" max="2" step="0.1" value="0.5">
+      </div>
+
+      <!-- k2 slider -->
+      <div class="slider-group">
+        <label>Cost Coefficient \(k_2\): <span class="value" id="k2-val">800</span></label>
+        <input type="range" id="k2" min="100" max="2000" step="50" value="800">
+      </div>
+
+      <!-- Total Distance D -->
+      <div class="slider-group">
+        <label>Total Delivery Distance \(D\) (km): <span class="value" id="D-val">10</span></label>
+        <input type="range" id="D" min="1" max="30" step="1" value="10">
+      </div>
+
+      <!-- Max Speed Limit -->
+      <div class="slider-group">
+        <label>Max Speed Limit (km/h): <span class="value" id="maxSpeed-val">40</span></label>
+        <input type="range" id="maxSpeed" min="10" max="80" step="5" value="40">
+      </div>
+
+      <!-- Real-Time Results -->
+      <div class="result-box">
+        <h3>Optimal Solution</h3>
+        <p class="result-text">Total Cost Function: <br>\(C(v) = k_1 D v^2 + \dfrac{k_2 D}{v}\)</p>
+        <p class="result-text optimal-speed">Optimal Speed \(v^* = \) <span id="v-star">0</span> km/h</p>
+        <p class="result-text">Minimum Cost = $<span id="min-cost">0</span></p>
+        <p class="result-text speed-limit-alert">Max Speed Limit: <span id="speed-alert-text">40</span> km/h</p>
+      </div>
+    </div>
+
+    <!-- Right: Dynamic D3 Chart -->
+    <div class="chart-panel">
+      <h3>Total Cost Curve \(C(v)\)</h3>
+      <svg id="cost-chart" width="650" height="450"></svg>
+    </div>
+  </div>
+
+  <script>
+    // --------------------------
+    // SVG & Margin Setup
+    // --------------------------
+    const margin = { top: 30, right: 50, bottom: 50, left: 60 };
+    const width = 650 - margin.left - margin.right;
+    const height = 450 - margin.top - margin.bottom;
+
+    const svg = d3.select("#cost-chart")
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Tooltip
+    const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+
+    // --------------------------
+    // Scales (will be updated)
+    // --------------------------
+    let xScale = d3.scaleLinear().range([0, width]);
+    let yScale = d3.scaleLinear().range([height, 0]);
+
+    // Axis groups
+    const xAxis = svg.append("g").attr("transform", `translate(0,${height})`);
+    const yAxis = svg.append("g");
+
+    // Axis labels
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", height + 40)
+      .style("text-anchor", "middle")
+      .text("Speed \(v\) (km/h)");
+
+    svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -50)
+      .attr("x", -height / 2)
+      .style("text-anchor", "middle")
+      .text("Total Cost \(C(v)\) ($)");
+
+    // --------------------------
+    // Cost Function & Optimal Speed
+    // Model: C(v) = k1*D*v² + (k2*D)/v
+    // Optimal speed: v* = sqrt(k2/(2*k1))
+    // --------------------------
+    function computeCost(v, k1, k2, D) {
+      return k1 * D * v * v + (k2 * D) / v;
+    }
+
+    function optimalSpeed(k1, k2) {
+      return Math.sqrt(k2 / (2 * k1));
+    }
+
+    // --------------------------
+    // Main Update Function
+    // --------------------------
+    function updateChart() {
+      // Get slider values
+      const k1 = parseFloat(d3.select("#k1").property("value"));
+      const k2 = parseFloat(d3.select("#k2").property("value"));
+      const D = parseFloat(d3.select("#D").property("value"));
+      const vMax = parseFloat(d3.select("#maxSpeed").property("value"));
+
+      // Update display values
+      d3.select("#k1-val").text(k1);
+      d3.select("#k2-val").text(k2);
+      d3.select("#D-val").text(D);
+      d3.select("#maxSpeed-val").text(vMax);
+      d3.select("#speed-alert-text").text(vMax);
+
+      // Compute optimal speed
+      const vStar = optimalSpeed(k1, k2);
+      const minCost = computeCost(vStar, k1, k2, D);
+
+      d3.select("#v-star").text(vStar.toFixed(2));
+      d3.select("#min-cost").text(minCost.toFixed(2));
+
+      // Generate data points for curve
+      const vVals = d3.range(1, 100, 0.5);
+      const data = vVals.map(v => ({
+        v: v,
+        cost: computeCost(v, k1, k2, D)
+      }));
+
+      // Update scales
+      xScale.domain([0, 100]);
+      yScale.domain([0, d3.max(data, d => d.cost) * 1.1]);
+
+      // Update axes
+      xAxis.call(d3.axisBottom(xScale));
+      yAxis.call(d3.axisLeft(yScale));
+
+      // --------------------------
+      // Draw Cost Curve
+      // --------------------------
+      const line = d3.line()
+        .x(d => xScale(d.v))
+        .y(d => yScale(d.cost))
+        .curve(d3.curveMonotoneX);
+
+      svg.selectAll(".cost-line").remove();
+      svg.append("path")
+        .attr("class", "cost-line")
+        .datum(data)
+        .attr("d", line)
+        .attr("fill", "none")
+        .attr("stroke", "#2b6cb0")
+        .attr("stroke-width", 3);
+
+      // --------------------------
+      // Optimal Speed Marker
+      // --------------------------
+      svg.selectAll(".optimal-marker").remove();
+      svg.append("circle")
+        .attr("class", "optimal-marker")
+        .attr("cx", xScale(vStar))
+        .attr("cy", yScale(minCost))
+        .attr("r", 6)
+        .attr("fill", "#2f855a");
+
+      svg.append("line")
+        .attr("class", "optimal-marker")
+        .attr("x1", xScale(vStar))
+        .attr("y1", yScale(minCost))
+        .attr("x2", xScale(vStar))
+        .attr("y2", height)
+        .attr("stroke", "#2f855a")
+        .attr("stroke-width", 2)
+        .attr("stroke-dasharray", "4 2");
+
+      // --------------------------
+      // Red Max Speed Alert Line
+      // --------------------------
+      svg.selectAll(".speed-limit").remove();
+      svg.append("line")
+        .attr("class", "speed-limit")
+        .attr("x1", xScale(vMax))
+        .attr("y1", 0)
+        .attr("x2", xScale(vMax))
+        .attr("y2", height)
+        .attr("stroke", "#e53e3e")
+        .attr("stroke-width", 3)
+        .attr("stroke-dasharray", "6 3");
+    }
+
+    // --------------------------
+    // Slider Event Listeners
+    // --------------------------
+    d3.selectAll("input").on("input", updateChart);
+
+    // Initialize chart
+    updateChart();
+  </script>
+</body>
+</html>
