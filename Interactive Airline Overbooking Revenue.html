@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Overbooking Revenue Dashboard</title>
+    <!-- Chart.js CDN for dynamic bar charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .dashboard-title {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        /* Slider Panel */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #3182ce;
+        }
+        .value-display {
+            color: #3182ce;
+            font-weight: bold;
+        }
+        /* Revenue Results */
+        .revenue-results {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #ebf8ff;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .perfect-case {
+            background: #c6f6d5 !important;
+            border: 2px solid #38a169;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .result-text {
+            font-size: 1.1rem;
+            margin: 0.5rem 0;
+        }
+        /* Chart Section */
+        .chart-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="dashboard-title">Interactive Airline Overbooking Revenue Dashboard</h1>
+
+    <div class="container">
+        <!-- Left: Control Sliders -->
+        <div class="controls-panel">
+            <h2>Adjust Parameters</h2>
+
+            <!-- 1. Available Seats (Fixed Capacity) -->
+            <div class="control-group">
+                <label>Available Seats (Fixed Capacity): <span class="value-display" id="seatsVal">200</span></label>
+                <input type="range" id="seats" min="100" max="300" value="200" step="10">
+            </div>
+
+            <!-- 2. Ticket Price -->
+            <div class="control-group">
+                <label>Ticket Price ($): <span class="value-display" id="priceVal">200</span></label>
+                <input type="range" id="price" min="50" max="500" value="200" step="10">
+            </div>
+
+            <!-- 3. Rebate per Bumped Passenger -->
+            <div class="control-group">
+                <label>Rebate per Bumped Passenger ($): <span class="value-display" id="rebateVal">600</span></label>
+                <input type="range" id="rebate" min="100" max="1000" value="600" step="50">
+            </div>
+
+            <!-- 4. Overbooking Percentage -->
+            <div class="control-group">
+                <label>Overbooking %: <span class="value-display" id="overbookVal">10</span>%</label>
+                <input type="range" id="overbook" min="0" max="30" value="10" step="1">
+            </div>
+
+            <!-- 5. Actual No-Shows -->
+            <div class="control-group">
+                <label>Actual No-Show Passengers: <span class="value-display" id="noshowVal">20</span></label>
+                <input type="range" id="noshow" min="0" max="100" value="20" step="1">
+            </div>
+
+            <!-- Real-Time Revenue Results -->
+            <div class="revenue-results" id="resultBox">
+                <h3>Financial Results</h3>
+                <p class="result-text">Overbooked Tickets: <span id="overbookedTickets">20</span></p>
+                <p class="result-text">Bumped Passengers: <span id="bumped">0</span></p>
+                <p class="result-text">Overbooking Revenue: $<span id="revOverbook">0</span></p>
+                <p class="result-text">No Overbooking Revenue: $<span id="revNoOverbook">0</span></p>
+                <p class="result-text" style="font-weight:bold; color: #e53e3e;">Status: <span id="statusText">Normal Operation</span></p>
+            </div>
+        </div>
+
+        <!-- Right: Dynamic Bar Chart -->
+        <div class="chart-panel">
+            <h2>Revenue Comparison: Overbooking vs No Overbooking</h2>
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --------------- DOM ELEMENTS ---------------
+        const seatsSlider = document.getElementById('seats');
+        const priceSlider = document.getElementById('price');
+        const rebateSlider = document.getElementById('rebate');
+        const overbookSlider = document.getElementById('overbook');
+        const noshowSlider = document.getElementById('noshow');
+        
+        const resultBox = document.getElementById('resultBox');
+        const statusText = document.getElementById('statusText');
+
+        // --------------- INITIALIZE CHART ---------------
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        let revenueChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['No Overbooking', 'With Overbooking'],
+                datasets: [{
+                    label: 'Total Revenue ($)',
+                    data: [0, 0],
+                    backgroundColor: ['#4299e1', '#38a169'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Real-Time Revenue Comparison' }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // --------------- CORE CALCULATION LOGIC ---------------
+        function calculateRevenue() {
+            // Get slider values
+            const fixedSeats = parseInt(seatsSlider.value);
+            const ticketPrice = parseInt(priceSlider.value);
+            const rebate = parseInt(rebateSlider.value);
+            const overbookPercent = parseInt(overbookSlider.value);
+            const actualNoShows = parseInt(noshowSlider.value);
+
+            // Calculate key metrics
+            const totalTicketsSold = Math.round(fixedSeats * (1 + overbookPercent / 100));
+            const overbookedTickets = totalTicketsSold - fixedSeats;
+            const passengersShowUp = totalTicketsSold - actualNoShows;
+            const bumpedPassengers = Math.max(0, passengersShowUp - fixedSeats);
+
+            // Revenue formulas (Linear Overbooking Model: R = (N-n)T - mC)
+            const revenueNoOverbook = fixedSeats * ticketPrice;
+            const revenueOverbook = (totalTicketsSold - actualNoShows) * ticketPrice - (bumpedPassengers * rebate);
+
+            // Update display values
+            document.getElementById('seatsVal').textContent = fixedSeats;
+            document.getElementById('priceVal').textContent = ticketPrice;
+            document.getElementById('rebateVal').textContent = rebate;
+            document.getElementById('overbookVal').textContent = overbookPercent;
+            document.getElementById('noshowVal').textContent = actualNoShows;
+            document.getElementById('overbookedTickets').textContent = overbookedTickets;
+            document.getElementById('bumped').textContent = bumpedPassengers;
+            document.getElementById('revOverbook').textContent = revenueOverbook.toLocaleString();
+            document.getElementById('revNoOverbook').textContent = revenueNoOverbook.toLocaleString();
+
+            // --------------- PERFECT CASE TRIGGER ---------------
+            // Perfect Case: No-shows EXACTLY equal overbooked tickets → 0 bumped passengers, full seats
+            if (overbookedTickets === actualNoShows && bumpedPassengers === 0) {
+                resultBox.classList.add('perfect-case');
+                statusText.textContent = '✅ PERFECT CASE! No bumped passengers, full capacity';
+                statusText.style.color = '#38a169';
+            } else {
+                resultBox.classList.remove('perfect-case');
+                if (bumpedPassengers > 0) {
+                    statusText.textContent = '⚠️ Overcapacity: Passengers bumped';
+                    statusText.style.color = '#dd6b20';
+                } else {
+                    statusText.textContent = 'Normal Operation';
+                    statusText.style.color = '#e53e3e';
+                }
+            }
+
+            // Update chart
+            revenueChart.data.datasets[0].data = [revenueNoOverbook, revenueOverbook];
+            revenueChart.update();
+        }
+
+        // --------------- SLIDER EVENT LISTENERS ---------------
+        seatsSlider.addEventListener('input', calculateRevenue);
+        priceSlider.addEventListener('input', calculateRevenue);
+        rebateSlider.addEventListener('input', calculateRevenue);
+        overbookSlider.addEventListener('input', calculateRevenue);
+        noshowSlider.addEventListener('input', calculateRevenue);
+
+        // Initial calculation on load
+        calculateRevenue();
+    </script>
+</body>
+</html>
