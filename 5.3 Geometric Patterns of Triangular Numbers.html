@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Triangular Numbers - Classroom Demonstration Tool</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary-dot: #1e40af; /* Deep Blue for existing dots */
+            --accent-dot: #f97316;  /* Vibrant Orange for the newly added row */
+            --border-color: #e2e8f0;
+            --btn-primary: #2563eb;
+            --btn-hover: #1d4ed8;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #0f172a;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Visual Canvas --- */
+        .canvas-container {
+            width: 100%;
+            height: 340px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            border: 2px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #triangle-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px; /* Row gap */
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 12px; /* Column gap */
+        }
+
+        .dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--primary-dot);
+            transition: background-color 0.3s ease;
+        }
+
+        /* Highlight animation for the newly added base row */
+        .dot.new-row {
+            background-color: var(--accent-dot);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            transform: scale(0);
+        }
+
+        @keyframes popIn {
+            to {
+                transform: scale(1);
+            }
+        }
+
+        /* --- Control Panel --- */
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 130px;
+        }
+
+        .btn-prev {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-prev:hover:not(:disabled) {
+            background-color: #cbd5e1;
+        }
+
+        .btn-next {
+            background-color: var(--btn-primary);
+            color: white;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background-color: var(--btn-hover);
+        }
+
+        .btn-reset {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: #dc2626;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* --- Math Info Box --- */
+        .info-box {
+            width: 100%;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-line {
+            display: flex;
+            font-size: 1.3rem;
+            align-items: baseline;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+
+        .info-line:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--text-muted);
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace; /* Clear math font */
+        }
+
+        .info-value em {
+            font-style: normal;
+            color: var(--accent-dot);
+            font-weight: 800;
+        }
+
+        /* Responsive scaling for smaller projectors */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.6rem; }
+            .info-line { flex-direction: column; gap: 4px; }
+            .info-label { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Geometric Patterns of Triangular Numbers</h1>
+        <div class="subtitle">Interactive Classroom Demonstration (n = 1 to 10)</div>
+    </header>
+
+    <!-- Visual Dot Canvas -->
+    <div class="canvas-container">
+        <div id="triangle-wrapper"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn-prev" id="btn-prev" onclick="changeTerm(-1)">← Previous</button>
+        <button class="btn-reset" onclick="resetDemo()">Reset (n=1)</button>
+        <button class="btn-next" id="btn-next" onclick="changeTerm(1)">Next →</button>
+    </div>
+
+    <!-- Math Info Box -->
+    <div class="info-box">
+        <div class="info-line">
+            <span class="info-label">Current Term (n):</span>
+            <span class="info-value" id="math-n">1</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Addition Formula:</span>
+            <span class="info-value" id="math-formula">1</span>
+        </div>
+        <div class="info-line">
+            <span class="info-label">Triangular Number (T<sub>n</sub>):</span>
+            <span class="info-value" id="math-total">1</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentN = 1;
+    const maxN = 10;
+
+    const wrapper = document.getElementById('triangle-wrapper');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const mathN = document.getElementById('math-n');
+    const mathFormula = document.getElementById('math-formula');
+    const mathTotal = document.getElementById('math-total');
+
+    function updateVisualization() {
+        // Clear previous state
+        wrapper.innerHTML = '';
+
+        // Draw the triangular arrangement row by row
+        for (let r = 1; r <= currentN; r++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row';
+
+            for (let c = 1; c <= r; c++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                
+                // If it's the very last row, render it in the accent color
+                if (r === currentN && currentN > 1) {
+                    dot.classList.add('new-row');
+                }
+                rowDiv.appendChild(dot);
+            }
+            wrapper.appendChild(rowDiv);
+        }
+
+        // Update control button states
+        btnPrev.disabled = (currentN === 1);
+        btnNext.disabled = (currentN === maxN);
+
+        // Calculate and update the algebraic formulas
+        const total = (currentN * (currentN + 1)) / 2;
+        
+        mathN.innerText = currentN;
+
+        // Build formula string
+        if (currentN === 1) {
+            mathFormula.innerHTML = "1";
+        } else {
+            const sequenceParts = Array.from({ length: currentN - 1 }, (_, i) => i + 1);
+            // Highlight the newly added term visually in the formula text too!
+            mathFormula.innerHTML = sequenceParts.join(' + ') + ` + <em>${currentN}</em>`;
+        }
+
+        mathTotal.innerHTML = `T<sub>${currentN}</sub> = ${total}`;
+    }
+
+    function changeTerm(direction) {
+        const targetN = currentN + direction;
+        if (targetN >= 1 && targetN <= maxN) {
+            currentN = targetN;
+            updateVisualization();
+        }
+    }
+
+    function resetDemo() {
+        currentN = 1;
+        updateVisualization();
+    }
+
+    // Initialize display on load
+    updateVisualization();
+</script>
+
+</body>
+</html>
