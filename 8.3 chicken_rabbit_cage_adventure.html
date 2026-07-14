@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken-Rabbit Cage Adventure: Logic Assumption Method</title>
+    <!-- Tailwind CSS for modern, adaptive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for an engaging, kid-friendly typographic palette -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@400..700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+        h1, h2, h3, .font-fun {
+            font-family: 'Fredoka', sans-serif;
+        }
+        
+        /* Keyframe animations for gamified elements */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.15); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes swapCard {
+            0% { transform: scale(1) rotate(0deg); }
+            30% { transform: scale(0.8) rotate(-15deg); filter: brightness(1.2); }
+            70% { transform: scale(1.1) rotate(15deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
+        }
+
+        @keyframes floatEffect {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .animate-pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .animate-swap-card {
+            animation: swapCard 0.6s ease-in-out;
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+
+        .animate-float {
+            animation: floatEffect 3s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar to keep layout clean */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-800 pb-6 selection:bg-emerald-200">
+
+    <!-- Header/Hero Section -->
+    <header class="w-full bg-white border-b-4 border-emerald-100 shadow-sm py-4 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <span class="text-4xl md:text-5xl animate-float"> cage 🪶 </span>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-emerald-600 tracking-wide">Chicken & Rabbit Cage Adventure</h1>
+                <p class="text-sm font-semibold text-slate-500">Master the "Logic Assumption Method" step-by-step!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 bg-emerald-50 border-2 border-emerald-200 rounded-2xl px-4 py-2">
+            <span class="text-2xl">🧠</span>
+            <div class="text-left">
+                <p class="text-xs font-bold text-emerald-700 uppercase tracking-widest">Puzzle Stats</p>
+                <p class="text-sm font-bold text-emerald-900">35 Heads & 94 Legs</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto w-full px-4 md:px-6 py-6 flex-1 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Left Panel: Status Board & Dynamic Teacher Guidance -->
+        <section class="w-full lg:w-1/3 flex flex-col gap-6">
+            
+            <!-- Dashboard / Status Panel -->
+            <div class="bg-white rounded-3xl border-4 border-emerald-200 p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-100 rounded-full -mr-10 -mt-10 opacity-50"></div>
+                <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 border-b pb-2">
+                    📊 Goal Progress
+                </h2>
+                
+                <!-- Head counter -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-bold text-slate-600">Total Animal Heads</span>
+                        <span id="heads-badge" class="bg-indigo-100 text-indigo-800 text-xs font-extrabold px-2.5 py-1 rounded-full border border-indigo-200">0 / 35</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3">
+                        <div id="heads-progress" class="bg-indigo-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Leg counter progress bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-bold text-slate-600">Total Animal Legs</span>
+                        <span id="legs-badge" class="bg-amber-100 text-amber-800 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-200">0 / 94</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3">
+                        <div id="legs-progress" class="bg-amber-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Micro Details Cards -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 text-center">
+                        <span class="text-xs font-bold text-amber-700 block uppercase">Current Legs</span>
+                        <span id="stats-current-legs" class="text-3xl font-extrabold text-amber-900 font-fun">0</span>
+                    </div>
+                    <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-3 text-center transition-all duration-300" id="deficit-container">
+                        <span id="deficit-label" class="text-xs font-bold text-rose-700 block uppercase">Legs Needed</span>
+                        <span id="stats-remaining-legs" class="text-3xl font-extrabold text-rose-900 font-fun">94</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assistant / Educator Box -->
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border-4 border-amber-200 p-6 shadow-xl flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-amber-200 p-3 rounded-2xl text-2xl animate-bounce">🦉</div>
+                        <div>
+                            <h3 class="font-bold text-amber-900 text-lg">Professor Owl</h3>
+                            <p class="text-xs text-amber-700">Your Math Guide</p>
+                        </div>
+                    </div>
+                    <!-- Dynamic Text Prompt Bubble -->
+                    <div class="bg-white border-2 border-amber-100 rounded-2xl p-4 shadow-sm relative">
+                        <div class="absolute left-6 -top-2 w-4 h-4 bg-white border-l-2 border-t-2 border-amber-100 transform rotate-45"></div>
+                        <p id="instructor-bubble" class="text-sm font-semibold text-slate-700 leading-relaxed">
+                            Hello! Welcome to the cage puzzle. We have 35 heads and 94 legs hidden inside! 
+                            <br><br>
+                            Let's use the <span class="text-amber-600 font-bold">Assumption Method</span>. Ready? Click <strong>Step 1</strong> to assume every single animal is a chicken first!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Calculation Hint Box -->
+                <div id="calc-hint-box" class="mt-4 p-3 bg-white border border-amber-100 rounded-xl text-xs font-bold text-amber-800 space-y-1 hidden">
+                    <div class="flex justify-between">
+                        <span>Chicken Legs:</span>
+                        <span id="calc-chicken-sum">0 × 2 = 0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Rabbit Legs:</span>
+                        <span id="calc-rabbit-sum">0 × 4 = 0</span>
+                    </div>
+                    <div class="border-t pt-1 flex justify-between font-extrabold text-amber-950">
+                        <span>Total Summed:</span>
+                        <span id="calc-total-sum">0 / 94</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Panel: Visual Arena -->
+        <section class="w-full lg:w-2/3 flex flex-col gap-4">
+            
+            <!-- Arena Title & Counters -->
+            <div class="bg-white rounded-3xl border-4 border-emerald-200 p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🏟️</span>
+                    <h2 class="text-xl font-bold text-slate-800">Visual Arena</h2>
+                </div>
+                <!-- Dynamic Count Badges -->
+                <div class="flex gap-2">
+                    <span class="bg-yellow-50 border-2 border-yellow-200 px-3 py-1 rounded-2xl text-xs font-extrabold text-yellow-800 flex items-center gap-1.5 shadow-sm">
+                        🐔 <span id="arena-chicken-count">0</span> Chickens
+                    </span>
+                    <span class="bg-pink-50 border-2 border-pink-200 px-3 py-1 rounded-2xl text-xs font-extrabold text-pink-800 flex items-center gap-1.5 shadow-sm">
+                        🐰 <span id="arena-rabbit-count">0</span> Rabbits
+                    </span>
+                    <span class="bg-slate-100 border-2 border-slate-200 px-3 py-1 rounded-2xl text-xs font-extrabold text-slate-700 flex items-center gap-1.5 shadow-sm">
+                        ❓ <span id="arena-empty-count">35</span> Empty
+                    </span>
+                </div>
+            </div>
+
+            <!-- The main grid arena of 35 elements -->
+            <div id="arena-grid" class="bg-slate-900 border-4 border-slate-800 rounded-3xl p-6 min-h-[420px] shadow-inner grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-7 gap-3 justify-center items-center relative">
+                <!-- Overlay for Initial State Instructions -->
+                <div id="arena-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm rounded-[20px] flex flex-col justify-center items-center p-6 text-center z-10">
+                    <div class="bg-slate-800/80 border border-slate-700 p-8 rounded-3xl max-w-md shadow-2xl">
+                        <span class="text-5xl mb-4 block animate-bounce">🪶</span>
+                        <h3 class="text-white text-xl font-bold mb-2">The Cage is Locked!</h3>
+                        <p class="text-slate-400 text-sm mb-6">
+                            The 35 magical creatures are currently asleep. Click <strong>"Step 1: Assume all chickens"</strong> to let them out and assume they are all chickens!
+                        </p>
+                        <button onclick="triggerStep1()" class="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white font-bold px-6 py-2.5 rounded-full shadow-lg hover:shadow-emerald-500/20 transition-all text-sm">
+                            Unlock Cage & Setup All Chickens 🐔
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 35 animal slots will be dynamically injected here -->
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Floating/Bottom Sticky Control Panel -->
+    <footer class="max-w-7xl mx-auto w-full px-4 md:px-6 mt-4">
+        <div class="bg-white border-4 border-emerald-200 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <div class="text-center md:text-left">
+                <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-600 block mb-1">Actions & Controls</span>
+                <p class="text-sm font-bold text-slate-500">Click actions step-by-step to visualize the math logic!</p>
+            </div>
+            
+            <div class="flex flex-wrap justify-center items-center gap-3">
+                <!-- Step 1 Button -->
+                <button id="btn-step-1" onclick="triggerStep1()" class="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:pointer-events-none text-yellow-950 font-extrabold px-6 py-3 rounded-2xl shadow-md transition-all duration-200 active:scale-95 flex items-center gap-2 border-b-4 border-yellow-600">
+                    <span>🐔</span> Step 1: Assume All Chickens
+                </button>
+                
+                <!-- Step 2 Button (Initially disabled until Step 1 is clicked) -->
+                <button id="btn-step-2" onclick="triggerStep2()" disabled class="bg-pink-500 hover:bg-pink-400 disabled:opacity-50 disabled:pointer-events-none text-white font-extrabold px-6 py-3 rounded-2xl shadow-md transition-all duration-200 active:scale-95 flex items-center gap-2 border-b-4 border-pink-700">
+                    <span>🐰</span> Step 2: Replace Chicken with Rabbit
+                </button>
+                
+                <!-- Reset Button -->
+                <button id="btn-reset" onclick="triggerReset()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold px-6 py-3 rounded-2xl shadow-sm transition-all duration-200 active:scale-95 flex items-center gap-2 border-b-4 border-slate-400">
+                    <span>🔄</span> Reset
+                </button>
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        // Game & Math Setup constants
+        const TOTAL_HEADS = 35;
+        const TARGET_LEGS = 94;
+        const LEGS_PER_CHICKEN = 2;
+        const LEGS_PER_RABBIT = 4;
+
+        // Dynamic State Variables
+        let step = 0; // 0: initial, 1: assumed all chickens, 2: swapping, 3: completed
+        let chickens = 0;
+        let rabbits = 0;
+        let legs = 0;
+        
+        // Native Web Audio Synthesizer for high-fidelity interactive SFX
+        let audioCtx = null;
+        function playSound(type) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'unlock') {
+                    // Ascending notes for opening the cage
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'replace') {
+                    // Fun conversion sound (boing/spring style)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+                    osc.frequency.exponentialRampToValueAtTime(330, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    // Joyous victory major chord progression
+                    const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    freqs.forEach((freq, idx) => {
+                        const chordOsc = audioCtx.createOscillator();
+                        const chordGain = audioCtx.createGain();
+                        chordOsc.connect(chordGain);
+                        chordGain.connect(audioCtx.destination);
+                        chordOsc.type = 'sawtooth';
+                        chordOsc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        chordGain.gain.setValueAtTime(0.08, now + idx * 0.1);
+                        chordGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.5);
+                        chordOsc.start(now + idx * 0.1);
+                        chordOsc.stop(now + idx * 0.1 + 0.5);
+                    });
+                } else if (type === 'reset') {
+                    // Soft descending warning-style reset tone
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                }
+            } catch (e) {
+                console.warn('Web Audio Context not loaded or supported: ', e);
+            }
+        }
+
+        // Initialize / Clean state
+        function initArena() {
+            const grid = document.getElementById('arena-grid');
+            grid.innerHTML = '';
+            
+            // Re-render the initial setup overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'arena-overlay';
+            overlay.className = 'absolute inset-0 bg-slate-900/90 backdrop-blur-sm rounded-[20px] flex flex-col justify-center items-center p-6 text-center z-10';
+            overlay.innerHTML = `
+                <div class="bg-slate-800/80 border border-slate-700 p-8 rounded-3xl max-w-md shadow-2xl">
+                    <span class="text-5xl mb-4 block animate-bounce">🪶</span>
+                    <h3 class="text-white text-xl font-bold mb-2">The Cage is Locked!</h3>
+                    <p class="text-slate-400 text-sm mb-6">
+                        The 35 magical creatures are currently asleep. Click <strong>"Step 1: Assume all chickens"</strong> to let them out and assume they are all chickens!
+                    </p>
+                    <button onclick="triggerStep1()" class="bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white font-bold px-6 py-2.5 rounded-full shadow-lg hover:shadow-emerald-500/20 transition-all text-sm">
+                        Unlock Cage & Setup All Chickens 🐔
+                    </button>
+                </div>
+            `;
+            grid.appendChild(overlay);
+
+            // Generate 35 beautiful placeholder slots in a grid (unrendered state)
+            for (let i = 1; i <= TOTAL_HEADS; i++) {
+                const slot = document.createElement('div');
+                slot.id = `animal-${i}`;
+                slot.className = 'bg-slate-800 border-2 border-dashed border-slate-700 rounded-2xl p-2 flex flex-col items-center justify-center h-24 relative select-none opacity-40 transition-all duration-300';
+                slot.innerHTML = `
+                    <span class="absolute top-1 left-2 text-[9px] font-bold text-slate-500">#${i}</span>
+                    <span class="text-2xl mt-1 opacity-20">💤</span>
+                    <span class="text-[10px] font-bold text-slate-500 mt-1">Sleeping</span>
+                    <span class="mt-1 bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-md text-[8px] font-extrabold uppercase">0 Legs</span>
+                `;
+                grid.appendChild(slot);
+            }
+            
+            // Adjust calculations display
+            document.getElementById('calc-hint-box').classList.add('hidden');
+        }
+
+        // Sync State to GUI variables
+        function updateUI() {
+            // Badges & Counters
+            document.getElementById('arena-chicken-count').textContent = chickens;
+            document.getElementById('arena-rabbit-count').textContent = rabbits;
+            document.getElementById('arena-empty-count').textContent = TOTAL_HEADS - (chickens + rabbits);
+
+            const totalSum = chickens + rabbits;
+            document.getElementById('heads-badge').textContent = `${totalSum} / ${TOTAL_HEADS}`;
+            document.getElementById('heads-progress').style.width = `${(totalSum / TOTAL_HEADS) * 100}%`;
+
+            document.getElementById('legs-badge').textContent = `${legs} / ${TARGET_LEGS}`;
+            document.getElementById('legs-progress').style.width = `${(legs / TARGET_LEGS) * 100}%`;
+
+            document.getElementById('stats-current-legs').textContent = legs;
+            const remainingLegs = TARGET_LEGS - legs;
+            
+            const deficitContainer = document.getElementById('deficit-container');
+            const deficitLabel = document.getElementById('deficit-label');
+            const deficitValue = document.getElementById('stats-remaining-legs');
+
+            if (remainingLegs >= 0) {
+                deficitLabel.textContent = "Legs Needed";
+                deficitValue.textContent = remainingLegs;
+                deficitContainer.className = "bg-rose-50 border-2 border-rose-200 rounded-2xl p-3 text-center transition-all duration-300";
+                deficitValue.className = "text-3xl font-extrabold text-rose-900 font-fun";
+            } else {
+                deficitLabel.textContent = "Too Many Legs";
+                deficitValue.textContent = Math.abs(remainingLegs);
+                deficitContainer.className = "bg-purple-50 border-2 border-purple-200 rounded-2xl p-3 text-center transition-all duration-300";
+                deficitValue.className = "text-3xl font-extrabold text-purple-900 font-fun";
+            }
+
+            // Sync calculation box numbers
+            document.getElementById('calc-chicken-sum').textContent = `${chickens} × 2 = ${chickens * LEGS_PER_CHICKEN}`;
+            document.getElementById('calc-rabbit-sum').textContent = `${rabbits} × 4 = ${rabbits * LEGS_PER_RABBIT}`;
+            document.getElementById('calc-total-sum').textContent = `${legs} / ${TARGET_LEGS}`;
+
+            // Control Button States
+            const btn1 = document.getElementById('btn-step-1');
+            const btn2 = document.getElementById('btn-step-2');
+
+            if (step === 0) {
+                btn1.disabled = false;
+                btn2.disabled = true;
+                btn2.classList.remove('animate-pulse-glow');
+            } else if (step === 1) {
+                btn1.disabled = true;
+                btn2.disabled = false;
+                btn2.classList.add('animate-pulse-glow');
+            } else if (step === 2) {
+                btn1.disabled = true;
+                btn2.disabled = false;
+            } else if (step === 3) {
+                btn1.disabled = true;
+                btn2.disabled = true;
+                btn2.classList.remove('animate-pulse-glow');
+            }
+        }
+
+        // ACTION: Step 1 (Assume All Chickens)
+        function triggerStep1() {
+            if (step !== 0) return;
+            
+            playSound('unlock');
+            
+            // Hide initial locked overlay
+            const overlay = document.getElementById('arena-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            step = 1;
+            chickens = TOTAL_HEADS;
+            rabbits = 0;
+            legs = chickens * LEGS_PER_CHICKEN;
+
+            // Trigger animation loading of chickens into every slot
+            for (let i = 1; i <= TOTAL_HEADS; i++) {
+                const slot = document.getElementById(`animal-${i}`);
+                slot.className = 'bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-2 flex flex-col items-center justify-center h-24 relative select-none shadow-sm transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-pop-in';
+                slot.innerHTML = `
+                    <span class="absolute top-1 left-2 text-[9px] font-bold text-yellow-600">#${i}</span>
+                    <span class="text-3xl mt-1 drop-shadow-sm">🐔</span>
+                    <span class="text-[10px] font-extrabold text-yellow-800 mt-1">Chicken</span>
+                    <span class="mt-1 bg-yellow-200 text-yellow-900 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase">2 Legs</span>
+                `;
+            }
+
+            // Update Teacher's educational dialogue box
+            document.getElementById('instructor-bubble').innerHTML = `
+                Wow! Look at all the 35 cute Chickens! 🐔
+                <br><br>
+                If <strong>ALL</strong> 35 animals are chickens, we count:<br>
+                <span class="text-amber-700 font-extrabold">35 chickens × 2 legs = 70 legs.</span>
+                <br><br>
+                But wait! The actual puzzle says we have <strong>94 legs</strong>! We are currently missing: <br>
+                <span class="text-rose-600 font-extrabold">94 − 70 = 24 legs!</span>
+                <br><br>
+                How do we get those extra legs? Click <strong>Step 2</strong> to replace a chicken with a rabbit!
+            `;
+
+            document.getElementById('calc-hint-box').classList.remove('hidden');
+            updateUI();
+        }
+
+        // ACTION: Step 2 (Incremental swap replacement)
+        function triggerStep2() {
+            if (step !== 1 && step !== 2) return;
+            if (chickens <= 0) return;
+
+            step = 2;
+            chickens--;
+            rabbits++;
+            legs = (chickens * LEGS_PER_CHICKEN) + (rabbits * LEGS_PER_RABBIT);
+
+            playSound('replace');
+
+            // Find the index slot to target (we swap from index 1 up to 35)
+            const targetIndex = rabbits; 
+            const slot = document.getElementById(`animal-${targetIndex}`);
+            
+            // Execute animation & visual swap content
+            slot.className = 'bg-pink-50 border-2 border-pink-300 rounded-2xl p-2 flex flex-col items-center justify-center h-24 relative select-none shadow-md transition-all duration-300 transform hover:scale-105 hover:shadow-lg animate-swap-card';
+            slot.innerHTML = `
+                <span class="absolute top-1 left-2 text-[9px] font-bold text-pink-600">#${targetIndex}</span>
+                <span class="text-3xl mt-1 drop-shadow-sm">🐰</span>
+                <span class="text-[10px] font-extrabold text-pink-800 mt-1">Rabbit</span>
+                <span class="mt-1 bg-pink-200 text-pink-900 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase">4 Legs</span>
+            `;
+
+            // Calculate remaining deficit details
+            const missingLegs = TARGET_LEGS - legs;
+
+            // Educational voice guidance
+            if (legs < TARGET_LEGS) {
+                document.getElementById('instructor-bubble').innerHTML = `
+                    Hooray! You traded <strong>1 Chicken</strong> 🐔 for <strong>1 Rabbit</strong> 🐰.
+                    <br><br>
+                    Since a rabbit has 4 legs (which is 2 more than a chicken), this trade added <span class="text-emerald-600 font-extrabold">+2 legs</span>!
+                    <br><br>
+                    Currently:<br>
+                    - Chickens: <span class="font-bold text-yellow-700">${chickens}</span>, Rabbits: <span class="font-bold text-pink-700">${rabbits}</span><br>
+                    - Leg count: <span class="font-bold text-emerald-700">${legs} / 94</span><br>
+                    - Still missing: <span class="font-bold text-rose-600">${missingLegs} legs</span>.
+                    <br><br>
+                    Let's swap another chicken to keep getting 2 more legs!
+                `;
+            } else if (legs === TARGET_LEGS) {
+                // VICTORY / SUCCESS State
+                triggerSuccess();
+            }
+
+            updateUI();
+        }
+
+        // Triggered upon satisfying variables (12 rabbits, 23 chickens = 94 legs)
+        function triggerSuccess() {
+            step = 3;
+            playSound('win');
+
+            // Instructor Success message with comprehensive breakdown of logical methodology
+            document.getElementById('instructor-bubble').innerHTML = `
+                🎉 <strong>CONGRATULATIONS! YOU SOLVED IT!</strong> 🎉
+                <br><br>
+                Look! We reached exactly <span class="text-emerald-600 font-extrabold">94 legs</span>!
+                <br><br>
+                <div class="bg-emerald-50 border-2 border-emerald-200 p-3 rounded-xl text-xs text-slate-800 space-y-1">
+                    <p class="font-bold text-emerald-800">Why does this logic work?</p>
+                    <p>1. Assuming all chickens gave us <strong class="text-amber-700">70 legs</strong> (a deficit of <strong class="text-rose-600">24 legs</strong>).</p>
+                    <p>2. Each Rabbit swap adds exactly <strong class="text-emerald-700">2 legs</strong>.</p>
+                    <p>3. Thus, we needed exactly <strong class="text-indigo-800">24 ÷ 2 = 12 swaps</strong>!</p>
+                </div>
+                <br>
+                Our solved cage contains:<br>
+                <span class="text-pink-600 font-extrabold text-base">🐰 12 Rabbits</span> and <span class="text-yellow-600 font-extrabold text-base">🐔 23 Chickens</span>!
+            `;
+
+            // Create customized dynamic CSS Confetti Exploding particle effects
+            createVisualCelebration();
+        }
+
+        function createVisualCelebration() {
+            const grid = document.getElementById('arena-grid');
+            
+            // Inject confetti/emoji elements flying across container bounds
+            const emojis = ['🎉', '✨', '🎈', '🏆', '⭐', '🐰', '🐔'];
+            for (let i = 0; i < 40; i++) {
+                const particle = document.createElement('div');
+                particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                particle.className = 'absolute pointer-events-none select-none text-2xl z-20';
+                
+                // Random position & speed vectors
+                const randomX = Math.random() * 100;
+                const randomY = Math.random() * 100;
+                particle.style.left = `${randomX}%`;
+                particle.style.top = `${randomY}%`;
+                
+                // Random dynamic keyframe motion
+                particle.style.transition = 'all 2s cubic-bezier(0.25, 1, 0.5, 1)';
+                particle.style.transform = 'scale(0.2) rotate(0deg)';
+                particle.style.opacity = '1';
+                
+                grid.appendChild(particle);
+
+                // Animate expansion explosion
+                setTimeout(() => {
+                    const moveX = (Math.random() - 0.5) * 200;
+                    const moveY = (Math.random() - 0.5) * 200;
+                    particle.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.8) rotate(${Math.random() * 720}deg)`;
+                    particle.style.opacity = '0';
+                }, 50);
+
+                // Garbage collect particle divs
+                setTimeout(() => {
+                    particle.remove();
+                }, 2050);
+            }
+        }
+
+        // ACTION: Reset simulation
+        function triggerReset() {
+            step = 0;
+            chickens = 0;
+            rabbits = 0;
+            legs = 0;
+
+            playSound('reset');
+            initArena();
+            updateUI();
+
+            // Reset standard guide text
+            document.getElementById('instructor-bubble').innerHTML = `
+                Hello! Welcome to the cage puzzle. We have 35 heads and 94 legs hidden inside! 
+                <br><br>
+                Let's use the <span class="text-amber-600 font-bold">Assumption Method</span>. Ready? Click <strong>Step 1</strong> to assume every single animal is a chicken first!
+            `;
+        }
+
+        // Window Onload bootstrapping loop
+        window.onload = function() {
+            initArena();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
