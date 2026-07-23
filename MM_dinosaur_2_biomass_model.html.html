@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinosaur Biomass Estimation Models - Comparison & Sensitivity</title>
+    <!-- Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --primary-color: #2b6cb0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: #1a365d;
+        }
+
+        p.subtitle {
+            color: #4a5568;
+            margin-top: 0;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.15rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .control-group .unit {
+            font-weight: normal;
+            color: #718096;
+            font-size: 0.8rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-box {
+            background: #f7fafc;
+            border-left: 4px solid var(--primary-color);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .metric-box.m1 { border-color: #cbd5e0; }
+        .metric-box.m2 { border-color: #4299e1; }
+        .metric-box.m3 { border-color: #ed8936; }
+        .metric-box.m4 { border-color: #48bb78; }
+
+        .metric-box .title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+
+        .metric-box .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .sensitivity-rank {
+            margin-top: 10px;
+            font-size: 0.88rem;
+        }
+
+        .sensitivity-rank ol {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+
+        .sensitivity-rank li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Dinosaur Biomass Model Explorer</h1>
+        <p classsubtitle">Interactive comparison & sensitivity analysis based on fossil femur measurements</p>
+    </header>
+
+    <div class="grid-layout">
+        <!-- Controls Sidebar -->
+        <div class="sidebar">
+            <div class="card">
+                <h2>1. Femur Measurements</h2>
+                
+                <div class="control-group">
+                    <label for="femurL">Femur Length ($L$) <span class="unit" id="val_femurL">0.50 m</span></label>
+                    <input type="range" id="femurL" min="0.1" max="2.0" step="0.05" value="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label for="femurA">Cross-sectional Area ($A$) <span class="unit" id="val_femurA">0.010 m²</span></label>
+                    <input type="range" id="femurA" min="0.001" max="0.08" step="0.001" value="0.01">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. Anatomical Assumptions</h2>
+
+                <div class="control-group">
+                    <label for="k_f">Femur / Total Bone Vol Ratio ($k_f$) <span class="unit" id="val_k_f">7.5%</span></label>
+                    <input type="range" id="k_f" min="0.03" max="0.15" step="0.005" value="0.075">
+                </div>
+
+                <div class="control-group">
+                    <label for="k_b">Bone / Body Vol Ratio ($k_b$) <span class="unit" id="val_k_b">10.0%</span></label>
+                    <input type="range" id="k_b" min="0.05" max="0.20" step="0.005" value="0.10">
+                </div>
+
+                <div class="control-group">
+                    <label for="rho_bone">Bone Density ($\rho_{bone}$) <span class="unit" id="val_rho_bone">1800 kg/m³</span></label>
+                    <input type="range" id="rho_bone" min="1400" max="2200" step="50" value="1800">
+                </div>
+
+                <div class="control-group">
+                    <label for="alpha">Pneumatization Factor ($\alpha$) <span class="unit" id="val_alpha">0.85</span></label>
+                    <input type="range" id="alpha" min="0.5" max="1.1" step="0.05" value="0.85">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Parameter Importance</h2>
+                <div class="sensitivity-rank">
+                    <p><strong>Sensitivity Ranking (Most to Least Impact):</strong></p>
+                    <ol>
+                        <li><strong>Cross-Sectional Area ($A$) / Circumference ($C$):</strong> Quadratic/Power scaling impact ($A \propto r^2$).</li>
+                        <li><strong>Femur Length ($L$):</strong> Direct linear impact on overall body volume.</li>
+                        <li><strong>Femur Vol Share ($k_f$) & Bone Share ($k_b$):</strong> Inverse proportional scaling; small changes dramatically alter volume.</li>
+                        <li><strong>Correction Factor ($\alpha$):</strong> Linear proportional tuning.</li>
+                        <li><strong>Bone Density ($\rho_{bone}$):</strong> Minor effect since muscle/soft-tissue dominates volume.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Results Cards -->
+            <div class="results-grid">
+                <div class="metric-box m1">
+                    <div class="title">Model 1: Water Volumetric</div>
+                    <div class="value" id="res_m1">667 kg</div>
+                    <span class="badge">Uniform Density</span>
+                </div>
+                <div class="metric-box m2">
+                    <div class="title">Model 2: Dual Density</div>
+                    <div class="value" id="res_m2">720 kg</div>
+                    <span class="badge">Separated Density</span>
+                </div>
+                <div class="metric-box m3">
+                    <div class="title">Campione & Evans</div>
+                    <div class="value" id="res_m3">2,700 kg</div>
+                    <span class="badge">Empirical Regression</span>
+                </div>
+                <div class="metric-box m4">
+                    <div class="title">Proposed Model</div>
+                    <div class="value" id="res_m4">1,530 kg</div>
+                    <span class="badge">Dual-Density + Pneumatization</span>
+                </div>
+            </div>
+
+            <!-- Bar Chart Comparison -->
+            <div class="card">
+                <h2>Biomass Estimation Comparison (kg)</h2>
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sensitivity Chart -->
+            <div class="card">
+                <h2>Parameter Sensitivity Analysis ($\pm 20\%$ Change Impact on Proposed Model)</h2>
+                <div class="chart-container">
+                    <canvas id="sensitivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State variables
+    let inputs = {
+        L: 0.5,
+        A: 0.01,
+        k_f: 0.075,
+        k_b: 0.10,
+        rho_bone: 1800,
+        alpha: 0.85,
+        rho_soft: 1000
+    };
+
+    // DOM Elements
+    const elements = {
+        femurL: document.getElementById('femurL'),
+        femurA: document.getElementById('femurA'),
+        k_f: document.getElementById('k_f'),
+        k_b: document.getElementById('k_b'),
+        rho_bone: document.getElementById('rho_bone'),
+        alpha: document.getElementById('alpha'),
+        
+        val_femurL: document.getElementById('val_femurL'),
+        val_femurA: document.getElementById('val_femurA'),
+        val_k_f: document.getElementById('val_k_f'),
+        val_k_b: document.getElementById('val_k_b'),
+        val_rho_bone: document.getElementById('val_rho_bone'),
+        val_alpha: document.getElementById('val_alpha'),
+
+        res_m1: document.getElementById('res_m1'),
+        res_m2: document.getElementById('res_m2'),
+        res_m3: document.getElementById('res_m3'),
+        res_m4: document.getElementById('res_m4')
+    };
+
+    // Calculate models
+    function calculateModels(params) {
+        const { L, A, k_f, k_b, rho_bone, alpha, rho_soft } = params;
+
+        // Model 1: Uniform Water Density (Presentation Slide 4-5)
+        // M = rho * L * A / 0.0075
+        const m1 = rho_soft * L * A / (k_f * k_b);
+
+        // Model 2: Dual Density (Presentation Slide 9-10)
+        const v_bone = (L * A) / k_f;
+        const v_body = v_bone / k_b;
+        const v_soft = v_body - v_bone;
+        const m2 = (rho_bone * v_bone) + (rho_soft * v_soft);
+
+        // Model 3: Campione & Evans (2012) Empirical Regression (Slide 13)
+        // C = 2 *0.01 * sqrt(pi * A) in cm
+        const radius_cm = Math.sqrt(A / Math.PI) * 100;
+        const C_cm = 2 * Math.PI * radius_cm;
+        const m3 = 0.16 * Math.pow(C_cm, 2.73);
+
+        // Model 4: Proposed Model (Dual-Density + Structural/Pneumatization Factor)
+        const m4 = alpha * ((rho_bone * v_bone) + (rho_soft * v_soft));
+
+        return { m1, m2, m3, m4, C_cm };
+    }
+
+    // Chart instances
+    let comparisonChart, sensitivityChart;
+
+    function initCharts() {
+        const ctxComp = document.getElementById('comparisonChart').getContext('2d');
+        comparisonChart = new Chart(ctxComp, {
+            type: 'bar',
+            data: {
+                labels: ['Model 1 (Water)', 'Model 2 (Dual Density)', 'Campione & Evans', 'Proposed Model'],
+                datasets: [{
+                    label: 'Estimated Mass (kg)',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#cbd5e0', '#4299e1', '#ed8936', '#48bb78'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.raw.toLocaleString(undefined, {maximumFractionDigits: 1})} kg`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Mass (kg)' }
+                    }
+                }
+            }
+        });
+
+        const ctxSens = document.getElementById('sensitivityChart').getContext('2d');
+        sensitivityChart = new Chart(ctxSens, {
+            type: 'bar',
+            data: {
+                labels: ['Area (A)', 'Length (L)', 'Bone Ratio (k_b)', 'Femur Ratio (k_f)', 'Pneumatization (α)', 'Bone Density (ρ_bone)'],
+                datasets: [
+                    {
+                        label: '-20% Parameter Change',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#f56565'
+                    },
+                    {
+                        label: '+20% Parameter Change',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#4299e1'
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw > 0 ? '+' : ''}${ctx.raw.toFixed(1)}% Mass`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: '% Change in Estimated Mass' }
+                    }
+                }
+            }
+        });
+    }
+
+    function calculateSensitivity() {
+        const baseMass = calculateModels(inputs).m4;
+        const keys = [
+            { key: 'A', name: 'Area (A)' },
+            { key: 'L', name: 'Length (L)' },
+            { key: 'k_b', name: 'Bone Ratio (k_b)' },
+            { key: 'k_f', name: 'Femur Ratio (k_f)' },
+            { key: 'alpha', name: 'Pneumatization (α)' },
+            { key: 'rho_bone', name: 'Bone Density (ρ_bone)' }
+        ];
+
+        const minus20 = [];
+        const plus20 = [];
+
+        keys.forEach(item => {
+            // -20%
+            let pMinus = { ...inputs, [item.key]: inputs[item.key] * 0.8 };
+            let mMinus = calculateModels(pMinus).m4;
+            minus20.push(((mMinus - baseMass) / baseMass) * 100);
+
+            // +20%
+            let pPlus = { ...inputs, [item.key]: inputs[item.key] * 1.2 };
+            let mPlus = calculateModels(pPlus).m4;
+            plus20.push(((mPlus - baseMass) / baseMass) * 100);
+        });
+
+        return { minus20, plus20 };
+    }
+
+    function update() {
+        // Read controls
+        inputs.L = parseFloat(elements.femurL.value);
+        inputs.A = parseFloat(elements.femurA.value);
+        inputs.k_f = parseFloat(elements.k_f.value);
+        inputs.k_b = parseFloat(elements.k_b.value);
+        inputs.rho_bone = parseFloat(elements.rho_bone.value);
+        inputs.alpha = parseFloat(elements.alpha.value);
+
+        // Update labels
+        elements.val_femurL.textContent = `${inputs.L.toFixed(2)} m`;
+        elements.val_femurA.textContent = `${inputs.A.toFixed(3)} m²`;
+        elements.val_k_f.textContent = `${(inputs.k_f * 100).toFixed(1)}%`;
+        elements.val_k_b.textContent = `${(inputs.k_b * 100).toFixed(1)}%`;
+        elements.val_rho_bone.textContent = `${inputs.rho_bone} kg/m³`;
+        elements.val_alpha.textContent = inputs.alpha.toFixed(2);
+
+        // Calculate results
+        const res = calculateModels(inputs);
+
+        // Update display text
+        elements.res_m1.textContent = `${Math.round(res.m1).toLocaleString()} kg`;
+        elements.res_m2.textContent = `${Math.round(res.m2).toLocaleString()} kg`;
+        elements.res_m3.textContent = `${Math.round(res.m3).toLocaleString()} kg`;
+        elements.res_m4.textContent = `${Math.round(res.m4).toLocaleString()} kg`;
+
+        // Update Comparison Chart
+        comparisonChart.data.datasets[0].data = [res.m1, res.m2, res.m3, res.m4];
+        comparisonChart.update();
+
+        // Update Sensitivity Chart
+        const sens = calculateSensitivity();
+        sensitivityChart.data.datasets[0].data = sens.minus20;
+        sensitivityChart.data.datasets[1].data = sens.plus20;
+        sensitivityChart.update();
+    }
+
+    // Attach listeners
+    Object.keys(elements).forEach(key => {
+        if (elements[key].tagName === 'INPUT') {
+            elements[key].addEventListener('input', update);
+        }
+    });
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        update();
+    });
+</script>
+</body>
+</html>
