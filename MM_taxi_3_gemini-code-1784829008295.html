@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Taxi Fare Mathematical Modeling Dashboard</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --alice-color: #3b82f6;
+            --becky-color: #10b981;
+            --christine-color: #f59e0b;
+            --accent-color: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        header {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .metric-toggle {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--card-bg);
+            color: var(--accent-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .legend-pills {
+            display: flex;
+            gap: 16px;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 380px;
+            width: 100%;
+        }
+
+        .model-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .model-info-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .model-info-card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .model-info-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .model-info-card p {
+            font-size: 0.825rem;
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .tag-unfair { background: #fee2e2; color: #dc2626; }
+        .tag-fair { background: #dcfce7; color: #16a34a; }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover td {
+            background-color: #f1f5f9;
+        }
+
+        .val-highlight {
+            font-weight: 700;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 12px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <h1>Shared Taxi Fare Allocation Analysis</h1>
+        <p>Comparative visualization of 4 mathematical models for sharing a $200 taxi fare among Alice, Becky, and Christine.</p>
+        <div class="badge-container">
+            <span class="badge">Total Fare: $200</span>
+            <span class="badge">Alice Solo: $70</span>
+            <span class="badge">Becky Solo: $120</span>
+            <span class="badge">Christine Solo: $200</span>
+            <span class="badge">HKDSE STEM Module (MA0622)</span>
+        </div>
+    </header>
+
+    <!-- Interactive Controls -->
+    <div class="controls">
+        <div class="metric-toggle">
+            <button class="toggle-btn active" onclick="switchMetric('fare')">Split Fare ($)</button>
+            <button class="toggle-btn" onclick="switchMetric('savings')">Money Saved ($)</button>
+            <button class="toggle-btn" onclick="switchMetric('discount')">Discount Rate (%)</button>
+        </div>
+        <div class="legend-pills">
+            <div class="pill"><span class="dot" style="background: var(--alice-color);"></span> Alice ($70 Solo)</div>
+            <div class="pill"><span class="dot" style="background: var(--becky-color);"></span> Becky ($120 Solo)</div>
+            <div class="pill"><span class="dot" style="background: var(--christine-color);"></span> Christine ($200 Solo)</div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid-2">
+        <!-- Chart Section -->
+        <div class="card">
+            <div class="card-title">
+                <span id="chartTitle">Model Comparison - Split Fare ($)</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Model Breakdown Section -->
+        <div class="card">
+            <div class="card-title">Model Evaluation</div>
+            <div class="model-cards">
+                <div class="model-info-card">
+                    <h4>Model 1: Divided Equally</h4>
+                    <p>Total cost ($200) split evenly by 3 riders ($66.7 each).</p>
+                    <span class="tag tag-unfair">Unfair to Alice (saves only 4.7%)</span>
+                </div>
+                <div class="model-info-card">
+                    <h4>Model 2: Equal Savings Split</h4>
+                    <p>Total savings ($190) shared evenly ($63.3 reduction each).</p>
+                    <span class="tag tag-unfair">Unfair to Christine (saves only 31.7%)</span>
+                </div>
+                <div class="model-info-card">
+                    <h4>Model 3: Ratio of Solo Fares</h4>
+                    <p>Fare split proportionally according to solo costs (70:120:200).</p>
+                    <span class="tag tag-fair">Equal 48.7% discount for all</span>
+                </div>
+                <div class="model-info-card">
+                    <h4>Model 4: Overlapping Route Increments</h4>
+                    <p>Costs shared dynamically per segment: O-A (3-way), A-B (2-way), B-C (1-way).</p>
+                    <span class="tag tag-fair">Marginal Cost Fair (Game Theory / Shapley)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Summary Table -->
+    <div class="card">
+        <div class="card-title">Detailed Mathematical Summary</div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Alice ($)</th>
+                        <th>Becky ($)</th>
+                        <th>Christine ($)</th>
+                        <th>Alice Saved (%)</th>
+                        <th>Becky Saved (%)</th>
+                        <th>Christine Saved (%)</th>
+                        <th>Evaluation Summary</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    <!-- Populated dynamically via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        Secondary School Mathematics Curriculum — STEM Mathematical Modeling Dashboard
+    </footer>
+</div>
+
+<script>
+    // Dataset definition based on HKDSE STEM Teaching Material
+    const rawData = [
+        {
+            model: 'Model 1: Equal Split',
+            fare: [66.7, 66.7, 66.7],
+            savings: [3.3, 53.3, 133.3],
+            discount: [4.7, 44.4, 66.7],
+            remarks: 'Simplest; Unfair to short-distance rider (Alice).'
+        },
+        {
+            model: 'Model 2: Equal Savings',
+            fare: [6.6, 56.7, 136.7],
+            savings: [63.4, 63.3, 63.3],
+            discount: [90.6, 52.8, 31.7],
+            remarks: 'Equal absolute savings; Unfair to long-distance rider (Christine).'
+        },
+        {
+            model: 'Model 3: Solo Ratio',
+            fare: [35.9, 61.5, 102.6],
+            savings: [34.1, 58.5, 97.4],
+            discount: [48.7, 48.7, 48.7],
+            remarks: 'Proportional discount; Ignores route overlap advantage.'
+        },
+        {
+            model: 'Model 4: Route Overlap',
+            fare: [23.3, 48.3, 128.3],
+            savings: [46.7, 71.7, 71.7],
+            discount: [66.71, 59.75, 35.85],
+            remarks: 'Fair marginal cost allocation based on shared distance segments.'
+        }
+    ];
+
+    let currentMetric = 'fare';
+    let chartInstance = null;
+
+    const metricConfigs = {
+        fare: {
+            title: 'Model Comparison - Split Fare ($)',
+            yAxis: 'Fare Paid ($)',
+            prefix: '$',
+            suffix: ''
+        },
+        savings: {
+            title: 'Model Comparison - Money Saved ($)',
+            yAxis: 'Savings ($)',
+            prefix: '$',
+            suffix: ''
+        },
+        discount: {
+            title: 'Model Comparison - Percentage Discount (%)',
+            yAxis: 'Discount Rate (%)',
+            prefix: '',
+            suffix: '%'
+        }
+    };
+
+    function initChart() {
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: getChartData(currentMetric),
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Using custom CSS legend
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const cfg = metricConfigs[currentMetric];
+                                return ` ${context.dataset.label}: ${cfg.prefix}${context.parsed.y}${cfg.suffix}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: metricConfigs[currentMetric].yAxis
+                        },
+                        grid: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 500
+                }
+            }
+        });
+    }
+
+    function getChartData(metric) {
+        return {
+            labels: rawData.map(d => d.model),
+            datasets: [
+                {
+                    label: 'Alice',
+                    data: rawData.map(d => d[metric][0]),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Becky',
+                    data: rawData.map(d => d[metric][1]),
+                    backgroundColor: '#10b981',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Christine',
+                    data: rawData.map(d => d[metric][2]),
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 6
+                }
+            ]
+        };
+    }
+
+    function switchMetric(metric) {
+        currentMetric = metric;
+        
+        // Update Toggle Buttons UI
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Update Chart Title & Y-Axis Label
+        const cfg = metricConfigs[metric];
+        document.getElementById('chartTitle').innerText = cfg.title;
+        chartInstance.options.scales.y.title.text = cfg.yAxis;
+
+        // Update Chart Data
+        chartInstance.data = getChartData(metric);
+        chartInstance.update();
+    }
+
+    function populateTable() {
+        const tbody = document.getElementById('summaryTableBody');
+        tbody.innerHTML = rawData.map(row => `
+            <tr>
+                <td class="val-highlight">${row.model}</td>
+                <td>$${row.fare[0].toFixed(1)}</td>
+                <td>$${row.fare[1].toFixed(1)}</td>
+                <td>$${row.fare[2].toFixed(1)}</td>
+                <td>${row.discount[0].toFixed(1)}%</td>
+                <td>${row.discount[1].toFixed(1)}%</td>
+                <td>${row.discount[2].toFixed(1)}%</td>
+                <td style="color: var(--text-muted); font-size: 0.85rem;">${row.remarks}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Initialize Dashboard
+    window.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        populateTable();
+    });
+</script>
+
+</body>
+</html>
