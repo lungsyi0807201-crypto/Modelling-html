@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bill-Splitting Models Visualizer & Analyst Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for tables and charts */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .gradient-border {
+      position: relative;
+      border-radius: 0.75rem;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(129, 140, 248, 0.1));
+    }
+  </style>
+</head>
+<body class="min-h-full font-sans antialiased bg-slate-900 text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
+
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-300 bg-clip-text text-transparent">Bill-Split Analytics</h1>
+          <p class="text-xs text-slate-400">Evaluating 3 Fair-Sharing Models for Group Dining</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-2 bg-slate-800/80 p-1 rounded-lg border border-slate-700/60 text-xs">
+        <button id="viewPresetBtn" onclick="switchMainView('presets')" class="px-3 py-1.5 rounded-md font-medium transition-all bg-cyan-600 text-white shadow-sm">
+          Core Case Study
+        </button>
+        <button id="viewSimBtn" onclick="switchMainView('simulator')" class="px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200">
+          Interactive Simulator
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+    
+    <!-- Hero / Summary Banner -->
+    <section class="bg-gradient-to-r from-slate-800 via-slate-800/90 to-slate-900 border border-slate-700/60 rounded-2xl p-6 sm:p-8 shadow-xl">
+      <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            Executive Analysis Summary
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            David's Total Out-of-Pocket Expense
+          </h2>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Comparing David's combined expenses across <span class="text-cyan-300 font-semibold">Party 1</span> ($2,000 total, 4 birthdays, David non-birthday) and <span class="text-cyan-300 font-semibold">Party 2</span> ($2,000 total, David birthday, 4 non-birthday).
+          </p>
+        </div>
+        
+        <!-- Summary Quick Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl text-center shadow-inner">
+            <span class="text-xs text-slate-400 block font-medium">Model 1</span>
+            <span class="text-lg sm:text-xl font-bold text-rose-400">$2,000.00</span>
+            <span class="text-[10px] text-slate-500 block mt-0.5">Full Subsidy</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl text-center shadow-inner">
+            <span class="text-xs text-slate-400 block font-medium">Model 2</span>
+            <span class="text-lg sm:text-xl font-bold text-emerald-400">$888.89</span>
+            <span class="text-[10px] text-slate-500 block mt-0.5">50% Discount</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl text-center shadow-inner">
+            <span class="text-xs text-slate-400 block font-medium">Model 3A</span>
+            <span class="text-lg sm:text-xl font-bold text-amber-400">$2,000.00</span>
+            <span class="text-[10px] text-slate-500 block mt-0.5">Non-Bday Split</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700/50 p-3.5 rounded-xl text-center shadow-inner">
+            <span class="text-xs text-slate-400 block font-medium">Model 3B</span>
+            <span class="text-lg sm:text-xl font-bold text-cyan-400">$800.00</span>
+            <span class="text-[10px] text-slate-500 block mt-0.5">All-Guest Split</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="presetsView" class="space-y-8">
+      
+      <!-- Party Selector Tabs -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div class="flex items-center space-x-2">
+          <button id="tabParty1" onclick="selectPartyTab(1)" class="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-800 text-white border border-cyan-500/50 shadow-md">
+            Party 1 (4 Birthday / 1 Non-Bday)
+          </button>
+          <button id="tabParty2" onclick="selectPartyTab(2)" class="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">
+            Party 2 (1 Birthday / 4 Non-Bday)
+          </button>
+          <button id="tabBoth" onclick="selectPartyTab('both')" class="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800">
+            Combined Both Parties
+          </button>
+        </div>
+        
+        <div class="text-xs text-slate-400 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span>
+          Party Total: <strong class="text-white">$2,000</strong> per party | 5 guests
+        </div>
+      </div>
+
+      <!-- Charts & Visual Comparison Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Main Comparison Bar Chart -->
+        <div class="lg:col-span-7 bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 flex flex-col justify-between shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                David's Expense Comparison ($)
+              </h3>
+              <p id="chartSubheading" class="text-xs text-slate-400">Comparing David's required contribution per model</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 bg-slate-700/60 rounded text-slate-300 font-mono">Interactive</span>
+          </div>
+
+          <div class="relative w-full h-72 sm:h-80">
+            <canvas id="davidCostChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Per-Person Bill Distribution Visualizer -->
+        <div class="lg:col-span-5 bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Per-Person Rates Breakdown
+              </h3>
+              <span id="partyBadge" class="text-xs px-2.5 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full font-medium">Party 1</span>
+            </div>
+
+            <!-- Distribution Cards per Model -->
+            <div class="space-y-3" id="distributionCards">
+              <!-- JS Populated Cards -->
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/50 text-xs text-slate-400 flex items-center justify-between">
+            <span>Baseline standard fair share:</span>
+            <span class="font-bold text-slate-200 font-mono">$400.00 / person</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comprehensive Data Comparison Table -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-6 border-b border-slate-700/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Full Financial Breakdown Table</h3>
+            <p class="text-xs text-slate-400">Complete breakdown of payments by role across both parties</p>
+          </div>
+          <button onclick="exportToCSV()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs font-medium rounded-lg text-slate-200 transition">
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h55.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Export Table CSV
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 font-semibold border-b border-slate-700/60">
+              <tr>
+                <th class="py-3.5 px-4 sm:px-6">Model Definition</th>
+                <th class="py-3.5 px-4 text-right">Party 1: Bday Person</th>
+                <th class="py-3.5 px-4 text-right text-cyan-300 font-bold bg-slate-800/40">Party 1: David</th>
+                <th class="py-3.5 px-4 text-right">Party 2: Bday (David)</th>
+                <th class="py-3.5 px-4 text-right">Party 2: Non-Bday Guest</th>
+                <th class="py-3.5 px-6 text-right text-emerald-400 font-bold bg-slate-800/80">David Combined Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/50 font-mono text-xs sm:text-sm" id="tableBody">
+              <!-- JS Injected Row 1 -->
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-4 px-4 sm:px-6 font-sans font-medium text-white">
+                  <div>Model 1: Full Bday Subsidy</div>
+                  <span class="text-[11px] text-slate-400 font-normal">Birthday guests pay $0; remaining guests split bill.</span>
+                </td>
+                <td class="py-4 px-4 text-right text-slate-400">$0.00</td>
+                <td class="py-4 px-4 text-right font-bold text-rose-400 bg-slate-800/30">$2,000.00</td>
+                <td class="py-4 px-4 text-right text-emerald-400">$0.00</td>
+                <td class="py-4 px-4 text-right">$500.00</td>
+                <td class="py-4 px-6 text-right font-extrabold text-rose-400 bg-slate-800/60 text-base">$2,000.00</td>
+              </tr>
+              <!-- JS Injected Row 2 -->
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-4 px-4 sm:px-6 font-sans font-medium text-white">
+                  <div>Model 2: 50% Rate Discount</div>
+                  <span class="text-[11px] text-slate-400 font-normal">Birthday guests pay half of what non-birthday guests pay.</span>
+                </td>
+                <td class="py-4 px-4 text-right text-slate-300">$333.33</td>
+                <td class="py-4 px-4 text-right font-bold text-emerald-400 bg-slate-800/30">$666.67</td>
+                <td class="py-4 px-4 text-right text-emerald-400">$222.22</td>
+                <td class="py-4 px-4 text-right">$444.44</td>
+                <td class="py-4 px-6 text-right font-extrabold text-emerald-400 bg-slate-800/60 text-base">$888.89</td>
+              </tr>
+              <!-- JS Injected Row 3 -->
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-4 px-4 sm:px-6 font-sans font-medium text-white">
+                  <div>Model 3A: Non-Bday Baseline Split</div>
+                  <span class="text-[11px] text-slate-400 font-normal">Birthday $400 baseline absorbed ONLY by non-birthday guests.</span>
+                </td>
+                <td class="py-4 px-4 text-right text-slate-400">$0.00</td>
+                <td class="py-4 px-4 text-right font-bold text-amber-400 bg-slate-800/30">$2,000.00</td>
+                <td class="py-4 px-4 text-right text-emerald-400">$0.00</td>
+                <td class="py-4 px-4 text-right">$500.00</td>
+                <td class="py-4 px-6 text-right font-extrabold text-amber-400 bg-slate-800/60 text-base">$2,000.00</td>
+              </tr>
+              <!-- JS Injected Row 4 -->
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-4 px-4 sm:px-6 font-sans font-medium text-white">
+                  <div>Model 3B: All-Guest Baseline Split</div>
+                  <span class="text-[11px] text-slate-400 font-normal">Birthday $400 baseline split among all OTHER party guests.</span>
+                </td>
+                <td class="py-4 px-4 text-right text-slate-300">$300.00</td>
+                <td class="py-4 px-4 text-right font-bold text-cyan-400 bg-slate-800/30">$800.00</td>
+                <td class="py-4 px-4 text-right text-emerald-400">$0.00</td>
+                <td class="py-4 px-4 text-right">$500.00</td>
+                <td class="py-4 px-6 text-right font-extrabold text-cyan-400 bg-slate-800/60 text-base">$800.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Strategic Analyst Commentary Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-rose-400 font-semibold text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            Model 1 & 3A Vulnerability
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            When birthday attendees dominate the group (e.g. Party 1 with 4 out of 5 celebrating), Model 1 and 3A create extreme financial leverage on minority non-birthday guests. David is penalized with 100% of the entire party bill ($2,000).
+          </p>
+        </div>
+
+        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Model 2 Equitability
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Model 2 enforces proportional sharing. Birthday guests still receive a substantial 50% discount off the base non-birthday rate, but non-birthday guests are protected from exponential payment spikes during multi-birthday events ($666.67 vs $2,000).
+          </p>
+        </div>
+
+        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 space-y-2">
+          <div class="flex items-center gap-2 text-cyan-400 font-semibold text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Model 3B Mutual Reciprocity
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Under Model 3B, celebrants waive their own baseline cost, but still subsidize co-celebrants. This bounds David's total expense across both parties to $800.00—making it the most economical total model for David.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Interactive Custom Simulator Section (Hidden by default) -->
+    <div id="simulatorView" class="hidden space-y-8">
+      
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <h3 class="text-xl font-bold text-white mb-2">Custom Scenario Sandbox</h3>
+        <p class="text-xs text-slate-400 mb-6">Test custom group sizes, bill totals, and birthday counts to see live payment recalculations across all models.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          
+          <!-- Total Bill Input -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 space-y-2">
+            <div class="flex justify-between items-center text-xs font-medium text-slate-300">
+              <label for="simBill">Total Bill Amount ($)</label>
+              <span id="simBillVal" class="text-cyan-400 font-bold font-mono">$2,000</span>
+            </div>
+            <input type="range" id="simBill" min="100" max="10000" step="100" value="2000" oninput="updateSimulation()" class="w-full accent-cyan-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- Total Group Size Input -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 space-y-2">
+            <div class="flex justify-between items-center text-xs font-medium text-slate-300">
+              <label for="simGroup">Total Group Size</label>
+              <span id="simGroupVal" class="text-cyan-400 font-bold font-mono">5 people</span>
+            </div>
+            <input type="range" id="simGroup" min="2" max="20" step="1" value="5" oninput="updateSimulation()" class="w-full accent-cyan-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- Birthday Guests Count Input -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 space-y-2">
+            <div class="flex justify-between items-center text-xs font-medium text-slate-300">
+              <label for="simBdays">Birthday Celebrants</label>
+              <span id="simBdaysVal" class="text-amber-400 font-bold font-mono">4 people</span>
+            </div>
+            <input type="range" id="simBdays" min="0" max="5" step="1" value="4" oninput="updateSimulation()" class="w-full accent-amber-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- David Birthday Toggle -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-between space-y-2">
+            <div class="flex justify-between items-center text-xs font-medium text-slate-300">
+              <span>Is David a Celebrant?</span>
+              <span id="simDavidStatus" class="text-rose-400 font-bold text-xs">No (Paying)</span>
+            </div>
+            <button id="simDavidBtn" onclick="toggleDavidStatus()" class="w-full py-2 bg-slate-800 border border-slate-600 rounded-lg text-xs font-semibold text-slate-200 hover:bg-slate-700 transition">
+              Toggle David Status
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Simulation Results Visual Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="simResultCards">
+          <!-- Populated by JavaScript -->
+        </div>
+
+      </div>
+
+      <!-- Simulation Chart -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
+        <h4 class="text-base font-bold text-white mb-4">Simulated Bill Payment Breakdown</h4>
+        <div class="relative w-full h-80">
+          <canvas id="simChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/90 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
+      <p>Data Analyst Assessment & Visualizer — Bill-Splitting Models Comparison</p>
+      <p>Party Total: $2,000 | 5 Attendees | Baseline $400 / Person</p>
+    </div>
+  </footer>
+
+  <script>
+    /* JavaScript State Management and Mathematical Engine */
+    let currentTab = 'party1'; // 'party1', 'party2', 'both'
+    let davidIsBirthdayInSim = false;
+    let davidChart = null;
+    let simChart = null;
+
+    // Fixed Baseline Data for Core Models
+    const dataModel = {
+      party1: {
+        name: "Party 1 (4 Bday / 1 Non-Bday)",
+        m1: { bday: 0.00, nonBday: 2000.00, david: 2000.00 },
+        m2: { bday: 333.33, nonBday: 666.67, david: 666.67 },
+        m3a: { bday: 0.00, nonBday: 2000.00, david: 2000.00 },
+        m3b: { bday: 300.00, nonBday: 800.00, david: 800.00 }
+      },
+      party2: {
+        name: "Party 2 (1 Bday / 4 Non-Bday)",
+        m1: { bday: 0.00, nonBday: 500.00, david: 0.00 },
+        m2: { bday: 222.22, nonBday: 444.44, david: 222.22 },
+        m3a: { bday: 0.00, nonBday: 500.00, david: 0.00 },
+        m3b: { bday: 0.00, nonBday: 500.00, david: 0.00 }
+      },
+      both: {
+        name: "Combined Both Parties",
+        m1: { david: 2000.00 },
+        m2: { david: 888.89 },
+        m3a: { david: 2000.00 },
+        m3b: { david: 800.00 }
+      }
+    };
+
+    window.onload = function() {
+      initDavidChart();
+      updateTabUI();
+      initSimulationChart();
+      updateSimulation();
+    };
+
+    function switchMainView(view) {
+      const presetsView = document.getElementById('presetsView');
+      const simulatorView = document.getElementById('simulatorView');
+      const viewPresetBtn = document.getElementById('viewPresetBtn');
+      const viewSimBtn = document.getElementById('viewSimBtn');
+
+      if (view === 'presets') {
+        presetsView.classList.remove('hidden');
+        simulatorView.classList.add('hidden');
+        viewPresetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-cyan-600 text-white shadow-sm";
+        viewSimBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200";
+      } else {
+        presetsView.classList.add('hidden');
+        simulatorView.classList.remove('hidden');
+        viewSimBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all bg-cyan-600 text-white shadow-sm";
+        viewPresetBtn.className = "px-3 py-1.5 rounded-md font-medium transition-all text-slate-400 hover:text-slate-200";
+      }
+    }
+
+    function selectPartyTab(tab) {
+      if (tab === 1) currentTab = 'party1';
+      else if (tab === 2) currentTab = 'party2';
+      else currentTab = 'both';
+
+      updateTabUI();
+    }
+
+    function updateTabUI() {
+      // Button styling
+      const tab1 = document.getElementById('tabParty1');
+      const tab2 = document.getElementById('tabParty2');
+      const tabBoth = document.getElementById('tabBoth');
+
+      const activeClass = "px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-800 text-white border border-cyan-500/50 shadow-md";
+      const inactiveClass = "px-4 py-2 rounded-lg font-medium text-sm transition-all bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800";
+
+      tab1.className = currentTab === 'party1' ? activeClass : inactiveClass;
+      tab2.className = currentTab === 'party2' ? activeClass : inactiveClass;
+      tabBoth.className = currentTab === 'both' ? activeClass : inactiveClass;
+
+      const partyBadge = document.getElementById('partyBadge');
+      const chartSubheading = document.getElementById('chartSubheading');
+
+      if (currentTab === 'party1') {
+        partyBadge.innerText = "Party 1 (4 Bday / 1 Non-Bday)";
+        chartSubheading.innerText = "David's out-of-pocket cost in Party 1 (David is non-birthday)";
+      } else if (currentTab === 'party2') {
+        partyBadge.innerText = "Party 2 (1 Bday / 4 Non-Bday)";
+        chartSubheading.innerText = "David's out-of-pocket cost in Party 2 (David is birthday celebrant)";
+      } else {
+        partyBadge.innerText = "Combined Total";
+        chartSubheading.innerText = "David's combined out-of-pocket total across BOTH parties";
+      }
+
+      updateDistributionCards();
+      updateDavidChart();
+    }
+
+    function updateDistributionCards() {
+      const container = document.getElementById('distributionCards');
+      container.innerHTML = '';
+
+      if (currentTab === 'both') {
+        container.innerHTML = `
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-1">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-200">
+              <span>Model 1 Total (Full Subsidy)</span>
+              <span class="text-rose-400 font-mono text-sm">$2,000.00</span>
+            </div>
+            <p class="text-[11px] text-slate-400">David pays $2,000 in Party 1 + $0 in Party 2.</p>
+          </div>
+
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-1">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-200">
+              <span>Model 2 Total (50% Discount)</span>
+              <span class="text-emerald-400 font-mono text-sm">$888.89</span>
+            </div>
+            <p class="text-[11px] text-slate-400">David pays $666.67 in Party 1 + $222.22 in Party 2.</p>
+          </div>
+
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-1">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-200">
+              <span>Model 3A Total (Non-Bday Split)</span>
+              <span class="text-amber-400 font-mono text-sm">$2,000.00</span>
+            </div>
+            <p class="text-[11px] text-slate-400">David pays $2,000 in Party 1 + $0 in Party 2.</p>
+          </div>
+
+          <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-1">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-200">
+              <span>Model 3B Total (All-Guest Split)</span>
+              <span class="text-cyan-400 font-mono text-sm">$800.00</span>
+            </div>
+            <p class="text-[11px] text-slate-400">David pays $800 in Party 1 + $0 in Party 2.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const pData = dataModel[currentTab];
+
+      const models = [
+        { label: "Model 1: Full Subsidy", key: "m1", color: "text-rose-400" },
+        { label: "Model 2: 50% Rate Discount", key: "m2", color: "text-emerald-400" },
+        { label: "Model 3A: Non-Bday Split", key: "m3a", color: "text-amber-400" },
+        { label: "Model 3B: All-Guest Split", key: "m3b", color: "text-cyan-400" }
+      ];
+
+      models.forEach(m => {
+        const item = pData[m.key];
+        const cardHtml = `
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/40 flex justify-between items-center text-xs">
+            <div>
+              <div class="font-semibold text-slate-200">${m.label}</div>
+              <div class="text-[11px] text-slate-400">Bday Guest: <span class="font-mono text-slate-300">$${item.bday.toFixed(2)}</span></div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] text-slate-400 uppercase tracking-wide">David Pays</div>
+              <div class="font-bold font-mono ${m.color} text-sm">$${item.david.toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHtml;
+      });
+    }
+
+    function initDavidChart() {
+      const ctx = document.getElementById('davidCostChart').getContext('2d');
+      davidChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Model 1 (Full Subsidy)', 'Model 2 (50% Discount)', 'Model 3A (Non-Bday Split)', 'Model 3B (All-Guest Split)'],
+          datasets: [{
+            label: "David's Cost ($)",
+            data: [2000.00, 666.67, 2000.00, 800.00],
+            backgroundColor: [
+              'rgba(244, 63, 94, 0.75)',  // Rose
+              'rgba(16, 185, 129, 0.75)', // Emerald
+              'rgba(245, 158, 11, 0.75)', // Amber
+              'rgba(6, 182, 212, 0.75)'   // Cyan
+            ],
+            borderColor: [
+              '#f43f5e',
+              '#10b981',
+              '#f59e0b',
+              '#06b6d4'
+            ],
+            borderWidth: 1.5,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` David Pays: $${context.raw.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 2200,
+              ticks: {
+                color: '#94a3b8',
+                callback: function(value) { return '$' + value; }
+              },
+              grid: { color: 'rgba(51, 65, 85, 0.4)' }
+            },
+            x: {
+              ticks: { color: '#cbd5e1', font: { size: 11 } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function updateDavidChart() {
+      if (!davidChart) return;
+
+      let newData = [];
+      if (currentTab === 'party1') {
+        newData = [
+          dataModel.party1.m1.david,
+          dataModel.party1.m2.david,
+          dataModel.party1.m3a.david,
+          dataModel.party1.m3b.david
+        ];
+      } else if (currentTab === 'party2') {
+        newData = [
+          dataModel.party2.m1.david,
+          dataModel.party2.m2.david,
+          dataModel.party2.m3a.david,
+          dataModel.party2.m3b.david
+        ];
+      } else {
+        newData = [
+          dataModel.both.m1.david,
+          dataModel.both.m2.david,
+          dataModel.both.m3a.david,
+          dataModel.both.m3b.david
+        ];
+      }
+
+      davidChart.data.datasets[0].data = newData;
+      davidChart.update();
+    }
+
+    function toggleDavidStatus() {
+      davidIsBirthdayInSim = !davidIsBirthdayInSim;
+      const btn = document.getElementById('simDavidStatus');
+      if (davidIsBirthdayInSim) {
+        btn.innerText = "Yes (Birthday)";
+        btn.className = "text-emerald-400 font-bold text-xs";
+      } else {
+        btn.innerText = "No (Paying)";
+        btn.className = "text-rose-400 font-bold text-xs";
+      }
+      updateSimulation();
+    }
+
+    function updateSimulation() {
+      const bill = parseFloat(document.getElementById('simBill').value);
+      const groupSize = parseInt(document.getElementById('simGroup').value);
+      const simBdayInput = document.getElementById('simBdays');
+
+      // Adjust max birthday count if group size changed
+      simBdayInput.max = groupSize;
+      if (parseInt(simBdayInput.value) > groupSize) {
+        simBdayInput.value = groupSize;
+      }
+      const bdayCount = parseInt(simBdayInput.value);
+      const nonBdayCount = groupSize - bdayCount;
+
+      // Update slider labels
+      document.getElementById('simBillVal').innerText = `$${bill.toLocaleString()}`;
+      document.getElementById('simGroupVal').innerText = `${groupSize} people`;
+      document.getElementById('simBdaysVal').innerText = `${bdayCount} people`;
+
+      // Calculations
+      const baseline = bill / groupSize;
+
+      // Model 1: Bdays pay 0. Non-bdays split bill.
+      let m1_david = 0;
+      let m1_bday = 0;
+      let m1_nonBday = 0;
+      if (nonBdayCount > 0) {
+        m1_nonBday = bill / nonBdayCount;
+      } else {
+        m1_nonBday = 0; // Edge case: all bdays
+      }
+      m1_david = davidIsBirthdayInSim ? 0 : m1_nonBday;
+
+      // Model 2: x = nonBday rate. bday rate = 0.5 * x.
+      // bill = bdayCount * 0.5x + nonBdayCount * x = x * (0.5*bdayCount + nonBdayCount)
+      let m2_x = 0;
+      const m2_denom = (0.5 * bdayCount) + nonBdayCount;
+      if (m2_denom > 0) {
+        m2_x = bill / m2_denom;
+      }
+      const m2_bday = 0.5 * m2_x;
+      const m2_nonBday = m2_x;
+      const m2_david = davidIsBirthdayInSim ? m2_bday : m2_nonBday;
+
+      // Model 3A: Baseline of bdays ($400 * bdays) split among non-bdays
+      let m3a_nonBday = 0;
+      if (nonBdayCount > 0) {
+        m3a_nonBday = baseline + (bdayCount * baseline) / nonBdayCount;
+      }
+      const m3a_bday = 0;
+      const m3a_david = davidIsBirthdayInSim ? 0 : m3a_nonBday;
+
+      // Model 3B: Baseline of each bday split among ALL OTHER (N-1) guests
+      // Each bday person contributes 0 to own baseline, but pays baseline / (N-1) for each OTHER bday.
+      let m3b_bday = 0;
+      let m3b_nonBday = 0;
+      if (groupSize > 1) {
+        const costPerBdayShift = baseline / (groupSize - 1);
+        m3b_bday = (bdayCount - 1) * costPerBdayShift; // pays for other celebrants
+        m3b_nonBday = baseline + (bdayCount * costPerBdayShift);
+      } else {
+        m3b_bday = 0;
+        m3b_nonBday = bill;
+      }
+      const m3b_david = davidIsBirthdayInSim ? m3b_bday : m3b_nonBday;
+
+      // Update Simulation Result Cards
+      const cardContainer = document.getElementById('simResultCards');
+      cardContainer.innerHTML = `
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 shadow">
+          <span class="text-xs text-slate-400 font-medium block">Model 1 (Full Subsidy)</span>
+          <span class="text-xl font-bold text-rose-400 font-mono mt-1 block">$${m1_david.toFixed(2)}</span>
+          <span class="text-[11px] text-slate-500 block mt-1">Non-Bday Rate: $${m1_nonBday.toFixed(2)}</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 shadow">
+          <span class="text-xs text-slate-400 font-medium block">Model 2 (50% Discount)</span>
+          <span class="text-xl font-bold text-emerald-400 font-mono mt-1 block">$${m2_david.toFixed(2)}</span>
+          <span class="text-[11px] text-slate-500 block mt-1">Bday: $${m2_bday.toFixed(2)} | Non: $${m2_nonBday.toFixed(2)}</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 shadow">
+          <span class="text-xs text-slate-400 font-medium block">Model 3A (Non-Bday Split)</span>
+          <span class="text-xl font-bold text-amber-400 font-mono mt-1 block">$${m3a_david.toFixed(2)}</span>
+          <span class="text-[11px] text-slate-500 block mt-1">Non-Bday Rate: $${m3a_nonBday.toFixed(2)}</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/60 shadow">
+          <span class="text-xs text-slate-400 font-medium block">Model 3B (All-Guest Split)</span>
+          <span class="text-xl font-bold text-cyan-400 font-mono mt-1 block">$${m3b_david.toFixed(2)}</span>
+          <span class="text-[11px] text-slate-500 block mt-1">Bday: $${m3b_bday.toFixed(2)} | Non: $${m3b_nonBday.toFixed(2)}</span>
+        </div>
+      `;
+
+      updateSimChart([m1_david, m2_david, m3a_david, m3b_david], bill);
+    }
+
+    function initSimulationChart() {
+      const ctx = document.getElementById('simChart').getContext('2d');
+      simChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Model 1', 'Model 2', 'Model 3A', 'Model 3B'],
+          datasets: [{
+            label: "David's Simulated Out-of-Pocket Cost ($)",
+            data: [0, 0, 0, 0],
+            backgroundColor: [
+              'rgba(244, 63, 94, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(6, 182, 212, 0.8)'
+            ],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#94a3b8', callback: function(val) { return '$' + val; } },
+              grid: { color: 'rgba(51, 65, 85, 0.4)' }
+            },
+            x: {
+              ticks: { color: '#cbd5e1' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function updateSimChart(data, totalBill) {
+      if (!simChart) return;
+      simChart.data.datasets[0].data = data;
+      simChart.options.scales.y.max = Math.max(...data, totalBill) * 1.1;
+      simChart.update();
+    }
+
+    function exportToCSV() {
+      const rows = [
+        ["Model Definition", "Party 1 Bday Person", "Party 1 David", "Party 2 Bday (David)", "Party 2 Non-Bday Guest", "David Combined Total"],
+        ["Model 1: Full Bday Subsidy", "$0.00", "$2,000.00", "$0.00", "$500.00", "$2,000.00"],
+        ["Model 2: 50% Rate Discount", "$333.33", "$666.67", "$222.22", "$444.44", "$888.89"],
+        ["Model 3A: Non-Bday Baseline Split", "$0.00", "$2,000.00", "$0.00", "$500.00", "$2,000.00"],
+        ["Model 3B: All-Guest Baseline Split", "$300.00", "$800.00", "$0.00", "$500.00", "$800.00"]
+      ];
+
+      let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "bill_splitting_models_comparison.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
