@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Chan — 12-Month Actionable Skill Roadmap (2026–2027)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg-slate: #0f172a;
+      --surface-dark: #1e293b;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --navy-primary: #1e3a8a;
+      --blue-accent: #2563eb;
+      --teal-accent: #0d9488;
+      --amber-accent: #d97706;
+      --purple-accent: #7c3aed;
+      --emerald-accent: #059669;
+      --rose-accent: #e11d48;
+      
+      --q1-color: #2563eb;
+      --q2-color: #7c3aed;
+      --q3-color: #0d9488;
+      --q4-color: #059669;
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-slate);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 32px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    header.hero-header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      color: #ffffff;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    header.hero-header::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .hero-title h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+    .hero-title p {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .candidate-badge-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .c-badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .c-badge i { color: #60a5fa; }
+
+    .target-profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .profile-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #334155;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+    }
+    .profile-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .profile-card p {
+      color: #e2e8f0;
+      line-height: 1.4;
+    }
+
+    .controls-bar {
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .filter-btn:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+    .filter-btn.active {
+      background: var(--navy-primary);
+      color: #ffffff;
+      border-color: var(--navy-primary);
+    }
+
+    .timeline-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    .section-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gantt-wrapper {
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+    .gantt-grid {
+      min-width: 900px;
+      display: grid;
+      grid-template-columns: 220px repeat(12, 1fr);
+      gap: 4px;
+      align-items: center;
+    }
+
+    .gantt-header-cell {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 8px 0;
+      background: #f8fafc;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+    }
+    .gantt-header-cell.quarter-tag {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .q1-bg { background: var(--q1-color) !important; }
+    .q2-bg { background: var(--q2-color) !important; }
+    .q3-bg { background: var(--q3-color) !important; }
+    .q4-bg { background: var(--q4-color) !important; }
+
+    .gantt-row-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      padding-right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gantt-bar-cell {
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+    .gantt-bar-cell:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      z-index: 2;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .skill-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .skill-card:hover {
+      box-shadow: var(--shadow-lg);
+      border-color: #cbd5e1;
+    }
+
+    .skill-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .skill-title-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .skill-num-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .skill-heading h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+    .skill-heading .timeframe-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .tags-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .tag-po { background: #dbeafe; color: #1e40af; }
+    .tag-ta { background: #dcfce7; color: #166534; }
+    .tag-cp { background: #f3e8ff; color: #6b21a8; }
+    .tag-core { background: #fef3c7; color: #92400e; }
+
+    .skill-body-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .skill-body-grid { grid-template-columns: 1fr; }
+    }
+
+    .sub-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .sub-box-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--navy-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sub-box-title i { font-size: 13px; }
+    .sub-box p, .sub-box ul {
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .sub-box ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .sub-box ul li {
+      position: relative;
+      padding-left: 18px;
+      margin-bottom: 6px;
+    }
+    .sub-box ul li::before {
+      content: '➔';
+      position: absolute;
+      left: 0;
+      color: var(--blue-accent);
+      font-size: 11px;
+      top: 1px;
+    }
+
+    .readiness-section {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-top: 32px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .check-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s ease;
+    }
+    .check-item:hover {
+      background: #f1f5f9;
+    }
+    .check-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--emerald-accent);
+      cursor: pointer;
+    }
+    .check-content {
+      font-size: 13px;
+      color: var(--text-main);
+    }
+    .check-content strong {
+      display: block;
+      color: var(--navy-primary);
+      margin-bottom: 2px;
+    }
+
+    footer.roadmap-footer {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    footer.roadmap-footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="hero-header">
+    <div class="hero-top">
+      <div class="hero-title">
+        <h1>12-Month Skill Roadmap for Alex Chan</h1>
+        <p>Bridging the 1–2 Year Experience Barrier for HK Education & Programme Roles (2026–2027)</p>
+      </div>
+      <div class="candidate-badge-group">
+        <span class="c-badge"><i class="fa-solid fa-graduation-cap"></i> EdUHK BEd (English '26)</span>
+        <span class="c-badge"><i class="fa-solid fa-briefcase"></i> 8-Wk Practicum + Speaking Workshop</span>
+        <span class="c-badge"><i class="fa-solid fa-laptop-code"></i> Google Workspace / Canva / Basic Excel</span>
+      </div>
+    </div>
+
+    <div class="target-profile-grid">
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="fa-solid fa-bullseye"></i> Career Target</div>
+        <p>Transition from fresh graduate to <strong>AI-Augmented Education Administrator / Coordinator</strong> across 3 key job families (Programme Officer, Teaching/TA, Content/Project Support).</p>
+      </div>
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="fa-solid fa-shield-halved"></i> Strategic Focus</div>
+        <p>Master non-automatable human workflows (exception handling, stakeholder diplomacy) + AI orchestration skills (RAG chatbot tuning, dashboard analytics, prompt engineering).</p>
+      </div>
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="fa-solid fa-folder-open"></i> Core Deliverable Goal</div>
+        <p>Build a verifiable, public digital portfolio proving 2+ years equivalent operational value to bypass strict experience filters (<span style="color:#38bdf8;">HKBU APO Model [D1]</span>).</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls-bar">
+    <div class="filter-group">
+      <span class="filter-label">Filter by Job Family:</span>
+      <button class="filter-btn active" onclick="filterSkills('all')">All Job Families</button>
+      <button class="filter-btn" onclick="filterSkills('po')">Programme Officer</button>
+      <button class="filter-btn" onclick="filterSkills('ta')">Teaching / TA</button>
+      <button class="filter-btn" onclick="filterSkills('cp')">Content & Project Support</button>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+      <i class="fa-solid fa-circle-info"></i> Timeline: Months 1–12 (Oct 2026 – Sept 2027)
+    </div>
+  </div>
+
+  <div class="timeline-card">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-calendar-days" style="color: var(--blue-accent);"></i> 12-Month Visual Timeline Overview</h2>
+      <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Hover over bars for focus areas</span>
+    </div>
+
+    <div class="gantt-wrapper">
+      <div class="gantt-grid">
+        <!-- Row Header: Months -->
+        <div class="gantt-header-cell">Skill Workflow / Focus</div>
+        <div class="gantt-header-cell quarter-tag q1-bg">M1</div>
+        <div class="gantt-header-cell quarter-tag q1-bg">M2</div>
+        <div class="gantt-header-cell quarter-tag q1-bg">M3</div>
+        <div class="gantt-header-cell quarter-tag q2-bg">M4</div>
+        <div class="gantt-header-cell quarter-tag q2-bg">M5</div>
+        <div class="gantt-header-cell quarter-tag q2-bg">M6</div>
+        <div class="gantt-header-cell quarter-tag q3-bg">M7</div>
+        <div class="gantt-header-cell quarter-tag q3-bg">M8</div>
+        <div class="gantt-header-cell quarter-tag q3-bg">M9</div>
+        <div class="gantt-header-cell quarter-tag q4-bg">M10</div>
+        <div class="gantt-header-cell quarter-tag q4-bg">M11</div>
+        <div class="gantt-header-cell quarter-tag q4-bg">M12</div>
+
+        <!-- Row 1: Skill 1 -->
+        <div class="gantt-row-title"><i class="fa-solid fa-robot" style="color:var(--q1-color);"></i> 1. RAG Bot Curation</div>
+        <div class="gantt-bar-cell q1-bg" style="grid-column: 2 / span 3;" onclick="scrollToSkill('skill1')">M1–M3: KB Tuning</div>
+        <div style="grid-column: 5 / span 9;"></div>
+
+        <!-- Row 2: Skill 2 -->
+        <div class="gantt-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--q2-color);"></i> 2. Prompt Scaffolding</div>
+        <div style="grid-column: 2 / span 2;"></div>
+        <div class="gantt-bar-cell q2-bg" style="grid-column: 4 / span 3;" onclick="scrollToSkill('skill2')">M3–M5: Pedagogy Kit</div>
+        <div style="grid-column: 7 / span 7;"></div>
+
+        <!-- Row 3: Skill 3 -->
+        <div class="gantt-row-title"><i class="fa-solid fa-chart-column" style="color:var(--q3-color);"></i> 3. Learning Analytics</div>
+        <div style="grid-column: 2 / span 5;"></div>
+        <div class="gantt-bar-cell q3-bg" style="grid-column: 7 / span 3;" onclick="scrollToSkill('skill3')">M6–M8: Dashboards</div>
+        <div style="grid-column: 10 / span 4;"></div>
+
+        <!-- Row 4: Skill 4 -->
+        <div class="gantt-row-title"><i class="fa-solid fa-gears" style="color:var(--q3-color);"></i> 4. Workflow Automation</div>
+        <div style="grid-column: 2 / span 7;"></div>
+        <div class="gantt-bar-cell q3-bg" style="grid-column: 9 / span 3;" onclick="scrollToSkill('skill4')">M8–M10: Admin Pipelines</div>
+        <div style="grid-column: 12 / span 2;"></div>
+
+        <!-- Row 5: Skill 5 -->
+        <div class="gantt-row-title"><i class="fa-solid fa-comments-dollar" style="color:var(--q4-color);"></i> 5. Crisis & Exception Mgt</div>
+        <div style="grid-column: 2 / span 9;"></div>
+        <div class="gantt-bar-cell q4-bg" style="grid-column: 11 / span 2;" onclick="scrollToSkill('skill5')">M10–M12: Human Core</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2><i class="fa-solid fa-layer-group" style="color: var(--blue-accent);"></i> 5 Core Skills Breakdown & Action Plan</h2>
+  </div>
+
+  <div class="skills-grid" id="skillsContainer">
+
+    <!-- SKILL 1 -->
+    <div class="skill-card po cp ta" id="skill1">
+      <div class="skill-card-top">
+        <div class="skill-title-block">
+          <div class="skill-num-badge q1-bg">S1</div>
+          <div class="skill-heading">
+            <h3>Knowledge Base Structuring & RAG Chatbot Auditing</h3>
+            <div class="timeframe-sub"><i class="fa-regular fa-clock"></i> Timeline: Months 1–3 (Q1) | Target Family: Programme Officer & Content Support</div>
+          </div>
+        </div>
+        <div class="tags-container">
+          <span class="tag tag-po">Programme Officer</span>
+          <span class="tag tag-cp">Content / Project</span>
+          <span class="tag tag-core">High AI Leverage</span>
+        </div>
+      </div>
+
+      <div class="skill-body-grid">
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-circle-question"></i> Why It Matters</div>
+          <p>Replaces repetitive email enquiry handling (<span style="font-weight:700;">Task 1</span>). Shifts Alex’s role from manually answering basic course/registration questions to structuring university information systems and auditing chatbot accuracy.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-person-running"></i> Concrete Practice Activity</div>
+          <p>Take a 50-page university student handbook (PDF), re-structure it into clean Markdown/Notion metadata tables, import into a no-code RAG chatbot (e.g., Custom GPT / DocsBot AI), and execute 30 edge-case query tests.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-folder-closed"></i> Portfolio / Evidence Item</div>
+          <p>A hosted, public <strong>"Student FAQ Chatbot & Audit Log"</strong> containing a 3-page document detailing knowledge base schema, hallucination rates, and human escalation protocols.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-vial"></i> How to Test Improvement</div>
+          <ul>
+            <li>Achieve <strong>&lt;5% query error/hallucination rate</strong> across 30 complex policy edge-cases.</li>
+            <li>Verify 100% of policy exception queries route cleanly to a human officer.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILL 2 -->
+    <div class="skill-card ta cp po" id="skill2">
+      <div class="skill-card-top">
+        <div class="skill-title-block">
+          <div class="skill-num-badge q2-bg">S2</div>
+          <div class="skill-heading">
+            <h3>AI-Assisted Differentiated Material Creation & Prompt Engineering</h3>
+            <div class="timeframe-sub"><i class="fa-regular fa-clock"></i> Timeline: Months 3–5 (Q2) | Target Family: Teaching / TA & Content Support</div>
+          </div>
+        </div>
+        <div class="tags-container">
+          <span class="tag tag-ta">Teaching / TA</span>
+          <span class="tag tag-cp">Content / Project</span>
+          <span class="tag tag-core">Pedagogical Core</span>
+        </div>
+      </div>
+
+      <div class="skill-body-grid">
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-circle-question"></i> Why It Matters</div>
+          <p>Accelerates lesson prep and curriculum drafting (<span style="font-weight:700;">Task 4 & 5</span>) by 4× while maintaining HK Curriculum/CEFR standards. Prevents reliance on generic, uncurated AI output.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-person-running"></i> Concrete Practice Activity</div>
+          <p>Construct a structured System-User-Assistant prompt library in Notion to generate multi-tier DSE English reading passages, vocabulary scaffolds, and automated grading rubrics based on HK EDB frameworks.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-folder-closed"></i> Portfolio / Evidence Item</div>
+          <p>An online <strong>"EdTech Prompt Engineering & Scaffolding Kit"</strong> with 12 battle-tested prompt templates, input/output comparison matrix, and pedagogical validation notes for CEFR B1–C1 levels.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-vial"></i> How to Test Improvement</div>
+          <ul>
+            <li>Reduce creation time for a 3-tier differentiated lesson unit from 4 hours to <strong>&lt;45 minutes</strong>.</li>
+            <li>Ensure 0 factual/grammatical errors in generated answer keys.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILL 3 -->
+    <div class="skill-card po cp" id="skill3">
+      <div class="skill-card-top">
+        <div class="skill-title-block">
+          <div class="skill-num-badge q3-bg">S3</div>
+          <div class="skill-heading">
+            <h3>Learning Analytics & Data Visualization Dashboarding</h3>
+            <div class="timeframe-sub"><i class="fa-regular fa-clock"></i> Timeline: Months 6–8 (Q3) | Target Family: Programme Officer & Content Support</div>
+          </div>
+        </div>
+        <div class="tags-container">
+          <span class="tag tag-po">Programme Officer</span>
+          <span class="tag tag-cp">Content / Project</span>
+          <span class="tag tag-core">High Strategic Value</span>
+        </div>
+      </div>
+
+      <div class="skill-body-grid">
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-circle-question"></i> Why It Matters</div>
+          <p>Elevates administrative officers from basic record keepers to strategic data analysts (<span style="font-weight:700;">Task 12</span>). Enables Alex to turn raw survey responses and attendance logs into visual executive reports.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-person-running"></i> Concrete Practice Activity</div>
+          <p>Clean a synthetic dataset of 500 student course evaluations using Excel (XLOOKUP, Pivot Tables, Power Query), import into Google Looker Studio, and build an interactive 3-tab executive dashboard.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-folder-closed"></i> Portfolio / Evidence Item</div>
+          <p>An interactive, published <strong>"Programme Evaluation & Student Satisfaction Dashboard"</strong> accompanied by a 2-page executive summary outlining 3 actionable programme improvements.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-vial"></i> How to Test Improvement</div>
+          <ul>
+            <li>Extract 3 correct strategic insights (e.g., identifying risk factors for course dropout) from an unseen 200-row dataset in <strong>&lt;30 minutes</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILL 4 -->
+    <div class="skill-card po cp" id="skill4">
+      <div class="skill-card-top">
+        <div class="skill-title-block">
+          <div class="skill-num-badge q3-bg">S4</div>
+          <div class="skill-heading">
+            <h3>Automated Administrative Workflow Orchestration</h3>
+            <div class="timeframe-sub"><i class="fa-regular fa-clock"></i> Timeline: Months 8–10 (Q3–Q4) | Target Family: Programme Officer & Operations</div>
+          </div>
+        </div>
+        <div class="tags-container">
+          <span class="tag tag-po">Programme Officer</span>
+          <span class="tag tag-cp">Content / Project</span>
+          <span class="tag tag-core">Workflow Efficiency</span>
+        </div>
+      </div>
+
+      <div class="skill-body-grid">
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-circle-question"></i> Why It Matters</div>
+          <p>Eliminates repetitive data entry, room tracking, and receipt logging (<span style="font-weight:700;">Tasks 2, 3 & 7</span>). Demonstrates senior-level operational capability without needing years of manual experience.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-person-running"></i> Concrete Practice Activity</div>
+          <p>Build an automated registration & feedback workflow using Zapier / Make.com connecting Google Forms, Sheets, Gmail, and Slack/Teams with conditional logic branching.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-folder-closed"></i> Portfolio / Evidence Item</div>
+          <p>A 3-minute video demo and architectural diagram showing an <strong>"Automated Event Management & Notification Pipeline"</strong> handling custom calendar invites, confirmations, and attendance reporting.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-vial"></i> How to Test Improvement</div>
+          <ul>
+            <li>Achieve <strong>zero-failure execution</strong> across 50 simulated user registrations with conditional logic triggers (e.g., routing special requests to staff automatically).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILL 5 -->
+    <div class="skill-card po ta cp" id="skill5">
+      <div class="skill-card-top">
+        <div class="skill-title-block">
+          <div class="skill-num-badge q4-bg">S5</div>
+          <div class="skill-heading">
+            <h3>High-Stakes Student Advisory & Exception Escalation Protocol</h3>
+            <div class="timeframe-sub"><i class="fa-regular fa-clock"></i> Timeline: Months 10–12 (Q4) | Target Family: All Job Families (Human Core)</div>
+          </div>
+        </div>
+        <div class="tags-container">
+          <span class="tag tag-po">Programme Officer</span>
+          <span class="tag tag-ta">Teaching / TA</span>
+          <span class="tag tag-cp">Content / Project</span>
+          <span class="tag tag-core">Non-Automatable Core</span>
+        </div>
+      </div>
+
+      <div class="skill-body-grid">
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-circle-question"></i> Why It Matters</div>
+          <p>Represents the core human value that AI cannot replace (<span style="font-weight:700;">Tasks 8, 10 & 11</span>). Focuses on crisis mentoring, academic appeal handling, and stakeholder diplomacy where empathy and policy compliance are paramount.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-person-running"></i> Concrete Practice Activity</div>
+          <p>Roleplay 10 simulated student crisis scenarios (academic plagiarism appeals, mental health distress, grade disputes) applying De-escalation Frameworks and HK University Governance Guidelines.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-folder-closed"></i> Portfolio / Evidence Item</div>
+          <p>A comprehensive <strong>"Student Advisory & Crisis Exception Playbook"</strong> featuring empathy scripts, regulatory decision trees, ethical AI boundaries, and referral escalation matrices.</p>
+        </div>
+        <div class="sub-box">
+          <div class="sub-box-title"><i class="fa-solid fa-vial"></i> How to Test Improvement</div>
+          <ul>
+            <li>Pass a blind evaluation by a senior education administrator on a simulated crisis scenario with <strong>&gt;85% score</strong> in empathy, policy accuracy, and escalation correctness.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="readiness-section">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-clipboard-check" style="color: var(--emerald-accent);"></i> Alex Chan's 12-Month Readiness Checklist</h2>
+      <span style="font-size: 13px; font-weight: 700; color: var(--emerald-accent);" id="completionCount">0 of 5 Completed</span>
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted);">Check off each portfolio deliverable as Alex completes them over the next 12 months to ensure 100% readiness for job application season.</p>
+
+    <div class="check-grid">
+      <label class="check-item">
+        <input type="checkbox" onchange="updateProgress()">
+        <div class="check-content">
+          <strong>Quarter 1: RAG Chatbot & Audit Log</strong>
+          Published FAQ Bot with &lt;5% error rate and documented escalation schema.
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" onchange="updateProgress()">
+        <div class="check-content">
+          <strong>Quarter 2: Prompt Engineering Scaffolding Kit</strong>
+          Notion Prompt Library with 12 validated EDB/CEFR lesson templates.
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" onchange="updateProgress()">
+        <div class="check-content">
+          <strong>Quarter 3: Student Analytics Dashboard</strong>
+          Looker Studio Dashboard with 3 executive data insights from survey logs.
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" onchange="updateProgress()">
+        <div class="check-content">
+          <strong>Quarter 3/4: Admin Workflow Pipeline</strong>
+          Zapier / Make.com automated pipeline demo video & architectural diagram.
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" onchange="updateProgress()">
+        <div class="check-content">
+          <strong>Quarter 4: Student Crisis & Exception Playbook</strong>
+          Comprehensive advisory playbook with de-escalation scripts and decision trees.
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <footer class="roadmap-footer">
+    <div>
+      Grounded in <strong>HK Evidence Brief (Sept 2026)</strong> — Designed for Alex Chan (EdUHK '26 BEd English Graduate).
+    </div>
+    <div>
+      References: <a href="#">HKBU Vacancy [D1]</a> | <a href="#">SFU Project Role [D2]</a> | <a href="#">WEF AI Study [E1]</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  function filterSkills(family) {
+    // Update active filter button
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Filter skill cards
+    const cards = document.querySelectorAll('.skill-card');
+    cards.forEach(card => {
+      if (family === 'all') {
+        card.style.display = 'block';
+      } else {
+        if (card.classList.contains(family)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  function scrollToSkill(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.style.borderColor = '#2563eb';
+      setTimeout(() => {
+        el.style.borderColor = 'var(--card-border)';
+      }, 1500);
+    }
+  }
+
+  function updateProgress() {
+    const checkboxes = document.querySelectorAll('.check-item input[type="checkbox"]');
+    let checkedCount = 0;
+    checkboxes.forEach(cb => {
+      if (cb.checked) checkedCount++;
+    });
+    document.getElementById('completionCount').textContent = `${checkedCount} of ${checkboxes.length} Completed`;
+  }
+</script>
+
+</body>
+</html>
